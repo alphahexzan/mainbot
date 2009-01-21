@@ -1,0 +1,70 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+ASHOWBANS 		= " [type]			-	"..				CMDLANG.CmdLine1
+ABANIP 			= " ip [rule] [reason]		-	"..		CMDLANG.CmdLine2
+ABANNICK		= " nick [rule] [reason]		-	"..		CMDLANG.CmdLine33
+AUNBANIP 		= " ip			-	"..					CMDLANG.CmdLine3
+AMLOG 			= " yyyy/mm/dd 			-	"..			CMDLANG.CmdLine4
+ASLOG 			= " yyyy/mm/dd 			-	"..			CMDLANG.CmdLine5
+APLOG 			= " yyyy/mm/dd 			-	"..			CMDLANG.CmdLine6
+AMHLOG 			= " yyyy/mm/dd/hh 		-	"..			CMDLANG.CmdLine7
+ASHLOG 			= " yyyy/mm/dd/hh 		-	"..			CMDLANG.CmdLine8
+APHLOG 			= " yyyy/mm/dd/hh 		-	"..			CMDLANG.CmdLine9
+AHELP 			= "				-	"..					CMDLANG.CmdLine10
+AKILLIP 		= " ip [rule] [reason]		-	"..		CMDLANG.CmdLine11
+AKILLNICK 		= " nick [rule] [reason]		-	"..	CMDLANG.CmdLine34
+ADROPNICK 		= " nick			-	"..				CMDLANG.CmdLine12
+ADROPIP 		= " ip				-	"..				CMDLANG.CmdLine13
+AFAQ 			= "				-	"..					CMDLANG.CmdLine14
+ARULES 			= "				-	"..					CMDLANG.CmdLine15
+AWHENWAS 		= " nick			-	"..				CMDLANG.CmdLine16
+AUI 			= " nick				-	"..			CMDLANG.CmdLine17
+AII 			= " ip				-	"..				CMDLANG.CmdLine18
+AREGME			= " password			-	"..			CMDLANG.CmdLine19
+APASSWD			= " password		-	"..				CMDLANG.CmdLine20
+ASETBANCOUNT 	= " ip [value]		-	"..				CMDLANG.CmdLine22
+ANLON 			= " sharesize			-	"..			CMDLANG.CmdLine24
+ANLOF 			= "			-	"..						CMDLANG.CmdLine25
+ANLSHOW			= "			-	"..						CMDLANG.CmdLine26
+AMUTE			= " ip [rule] [reason]		-	"..		CMDLANG.CmdLine27
+AMUTENICK		= " nick [rule] [reason]		-	"..	CMDLANG.CmdLine31
+AUNMUTE 		= " ip			-	"..					CMDLANG.CmdLine28
+AUNMUTENICK		= " nick			-	"..					CMDLANG.CmdLine32
+AMYINFO			= "				-	"..					CMDLANG.CmdLine29
+ALOCKNICK		= " ip [nick]			-	"..			CMDLANG.CmdLine30
+AWHENWASIP 		= " ip			-	"..					CMDLANG.CmdLine35
+AMUTEFRVR		= " ip [rule] [reason]		-	"..		CMDLANG.CmdLine36
+AMUTENICKFRVR	= " nick [rule] [reason]	-	"..		CMDLANG.CmdLine42
+AOPTIONS		= " 				-	"..				CMDLANG.CmdLine37
+ASETOPTIONS		= " var value 			-	"..			CMDLANG.CmdLine38
+ANEWS			= " text 			-	"..				CMDLANG.CmdLine39
+APMNICK			= " user message		-	"..				CMDLANG.CmdLine40
+APMIP			= " ip message			-	"..				CMDLANG.CmdLine41
+ATOPIC			= " topic			-	"..				CMDLANG.CmdLine43
+AMUTEPM			= " ip			-	"..				CMDLANG.CmdLine44
+AMUTENICKPM		= " nick			-	"..				CMDLANG.CmdLine45
+ASHARETOP		= " num			-	"..				CMDLANG.CmdLine46
+AUNMUTEPM		= " ip			-	"..				CMDLANG.CmdLine47
+AUNMUTENICKPM	= " nick		-	"..				CMDLANG.CmdLine48
+AMUTEFRVRPM			= " ip			-	"..				CMDLANG.CmdLine49
+AMUTENICKFRVRPM		= " nick		-	"..				CMDLANG.CmdLine50
+ASETREG 	= " nick prof			-	"..				CMDLANG.CmdLine51
+AINETDOWN 	= " on/off			-	"..				CMDLANG.CmdLine52
+AHUBBASAY 	= " text			-	"..				CMDLANG.CmdLine53

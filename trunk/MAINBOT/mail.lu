@@ -1,0 +1,48 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+--приват в оффлайн
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+function addmailip(ip, fromuser,text)
+	if MAIL.IP[ip]==nil then
+		MAIL.IP[ip]={}
+	end
+	local msg={}
+	msg.from_ip=fromuser.sIP
+	msg.from_nick=fromuser.sName
+	msg.date = os.date("%Y/%m/%d %H:%M:%S");
+	msg.text = text ;
+	table.insert (MAIL.IP[ip],msg)
+	SaveFile(MAIL,"MAIL",F_MAIL);
+end
+--------------------------------------------------------------------
+function addmailnick(nick, fromuser,text)
+	if MAIL.NICK[nick]==nil then
+		MAIL.NICK[nick]={}
+	end
+	local msg={}
+	msg.from_ip=fromuser.sIP
+	msg.from_nick=fromuser.sName
+	msg.date = os.date("%Y/%m/%d %H:%M:%S");
+	msg.text = text ;
+	table.insert (MAIL.NICK[nick],msg)
+	SaveFile(MAIL,"MAIL",F_MAIL);
+end
+--------------------------------------------------------------------
+

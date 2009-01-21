@@ -1,0 +1,209 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Функции проверки матюков
+--------------------------------------------------------------------------------------------------------------------------------------------
+function isbad2(text,patterns)
+	local flag=0
+	for i=1,TableMaxSize(patterns)  do
+		local vb = patterns[i].bad
+		local from_b = 1
+		local start_b, end_b = string.find(text, vb, from_b)
+		while start_b ~= nil do
+			flag=0
+			for j = 1, TableMaxSize(patterns[i].good) do
+				vg = patterns[i].good[j]
+					local from_g = 1
+					local start_g, end_g = string.find(text, vg, from_g)
+					while start_g ~= nil  do
+						if start_g <= start_b and end_g>=end_b then	
+							flag=1				
+							break
+						end
+			
+						if start_g>start_b then 
+							break 
+						end
+						from_g = start_g + 1
+						start_g, end_g = string.find(text, vg, from_g)
+					end	
+			end
+			if flag==0 then --not found good word around bad word
+				local start_context=start_b - 10;
+				if  start_context < 1 then start_context=1; end
+				local end_context=end_b + 10;
+				if  end_context > string.len(text) then end_context = string.len (text) end;
+				local context = string.sub(text, start_context , end_context ) 
+				return 1, vb, start_b, context 
+			end
+			from_b = start_b + 1
+			start_b, end_b = string.find(text, vb, from_b)
+		end
+	end
+	return 0
+end
+function isbadnick(text,patterns)
+	local flag=0
+	local lentxt = string.len(text)
+	for i=1,TableMaxSize(patterns)  do
+		local vb = patterns[i].bad
+		local from_b = 1
+		local start_b, end_b = string.find(text, vb, from_b) -- если от 1-ой до последней букы всё плохо, то плохо :)
+		if start_b and end_b then
+			if start_b == 1 and end_b == lentxt then
+				return 1
+			end
+		end
+	end
+	return 0
+end
+function isbadnick_part(text,patterns)
+	local flag=0
+	for i=1,TableMaxSize(patterns)  do
+		local vb = patterns[i].bad
+		local from_b = 1
+		local start_b, end_b = string.find(text, vb, from_b)
+		while start_b ~= nil do
+			flag=0
+			for j = 1, TableMaxSize(patterns[i].good) do
+				vg = patterns[i].good[j]
+					local from_g = 1
+					local start_g, end_g = string.find(text, vg, from_g)
+					while start_g ~= nil  do
+						if start_g <= start_b and end_g>=end_b then	
+							flag=1				
+							break
+						end
+						if start_g>start_b then 
+							break 
+						end
+						from_g = start_g + 1
+						start_g, end_g = string.find(text, vg, from_g)
+					end	
+			end
+			if flag==0 then --not found good word around bad word
+				return 1 --, vb, start_b, context 
+			end
+			from_b = start_b + 1
+			start_b, end_b = string.find(text, vb, from_b)
+		end
+	end
+	return 0
+end
+function isbadantiadv(text,pattern1,pattern2,pattern4)
+	--VH:SendDataToUser("isbadantiadv.  text ["..(text or "ERR").."]","Palmer")
+	--local flag=0
+	text=string.gsub(text,"|","") 
+	text=string.gsub(text,"\n","")
+	text=string.gsub(text,"\r","")
+	local text_wodev = text
+	for c=1,TableMaxSize(pattern2) do
+		local dev1 = pattern2[c].bad
+		text_wodev=string.gsub(text_wodev,dev1,"")
+	end
+	for d=1,TableMaxSize(pattern1) do
+		--[[
+		for j = 1, TableMaxSize(pattern[d].good) do
+			vg = patterns[d].good[j]
+			local from_g = 1
+			local start_g, end_g = string.find(text, vg, from_g)
+			while start_g ~= nil  do
+				if start_g <= start_b and end_g>=end_b then	
+					flag=1				
+					break
+				end
+				if start_g>start_b then 
+					break 
+				end
+				from_g = start_g + 1
+				start_g, end_g = string.find(text, vg, from_g)
+			end	
+		end
+		]]--
+		local pb1 = pattern1[d].bad
+		local start_dev_b01, end_dev_b01 = string.find(text_wodev,pb1)
+		if start_dev_b01 and end_dev_b01 then
+			local start_context_wodev=start_dev_b01 - 25;
+			if start_context_wodev < 1 then
+				start_context_wodev = 1
+			end
+			local end_context_wodev=end_dev_b01 + 25;
+			if end_context_wodev > string.len(text_wodev) then
+				end_context_wodev = string.len(text_wodev)
+			end
+			local context_wodev = string.sub(text_wodev,start_context_wodev,end_context_wodev)
+			return 1, context_wodev
+		end
+	end
+	for g=1,TableMaxSize(pattern4) do
+		local pb4 = pattern4[g].bad
+		local start_b04, end_b04 = string.find(text_wodev, pb4)
+		if start_b04 and end_b04 then
+			local start_context_b04=start_b04 - 25;
+			if start_context_b04 < 1 then
+				start_context_b04 = 1
+			end
+			local end_context_b04=end_b04 + 25;
+			if end_context_b04 > string.len(text_wodev) then
+				end_context_b04 = string.len(text_wodev)
+			end
+			local context_b04 = string.sub(text_wodev,start_context_b04,end_context_b04) 
+			return 1, context_b04
+		end
+	end
+	---------
+	local from_g = 1
+	local start_g,end_g,arg1,arg2,arg3,arg4 = string.find(text,"(%d+)..-(%d+)..-(%d+)..-(%d+)",from_g)
+	if start_g ~= nil then
+		--VH:SendDataToUser("$To: Palmer From: isbadantiadv $<isbadantiadv> [1]: arg1["..(arg1 or "ERR").."] arg2["..(arg2 or "ERR").."] arg3["..(arg3 or "ERR").."] arg4["..(arg4 or "ERR").."] end_g["..(end_g or "ERR").."] start_g["..(start_g or "ERR").."]|","Palmer")
+		local found_num = (arg1 or "")..(arg2 or "")..(arg3 or "")..(arg4 or "");
+		local found_pattern = 0;
+		while found_pattern ~= 1 do
+			if start_g ~= nil then
+				for g=1,TableMaxSize(pattern4) do
+					local pb4 = pattern4[g].bad
+					local start_b04, end_b04 = string.find(found_num, pb4)
+					if start_b04 and end_b04 then
+						local start_context_b04=start_g - 25;
+						if start_context_b04 < 1 then
+							start_context_b04 = 1
+						end
+						local end_context_b04=end_g + 25;
+						if end_context_b04 > string.len(text) then
+							end_context_b04 = string.len(text)
+						end
+						local context_b04 = string.sub(text,start_context_b04,end_context_b04)
+						--VH:SendDataToUser("$To: Palmer From: isbadantiadv $<isbadantiadv> [2]: text["..(text or "ERR").."] found_num["..(found_num or "ERR").."] pb4["..(pb4 or "ERR").."] start_g["..(start_g or "ERR").."] end_g["..(end_g or "ERR").."] context_b04["..(context_b04 or "ERR").."]|","Palmer")
+						AddDebugLog("isbadantiadv","[2]: text["..(text or "ERR").."] found_num["..(found_num or "ERR").."] pb4["..(pb4 or "ERR").."] start_g["..(start_g or "ERR").."] end_g["..(end_g or "ERR").."] context_b04["..(context_b04 or "ERR").."]")
+						return 1, context_b04
+						--return 0, nil
+					end
+				end
+				from_g = end_g+1;
+				start_g,end_g,arg1,arg2,arg3,arg4 = string.find(text,"(%d+)..-(%d+)..-(%d+)..-(%d+)",from_g)
+				if start_g == nil then
+					return 0, nil
+				end
+				found_num = (arg1 or "")..(arg2 or "")..(arg3 or "")..(arg4 or "");
+				--VH:SendDataToUser("$To: Palmer From: isbadantiadv $<isbadantiadv> [3]: arg1["..(arg1 or "ERR").."] arg2["..(arg2 or "ERR").."] arg3["..(arg3 or "ERR").."] arg4["..(arg4 or "ERR").."] end_g["..(end_g or "ERR").."] start_g["..(start_g or "ERR").."]|","Palmer")
+			end
+		end
+	end
+	---------
+end

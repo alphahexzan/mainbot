@@ -1,0 +1,149 @@
+function MB_Main()--+
+	local sysmsg = "Загрузка модулей:";
+	local counter = 0;
+	---------
+	--Trivia
+	--TRIVIAPATH = MODULESPATH.."Trivia/"
+	--LoadFunction (TRIVIAPATH.."Trivia.main.lu")
+	--sysmsg = sysmsg.."\r\n\t"..TrivEx:Main()
+	--counter = counter+1;
+	---------
+	--PMBlocker
+	PMBLOCKERPATH = MODULESPATH.."PMBlocker/";
+	LoadFunction (PMBLOCKERPATH.."PMBlocker.lu");
+	sysmsg = sysmsg.."\r\n\t"..PMBlocker:Main();
+	counter = counter+1;
+	---------
+	--MCLOGGERPATH = MODULESPATH.."mclogger/";
+	--LoadFunction (MCLOGGERPATH.."mclogger.lu");
+	--sysmsg = sysmsg.."\r\n\t"..MCLogger:Main();
+	--counter = counter+1;
+	---------
+	sysmsg = sysmsg.."\r\n\tКоличество модулей: ["..tostring(counter).."]"
+	return sysmsg
+end
+function MB_OnUserLogin(sUser)--+
+	local loginretval = 1;
+	---------
+	--Trivia
+	--TrivEx:NewUserConnected(sUser)
+	---------
+	--PMBlocker
+	PMBlocker:sendUserCommands(sUser)
+	---------
+	return loginretval
+end
+function MB_OnUserLogout(sUser)--+
+	---------
+	--TrivEx:UserDisconnected(sUser)
+	---------
+end
+function MB_OnParsedMsgMyINFO(sUser, data)--+
+	local msgmyinforetval = 1;
+	---------
+	return msgmyinforetval
+end
+function MB_OnParsedMsgPM(sUser,data,vUser)--+
+	local pmretval = 1;
+	---------
+	--Trivia
+	--[[
+	if (vUser == TrivEx._Sets.bot) then
+		local _,_,mes = string.find(data,"$To:%s+%S+%s+From:%s+%S+%s+$(.*)$")
+		TrivEx:SendChatToOthers(mes, sUser)
+		TrivEx:ParseData("pm",sUser,mes)
+	end
+	]]--
+	---------
+	--PMBlocker
+	if (PMBlocker:Protection(sUser,data,vUser)==0) then
+		pmretval = 0;
+	end
+	---------
+	return pmretval
+end
+function MB_OnParsedMsgChat(sUser, data)--+
+	local mainchatretval = 1;
+	---------
+	--Trivia
+	--[[
+	if TrivEx:ParseData("main",sUser,data) == 1 then
+		return 0
+	end
+	]]--
+	---------
+	--PMBlocker
+	--PMBlocker:ParseData(sUser,data,vUser)
+	---------
+	---------
+	--MCLogger
+	--MCLogger:OnParsedMsgChat(sUser, data)
+	---------
+	return mainchatretval
+end
+function MB_OnUserCommand(sUser, data)--+
+	local usercommandretval = 1;
+	---------
+	--PMBlocker
+	if (PMBlocker:ParseCommand(sUser, data)==0) then
+		usercommandretval = 0;
+	end
+	---------
+	return usercommandretval
+end
+function MB_OnOperatorCommand(nick, data)--+
+	local opcommandretval = 1;
+	---------
+	return opcommandretval
+end
+function MB_OnParsedMsgConnectToMe(sUser, othernick)
+	local msgcontomeretval = 1;
+	---------
+	return msgcontomeretval
+end
+function MB_OnParsedMsgRevConnectToMe(sUser, othernick)
+	local msgrevcontomeretval = 1;
+	---------
+	return msgrevcontomeretval
+end
+function MB_OnParsedMsgSearch(sUser,data)
+	local msgsearchretval = 1;
+	---------
+	return msgsearchretval
+end
+function MB_OnParsedMsgSR(sUser, data)
+	local msgsrretval = 1;
+	---------
+	return msgsrretval
+end
+function MB_OnParsedMsgAny(sUser, data)
+	local msganyretval = 1;
+	---------
+	return msganyretval
+end
+function MB_UnLoad()
+	---------
+	--Trivia
+	--TrivEx:OnExit()
+	---------
+end
+function MB_OnTimer()
+	local ontimerretval = 1;
+	---------
+	--Trivia
+	--[[
+	if TrivExTimer~=0 then
+		TimerReg(TrivEx:OnTimer, TrivExTimer)
+		--TrivEx:OnTimer()
+	end
+	]]--
+	---------
+	return ontimerretval
+end
+----------------------------
+ModuleActivation_tCommands = {
+}
+tModuleActivated = {
+	ActTrivia = 1,
+	ActPMBLocker = 1,
+}

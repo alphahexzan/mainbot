@@ -1,0 +1,118 @@
+--- User Functions ---
+User = {}
+User.IsPrefixAllowed = function(nick)
+   local allowed = true
+        for key,value in unwantedPrefix do
+            if StringExt.StartsWith(nick,value) then
+                allowed = false
+            end
+        end
+   return allowed
+end
+
+User.GetIP = function(nick)
+    res, ip = VH:GetUserIP(nick)
+    if not res then
+        ip = "unknown"
+		--VH:CloseConnection(sUser.sName);
+		--if next(ONLINEUSERS[nick]) then ONLINEUSERS[nick] = nil
+    end
+    return ip
+end
+
+User.IsMaster = function(nick)
+	res, class = VH:GetUserClass(nick)
+	if res and class > 5 then
+		return true
+	else
+		return false
+	end
+end
+
+User.IsAdmin = function(nick)
+	res, class = VH:GetUserClass(nick)
+	if res and class > 4 then
+		return true
+	else
+		return false
+	end
+end
+
+User.IsSuperOperator = function(nick)
+        res, class = VH:GetUserClass(nick)
+        if res and class > 3 then
+                return true
+        else
+                return false
+        end
+end
+
+User.IsOperator = function(nick)
+	res, class = VH:GetUserClass(nick)
+	if res and class > 2 then
+		return true
+	else
+		return false
+	end
+end
+
+User.IsReg = function(nick)
+	res, class = VH:GetUserClass(nick)
+	if res and class < 1 then
+		return true
+	else
+		return false
+	end
+end
+
+User.Authorized = function(nick)
+    authorized = 0
+    local ip = User.GetIP(nick)
+    local ipR = IPFunc.IPRealValue(ip)
+    query = "SELECT op,range FROM "..ipsec_tblName.." WHERE op='"..SQL_Escape(nick).."'"
+    res, rows = VH:SQLQuery(query)
+    if res then
+	for x=0,rows-1 do
+		res,op,range = VH:SQLFetch(x)
+		if ( IPFunc.IsRange(range) ) then
+			local _,_,sIP,eIP = string.find(range, "(%S+)-(%S+)")
+			local sIPR = IPFunc.IPRealValue(sIP)
+			local eIPR = IPFunc.IPRealValue(eIP)
+			if ( ipR >= sIPR and ipR <= eIPR ) then
+				authorized = 1
+				return authorized
+			end
+		else
+			local _,_,sIP = string.find(range, "(%S+)")
+			local sIPR = IPFunc.IPRealValue(sIP)
+			if (ipR == sIPR) then
+				authorized = 1
+				return authorized
+			end
+		end
+	end
+    end
+    return authorized
+end
+
+User.SendPvt = function(data,nick)
+	VH:SendDataToUser("$To: " .. nick .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..data.."|", nick)
+end
+
+User.SendToMain = function(data,nick)
+	VH:SendDataToUser("<"..BOTNAME.."> "..data.."|",nick)
+end
+
+User.SendHeader = function(label,nick)
+	User.SendPvt(strLimiter,nick)
+	User.SendPvt("*** "..label,nick)
+	User.SendPvt(strLimiter,nick)
+end
+
+User.SendFooter = function(nick)
+	User.SendPvt(strLimiter,nick)
+end
+
+User.Kick = function(reason,nick)
+	VH:KickUser(BOTNAME,nick,reason)
+end

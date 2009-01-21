@@ -1,0 +1,1689 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+tOtherCommands = {
+	mbsettimer = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local timername, timervalue = GetNickNum(arg)
+			if timername and timervalue then
+				timervalue=tonumber(timervalue)
+				SQL_SetTimersCfg(timername, timervalue);
+				SQL_TimersCfg();
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Таймер "..timername.." установлен в значение: "..timervalue..".|", sUser.sName)
+			else
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Ошибка. Введите имя и значение таймера|", sUser.sName)
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,-- [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Установка таймеров",
+		sName = "mbsettimer",
+		tMenu = function(sUser)
+			local query = "SELECT name FROM MainBot_timeconfig"
+			local res, rows = VH:SQLQuery(query)
+			local tempTimers = {}
+			if res and rows~=0  then
+				if rows > 1 then
+					for x=0, rows-1 do
+						local res,name = VH:SQLFetch(x)
+						tempTimers[x+1] = {}
+						tempTimers[x+1].name = name
+					end
+				else
+					local res,name = VH:SQLFetch(0)
+					tempTimers[1] = {}
+					tempTimers[1].name = name
+					if (name == "could not fetch row") or (name == "could not seek data") then tempTimers = nil end
+				end
+			end
+			if tempTimers ~= nil then
+				for i,v in pairs(tempTimers) do
+					tRC = "1 1 Управление\\Системные таймеры\\Задать таймер\\"..tempTimers[i].name.."$<%[mynick]> +mbsettimer "..tempTimers[i].name.." %[line:Значение]"
+					VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+				end
+			end
+			tempTimers = nil
+		end,
+	},
+	mbtimerlisting = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local query = "SELECT * FROM MainBot_timeconfig"
+			local res, rows = VH:SQLQuery(query)
+			local tempTimers = {}
+			if res and rows~=0  then
+				if rows > 1 then
+					for x=0, rows-1 do
+						local res,name,valore = VH:SQLFetch(x)
+						tempTimers[x+1] = {}
+						tempTimers[x+1].name = name
+						tempTimers[x+1].valore = valore
+					end
+				else
+					local res,name,valore = VH:SQLFetch(0)
+					tempTimers[1] = {}
+					tempTimers[1].name = name
+					tempTimers[1].valore = valore
+					if (name == "could not fetch row") or (name == "could not seek data") then tempTimers = nil end
+				end
+			end
+			local msg="Список таймеров:\r\n";
+			if tempTimers ~= nil then
+				for i,v in pairs(tempTimers) do
+					msg = msg.."\t"..tempTimers[i].name.." = "..tempTimers[i].valore.."\r\n"
+				end
+			end
+			VH:SendDataToUser("$To: "..sUser.sName.." From: "..BOTNAME.." $<"..BOTNAME.."> "..msg.."|", sUser.sName)
+			tempTimers = nil
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,-- [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Список таймеров",
+		sName = "mbtimerlisting",
+		tMenu = function(sUser)
+			tRC = "1 1 Управление\\Системные таймеры\\Список$<%[mynick]> +mbtimerlisting"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbaddbadtth = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--[ K37SVPMB6M AMUQOLGMCK XOF3FAIOFY AGWLCDAVA ] -- 39
+			if (string.len(arg) ~= 39) then
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. ">***Ошибка! Длина строки не соответствует TTH|", sUser.sName)
+				return 1
+			end
+			local retval = SQL_TTHAdd(arg);
+			if retval == "tth_added" then
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH["..arg.."] добавлен.|", sUser.sName)
+			else
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH["..arg.."] ID ["..(retval or "ERR").."] уже имеется в базе.|", sUser.sName)
+			end
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Добавление TTH в запрещённый список",
+		sName = "mbaddbadtth",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск TTH\\Добавить TTH$<%[mynick]> +mbaddbadtth %[line:Введите TTH]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbfindbadtth = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--VH:SendDataToAll("addbadtthtolist tFunc: ОК|",10,10)
+			--VH:SendDataToAll("arg: "..arg.."|",10,10)
+			local id = SQL_TTHFind(arg)
+			if id ~= nil then
+				--VH:SendDataToAll("id: "..id.."|",10,10)
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH["..arg.." ] id: "..id.."|", sUser.sName)
+			else
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH не найден.|", sUser.sName)
+			end
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Найти id по TTH",
+		sName = "mbfindbadtth",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск TTH\\Найти ID$<%[mynick]> +mbfindbadtth %[line:Введите TTH]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbdeletebadtth = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local retval = SQL_TTHDelete(arg)
+			if retval~=nil then
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> ID["..retval.."] TTH["..arg.." ] удалён.|", sUser.sName)
+			else
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Ошибка при удалении TTH["..arg.." ].|", sUser.sName)
+			end
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1,-- [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Удалить TTH",
+		sName = "mbdeletebadtth",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск TTH\\Удалить TTH$<%[mynick]> +mbdeletebadtth %[line:Введите TTH]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbfixtablebadtth = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--SQL_TTHFix()
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> База TTH исправлена.|", sUser.sName)
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			--[10] = 1, [5] = 1,-- [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Пофиксить TTH",
+		sName = "mbfixtablebadtth",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск TTH\\Пофиксить$<%[mynick]> +mbfixtablebadtth"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mblistingbadtth = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local tempTTH = {}
+			tempTTH = SQL_TTHListing()
+			if tempTTH~=nil then
+				msg = "Список TTH:"
+				for indx,val in pairs(tempTTH) do
+					msg = msg.."\r\nID[ "..val.id.." ]\t FindTime[ "..val.findtime.." ]\tTTH[ "..val.tth.." ]"
+				end
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			end
+			tempTTH = nil
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Список TTH",
+		sName = "mblistingbadtth",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск TTH\\Список TTH$<%[mynick]> +mblistingbadtth"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbipsecaddnickip = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local ipaddr, nick = GetArgIpNick(arg)
+			if nick == nil or ipaddr == nil then 
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Ошибка. Введите ник и ip|", sUser.sName)
+				return 1
+			end
+			SQL_IPSecurityAdd(nick,ipaddr)
+			tMainBufer.IPSecBufer={};
+			IPSecBufferInit()
+			--[[
+			if (type(tMainBufer.IPSecBufer[sUser.sName])=="table") then
+				local length = tostring(TableMaxSize(tMainBufer.IPSecBufer[sUser.sName])+1);
+				tMainBufer.IPSecBufer[nick][length]=ip;
+			else
+				tMainBufer.IPSecBufer[nick]["1"]=ip;
+			end
+			]]--
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> В базу IPSecurity добавлено: Ник ["..nick.."] IP ["..ipaddr.."]|", sUser.sName)
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,-- [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Добавить IP в IPSecurity",
+		sName = "mbipsecaddnickip",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Проверка IP\\Добавить(nick,ip)$<%[mynick]> +mbipsecaddnickip %[line:Введите IP] %[line:Введите ник]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbipsecdelnickip = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local  nick, ipaddr = GetNickMsg(arg)
+			--VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> ipaddr: "..ipaddr.."|", sUser.sName)
+			if nick == nil then 
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Ошибка. Введите ник|", sUser.sName)
+				return 1
+			end
+			if ipaddr == "" then
+				SQL_IPSecurityDeleteNick(nick)
+				tMainBufer.IPSecBufer={};
+				IPSecBufferInit()
+				--[[
+				if (type(tMainBufer.IPSecBufer[sUser.sName])=="table") then
+					tMainBufer.IPSecBufer[sUser.sName]=nil;
+				end
+				]]--
+			else
+				SQL_IPSecurityDeleteNickIP(nick,ipaddr)
+				tMainBufer.IPSecBufer={};
+				IPSecBufferInit()
+				--[[
+				if (type(tMainBufer.IPSecBufer[sUser.sName])=="table") then
+					for indx, value in pairs(tMainBufer.IPSecBufer[sUser.sName]) do
+						if value==ipaddr then
+							tMainBufer.IPSecBufer[sUser.sName][indx]=nil;
+						end
+					end
+					--local length = TableMaxSize(tMainBufer.IPSecBufer[sUser.sName])
+					if not next(tMainBufer.IPSecBufer[sUser.sName]) then
+						tMainBufer.IPSecBufer[sUser.sName]=nil;
+					end
+				end
+				]]--
+			end
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Из базы IPSecurity удалено: Ник ["..nick.."] IP ["..ipaddr.."]|", sUser.sName)
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,-- [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Удалить IP из IPSecurity",
+		sName = "mbipsecdelnickip",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Проверка IP\\Удалить(nick,ip)$<%[mynick]> +mbipsecdelnickip %[line:Введите ник] %[line:Введите IP]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mblistingipsec = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local tempIPSec = {}
+			tempIPSec = SQL_IPSecurityListing()
+			if tempIPSec~=nil then
+				msg = "Список IPSec:\r\n"
+				for indx,val in pairs(tempIPSec) do
+					msg = msg.."\r\n\tНик[ "..val.nick.." ]\tIP[ "..val.ip.." ]\tID[ "..val.id.." ]"
+				end
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			end
+			tempIPSec = nil
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Список IPSec",
+		sName = "mblistingipsec",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Проверка IP\\Список$<%[mynick]> +mblistingipsec"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbipspyaddiptext = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local ipaddr, text = GetArgIpNick(arg)
+			if ipaddr == nil then 
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Ошибка. Введите ip|", sUser.sName)
+				return 1
+			end
+			if text == nil then text = "" end
+			--[[
+			local query = "SELECT text FROM MainBot_ipspy WHERE ip="..ipaddr..""
+			local res, rows = VH:SQLQuery(query)
+			local res, stext = VH:SQLFetch(0)
+			]]--
+			--VH:SendPMToAll("text: "..text.."|", BOTNAME, 10, 10)
+			--if stext == "could not seek data" then
+			if not (tMainBufer.IPSpyBufer[ipaddr]) then
+				SQL_IPSpyAdd(ipaddr,text)
+				tMainBufer.IPSpyBufer[ipaddr]=text;
+				--IPSpyBufferInit()
+			else
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Ошибка. IP уже отслеживается|", sUser.sName)
+				return 1
+			end
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> В базу IPSpy добавлено: IP ["..ipaddr.."] Описание ["..text.."]|", sUser.sName)
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Добавить IP в IPSpy",
+		sName = "mbipspyaddiptext",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Отслеживание IP\\Добавить(ip,text)$<%[mynick]> +mbipspyaddiptext %[line:Введите IP] %[line:Введите описание]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbipspydelip = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--local ipaddr, text = GetArgIpNick(arg)
+			if arg == nil then 
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Ошибка. Введите ip|", sUser.sName)
+				return 1
+			end
+			SQL_IPSpyDeleteIP(arg)
+			tMainBufer.IPSpyBufer[arg]=nil;
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Из базы IPSpy удалено: IP ["..arg.."]|", sUser.sName)
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Удалить IP в IPSpy",
+		sName = "mbipspydelip",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Отслеживание IP\\Удалить(ip)$<%[mynick]> +mbipspydelip %[line:Введите IP]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mblistingipspy = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local tempIPSpy = {}
+			tempIPSpy = SQL_IPSpyListing()
+			if tempIPSpy~=nil then
+				msg = "Список IPSpy:\r\n"
+				for indx,val in pairs(tempIPSpy) do
+					msg = msg.."\r\n\tIP[ "..val.ip.." ]\tОписание[ "..val.text.." ]"
+					--msg = msg.."\r\n\tIP[ "..val.ip.." ]"
+				end
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			end
+			tempIPSpy = nil
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Список IPSpy",
+		sName = "mblistingipspy",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Отслеживание IP\\Список$<%[mynick]> +mblistingipspy"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbchathistory = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local linecount = GetArg(arg);
+			if linecount==nil then 
+				linecount = 20 
+			else
+				linecount = tonumber(linecount)
+			end
+			if linecount ~= 0 then
+				local n1 = TableMaxSize(CHATHISTORY)
+				local n2 = linecount
+				local n3 = n1-(n2-1)
+				if n1 <= linecount then n3 = 1 end
+				local str = "\r\n\t[ Последние ( "..linecount.." ) сообщений чата ]"
+				for i = n3,n1 do str = str.."\r\n"..CHATHISTORY[i] end
+				str = str.."\r\n\t[ Конец истории чата ]"
+				--user:SendPM(botname,str.."\r\n")
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..str.."|", sUser.sName)
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "История чата",
+		sName = "mbchathistory",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Информация\\История чата$<%[mynick]> +mbchathistory %[line:Введите N]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mblistipbans = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--local query = "SELECT ip,date_start,date_limit,nick_op,reason FROM banlist WHERE nick='_ipban_' and date_limit"
+			local query = "SELECT ip,nick_op,reason FROM banlist WHERE nick='_ipban_' and date_limit"
+			local res, rows = VH:SQLQuery(query)
+			if not res then
+		        Users.SendToMain("Error in query: "..query,5, 10)
+		        Users.SendToMain("Error: "..rows,5, 10)
+		    end
+			local IPBanList = {}
+			if res and rows~=0  then
+				if rows > 1 then
+					for x=0, rows-1 do
+						--local res,ip,date_start,date_limit,nick_op,reason = VH:SQLFetch(x)
+						local res,ip,nick_op,reason = VH:SQLFetch(x)
+						IPBanList[x+1] = {}
+						IPBanList[x+1].ip = ip
+						--IPBanList[x+1].date_start = tonumber(date_start)
+						--IPBanList[x+1].date_limit = tonumber(date_limit)
+						IPBanList[x+1].nick_op = nick_op
+						IPBanList[x+1].reason = reason
+					end
+				else
+					--local res,ip,date_start,date_limit,nick_op,reason = VH:SQLFetch(0)
+					local res,ip,nick_op,reason = VH:SQLFetch(0)
+					IPBanList[1] = {}
+					IPBanList[1].ip = ip
+					--IPBanList[1].date_start = tonumber(date_start)
+					--IPBanList[1].date_limit = tonumber(date_limit)
+					IPBanList[1].nick_op = nick_op
+					IPBanList[1].reason = string.gsub(string.gsub(reason,"","\r\n"),"","\n")
+					--message=string.gsub(message,"\n","\r\n")
+					if id == "could not fetch row" then IPBanList = nil end
+				end
+			end
+			if IPBanList ~= nil then
+				local msg = "\r\nСписок банов хаба по IP\r\nIP\t\t\tНаказал\t\tПричина"
+				for indx,val in pairs(IPBanList) do
+					--local timeleft = (val.date_limit - val.date_start)/60
+					--[[
+					if (timeleft > 60) and (timeleft < 1440) then
+						local humantime = math.abs(timeleft/60).." часов "..timeleft-60*math.abs(timeleft/60).." минут\t"
+					elseif timeleft > 1440 then
+						local humantime = math.abs(timeleft/60*24).." дней "..math.abs((timeleft-24*math.abs(timeleft/60*24))/60).." часов "..timeleft-60*math.abs((timeleft-24*math.abs(timeleft/60*24))/60).." минут"
+					else
+						local humantime = timeleft.."минут\t\t\t\t"
+					end
+					]]--
+					--msg = msg.."\r\n"..val.ip.."\t\t"..timeleft.."\t"..val.nick_op.."\t\t"..val.reason..""
+					msg = msg.."\r\n"..val.ip.."\t\t"..val.nick_op.."\t"..val.reason..""
+				end
+				msg = msg.."\r\nКоличество банов [ "..TableMaxSize(IPBanList).." ]"
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			else
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Не удалось получить список банов.|", sUser.sName)
+			end
+			IPBanList = nil
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Список банов компакт(ip)",
+		sName = "mblistipbans",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Информация\\Список банов компакт(ip)$<%[mynick]> +mblistipbans"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mblistippermbans = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local query = "SELECT ip,nick_op,reason FROM banlist WHERE nick='_ipban_' and date_limit is NULL"
+			local res, rows = VH:SQLQuery(query)
+			if not res then
+		        Users.SendToMain("Error in query: "..query,5, 10)
+		        Users.SendToMain("Error: "..rows,5, 10)
+		    end
+			local IPBanList = {}
+			if res and rows~=0  then
+				if rows > 1 then
+					for x=0, rows-1 do
+						local res,ip,nick_op,reason = VH:SQLFetch(x)
+						IPBanList[x+1] = {}
+						IPBanList[x+1].ip = ip
+						IPBanList[x+1].nick_op = nick_op
+						IPBanList[x+1].reason = reason
+					end
+				else
+					local res,ip,nick_op,reason = VH:SQLFetch(0)
+					IPBanList[1] = {}
+					IPBanList[1].ip = ip
+					IPBanList[1].nick_op = nick_op
+					IPBanList[1].reason = reason
+					if id == "could not fetch row" then IPBanList = nil end
+				end
+			end
+			if IPBanList ~= nil then
+				local msg = "\r\nСписок банов хаба по IP\r\nIP\t\tНаказал\tПричина"
+				for indx,val in pairs(IPBanList) do
+					msg = msg.."\r\n"..val.ip.."\t"..val.nick_op.."\t"..val.reason..""
+				end
+				msg = msg.."\r\nКоличество банов [ "..TableMaxSize(IPBanList).." ]"
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			else
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Не удалось получить список банов.|", sUser.sName)
+			end
+			IPBanList = nil
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Список банов компакт(ip,perm)",
+		sName = "mblistippermbans",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Информация\\Список банов компакт(ip,perm)$<%[mynick]> +mblistippermbans"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbcountipbans = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local query = "SELECT COUNT(ip) FROM banlist WHERE nick='_ipban_' and date_limit"
+			local res, rows = VH:SQLQuery(query)
+			if not res then
+		        Users.SendToMain("Error in query: "..query,5, 10)
+		        Users.SendToMain("Error: "..rows,5, 10)
+		    else
+				local res, count = VH:SQLFetch(0)
+				count = tonumber(count)
+				local msg = "Количество банов [ "..count.." ]"
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Количество банов (ip)",
+		sName = "mbcountipbans",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Информация\\Количество банов (ip)$<%[mynick]> +mbcountipbans"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbsendmysqlquery = {
+		tFunc = function(sUser,arg,cmd,sData)
+			if arg == nil then 
+				VH:SendDataToUser("$To: "..sUser.sName.." From: "..BOTNAME.." $<"..BOTNAME.."> Ошибка. Введите запрос.|", sUser.sName)
+				return 1
+			end
+			local value = SQL_SendQuery(arg)
+			if value ~= nil then
+				VH:SendDataToUser("$To: "..sUser.sName.." From: "..BOTNAME.." $<"..BOTNAME.."> Ошибка: "..value.."|", sUser.sName)
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, --[5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "MySQL запрос",
+		sName = "mbsendmysqlquery",
+		tMenu = function(sUser)
+			local tRC = "1 1 Управление\\MySQL запрос$<%[mynick]> +mbsendmysqlquery %[line:MySQL запрос]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbregnewuser = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local UserNick, password = Get2Args(arg)
+			local query = "SELECT login_ip FROM reglist WHERE nick = '"..SQL_Escape(UserNick).."'"
+			local res, rows = VH:SQLQuery(query)
+			local LowRetval = 0
+			if res and rows~=0 then
+				local res, value = VH:SQLFetch(0)
+				if (value == "could not fetch row") or (value == "could not seek data") then 
+					LowRetval = 1
+				else
+					LowRetval = 0
+				end
+			else
+				LowRetval = 1
+			end
+			--VH:SendPMToAll("\r\nНик: "..usr.sName.." ["..usr.sIP.."], Шара: "..usr.iShareSize..",LowRetval: "..LowRetval.."|",BOTNAME,10,10)
+			if LowRetval == 1 then
+				local query = "INSERT INTO reglist (reg_date,reg_op,nick,class,login_pwd,pwd_change,pwd_crypt) VALUES (unix_timestamp(now()),'"..SQL_Escape(sUser.sName).."','"..SQL_Escape(UserNick).."',1,encrypt('"..SQL_Escape(password).."'),0,1)"
+				local res, err = VH:SQLQuery(query)
+				VH:SendDataToUser("$To: "..sUser.sName.." From: "..BOTNAME.." $<"..BOTNAME.."> Выполнено: Пользователь ["..UserNick.."], Пароль ["..password.."].|", sUser.sName)
+			else
+				VH:SendDataToUser("$To: "..sUser.sName.." From: "..BOTNAME.." $<"..BOTNAME.."> Ошибка: Пользователь "..UserNick.." уже зарегистрирован.|", sUser.sName)
+				return 1
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, --[3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Регистрация пользователя (Ник и Пароль)",
+		sName = "mbregnewuser",
+		tMenu = function(sUser)
+			local tRC = "1 1 Юзера\\Зарегить (nick,pass)$<%[mynick]> +mbregnewuser %[line:Ник] %[line:Пароль]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+			tRC = "1 2 Юзера\\Зарегить (nick,pass)$<%[mynick]> +mbregnewuser %[nick] %[line:Пароль]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbclearmainchat = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local msg = ""
+			for i=1,5000 do
+				msg = msg.."\r\n"
+			end
+			BotSayToAll(msg)
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1,-- [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Очистка основного чата",
+		sName = "mbclearmainchat",
+		tMenu = function(sUser)
+			local tRC = "1 1 Управление\\Очистка чата$<%[mynick]> +mbclearmainchat"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbaddsysfile = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local sTTH, sName, sPath = GetTTHNamePath(arg)
+			sName = ToLowerCase(sName)
+			sPath = ToLowerCase(sPath)
+			SQL_SystemFilesAdd(sTTH, sName, sPath)
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Добавлено: TTH["..sTTH.."] Имя["..sName.."] Путь["..sPath.."]|", sUser.sName)
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Добавление TTH в запрещённый список",
+		sName = "mbaddsysfile",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск SysFiles\\Добавить TTH$<%[mynick]> +mbaddsysfile %[line:Введите TTH] %[line:Введите Имя] %[line:Введите Путь]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbfindsysfile = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--VH:SendDataToAll("addbadtthtolist tFunc: ОК|",10,10)
+			--VH:SendDataToAll("arg: "..arg.."|",10,10)
+			--local id = SQL_TTHFind(arg)
+			local id,file_name,file_path = SQL_SystemFilesFind(arg)
+			if id~=nil and file_name~=nil and file_path~=nil then
+				--VH:SendDataToAll("id: "..id.."|",10,10)
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH ["..arg.." ] id ["..id.."] file_name ["..file_name.."] file_path ["..file_path.."]|", sUser.sName)
+			else
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH не найден.|", sUser.sName)
+			end
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Найти id по TTH",
+		sName = "mbfindsysfile",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск SysFiles\\Найти ID$<%[mynick]> +mbfindsysfile %[line:Введите TTH]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbdeletesysfile = {
+		tFunc = function(sUser,arg,cmd,sData)
+			SQL_SystemFilesDelete(arg)
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH ["..arg.." ] удалён.|", sUser.sName)
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Удалить TTH",
+		sName = "mbdeletesysfile",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск SysFiles\\Удалить TTH$<%[mynick]> +mbdeletesysfile %[line:Введите TTH]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbfixtablesysfile = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--SQL_TTHFix()
+			SQL_SystemFilesFix()
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> База TTH исправлена.|", sUser.sName)
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,-- [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Пофиксить TTH",
+		sName = "mbfixtablesysfile",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск SysFiles\\Пофиксить$<%[mynick]> +mbfixtablesysfile"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mblistingsysfiles = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local tempTTH = {}
+			tempTTH = SQL_SystemFilesListing()
+			if tempTTH~=nil then
+				msg = "Список TTH:"
+				for indx,val in pairs(tempTTH) do
+					msg = msg.."\r\n\tID ["..val.id.."]\tTTH ["..val.tth.."]\r\n\t  Имя ["..val.file_name.."]\tПуть ["..val.file_path.."]"
+				end
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			end
+			tempTTH = nil
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Список TTH",
+		sName = "mblistingsysfiles",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Управление\\Поиск SysFiles\\Список TTH$<%[mynick]> +mblistingsysfiles"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbdaychatroomlogs = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local chatname, fdate = Get2Args(arg);
+			if chatname == nil then
+				BotSayToUser(sUser,messages[218])
+				return 1
+			end
+			if fdate == nil then 
+				BotSayToUser(sUser,messages[218])
+				return 1
+			end 
+			local msg ="\r\n"..messages[28].."\r\n"
+			msg = msg .. string.gsub(messages[219],"%[CHATROOM%]",chatname)
+			msg = msg .. fdate.."\r\n"..messages[28].."\r\n"
+			--BotSayToUser(sUser,msg )
+			local str_i="";
+			local tempmsg = "";
+			for i = 0,23,1 do
+				if i<10 then str_i="0"..i else str_i=i end
+					tempmsg = loadtext(F_MainLogPath..fdate.."/"..str_i .."_"..chatname.."_CR.log")
+					if (tempmsg~="") then
+						msg = msg..tempmsg.."\r\n"
+					end
+					tempmsg = "";
+			end
+			msg = msg..messages[28].."\r\n"..messages[21].."\r\n"..messages[28]
+			BotSayToUser(sUser,msg )
+			--BotSayToUser(sUser,"\r\n"..messages[28].."\r\n"..messages[21].."\r\n"..messages[28])
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Логи чат комнаты за день",
+		sName = "mbdaychatroomlogs",
+		tMenu = function(sUser)
+			local tRC = "1 1 Логи\\Чат-комнаты\\"..OPCHATNAME.."\\За день$<%[mynick]> +mbdaychatroomlogs "..OPCHATNAME.." %[line:Введите дату (пример:2000/01/01)]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+			---------
+			local query = "SELECT nick FROM pi_chatroom"
+			local res, rows = VH:SQLQuery(query)
+			local tempChatRooms = {}
+			if res and rows~=0  then
+				if rows > 1 then
+					for x=0, rows-1 do
+						local res,nick = VH:SQLFetch(x)
+						tempChatRooms[x+1] = {}
+						tempChatRooms[x+1].nick = nick
+					end
+				else
+					local res,nick = VH:SQLFetch(0)
+					tempChatRooms[1] = {}
+					tempChatRooms[1].nick = nick
+					if (nick == "could not fetch row") or (nick == "could not seek data") then tempChatRooms = nil end
+				end
+			end
+			if tempChatRooms ~= nil then
+				for i,v in pairs(tempChatRooms) do
+					tRC = "1 1 Логи\\Чат-комнаты\\"..tempChatRooms[i].nick.."\\За день$<%[mynick]> +mbdaychatroomlogs "..tempChatRooms[i].nick.." %[line:Введите дату (пример:2000/01/01)]"
+					VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+				end
+			end
+		end,
+	},
+	mbhourchatroomlogs = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local chatname, fdate = Get2Args(arg);
+			if chatname == nil then
+				BotSayToUser(sUser,messages[218])
+				return 1
+			end
+			if fdate == nil then 
+				BotSayToUser(sUser,messages[218])
+				return 1
+			end 
+			local msg ="\r\n"..messages[28].."\r\n"
+			string.gsub(messages[173],"%[WHO%]",sUser.sName.." ("..sUser.sIP ..")")
+			msg = msg..string.gsub(messages[220],"%[CHATROOM%]",chatname)
+			msg = msg..fdate.."\r\n"..messages[28].."\r\n"
+			--BotSayToUser(sUser,msg )
+			msg = msg..loadtext(F_MainLogPath..fdate.."_"..chatname.."_CR.log").."\r\n"
+			msg = msg..messages[28].."\r\n"..messages[21].."\r\n"..messages[28]
+			BotSayToUser(sUser,msg )
+			--BotSayToUser(sUser,"\r\n"..messages[28].."\r\n"..messages[21].."\r\n"..messages[28])
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Логи чат комнаты за час",
+		sName = "mbhourchatroomlogs",
+		tMenu = function(sUser)
+			local tRC = "1 1 Логи\\Чат-комнаты\\"..OPCHATNAME.."\\За час$<%[mynick]> +mbhourchatroomlogs "..OPCHATNAME.." %[line:Введите дату (пример:2000/01/01/01)]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+			---------
+			local query = "SELECT nick FROM pi_chatroom"
+			local res, rows = VH:SQLQuery(query)
+			local tempChatRooms = {}
+			if res and rows~=0  then
+				if rows > 1 then
+					for x=0, rows-1 do
+						local res,nick = VH:SQLFetch(x)
+						tempChatRooms[x+1] = {}
+						tempChatRooms[x+1].nick = nick
+					end
+				else
+					local res,nick = VH:SQLFetch(0)
+					tempChatRooms[1] = {}
+					tempChatRooms[1].nick = nick
+					if (nick == "could not fetch row") or (nick == "could not seek data") then tempChatRooms = nil end
+				end
+			end
+			if tempChatRooms ~= nil then
+				for i,v in pairs(tempChatRooms) do
+					tRC = "1 1 Логи\\Чат-комнаты\\"..tempChatRooms[i].nick.."\\За час$<%[mynick]> +mbhourchatroomlogs "..tempChatRooms[i].nick.." %[line:Введите дату (пример:2000/01/01/01)]"
+					VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+				end
+			end
+		end,
+	},
+	mbuserinfobylastnick = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local name = GetArg(arg)
+			local flag=0
+			local curUserLN = {}
+			name=SQL_Escape(name);
+			local query = "SELECT ip FROM MainBot_userlist_lastnicks WHERE (lastnick1='"..name.."' or lastnick2='"..name.."' or lastnick3='"..name.."' or lastnick4='"..name.."' or lastnick5='"..name.."' or lastnick6='"..name.."' or lastnick7='"..name.."' or lastnick8='"..name.."' or lastnick9='"..name.."' or lastnick10='"..name.."')"
+			local res, rows = VH:SQLQuery(query)
+			if res and rows~=0 then
+				if rows > 1 then
+					for x=0, rows-1 do
+						local res, value = VH:SQLFetch(x)
+						curUserLN[x+1]={}
+						curUserLN[x+1].ip = value
+					end
+				else
+					local res, value = VH:SQLFetch(0)
+					if (value == "could not fetch row") or (value == "could not seek data") then 
+						curUserLN = nil
+					else
+						curUserLN[1]={}
+						curUserLN[1].ip = value
+					end
+				end
+			else
+				curUserLN = nil
+			end
+			if curUserLN then
+				for i,v in pairs(curUserLN) do
+					BotSayToUser(sUser,"\r\n"..messages[28].. "\r\n" ..getUserInfo(v.ip) .. "\r\n" .. messages[28]) 
+					flag=1
+				end
+			end
+			if flag==0 then
+				BotSayToUser(sUser,messages[71])
+				curUserLN = nil
+			end
+			curUserLN = nil
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Инфо по нику(last.nicks)",
+		sName = "mbuserinfobylastnick",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Информация\\Инфо по нику(last.nicks)$<%[mynick]> +mbuserinfobylastnick %[line:Введите ник]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+			tRC = "1 2 Информация\\Инфо по нику(last.nicks)$<%[mynick]> +mbuserinfobylastnick %[nick]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbhistorysearchfull = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local sPattern = GetArg(arg)
+			if sPattern then
+				--local iKey, sResult = os.execute("grep -Rns -B"..(iBnum or "0").." -A"..(iAnum or "0").." '"..sPattern.."' /etc/verlihub/scripts/MAINBOT/LOGS/*")
+				os.execute("grep -REns '"..sPattern.."' "..LOGSPATH.."* > "..HOMEPATH..".search.result")
+				--BotSayToUser(sUser,"sResult:\r\n"..(sResult or "ERR").."\r\niKey:["..(iKey or "ERR").."]")
+				local sResult = loadtext(HOMEPATH..".search.result")
+				sResult=string.gsub(sResult,LOGSPATH,"")
+				BotSayToUser(sUser,"Результат:\r\n"..(sResult or "ERR"))
+				os.execute("rm "..HOMEPATH..".search.result")
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Полный поиск по логам",
+		sName = "mbhistorysearchfull",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Логи\\Поиск\\Полный$<%[mynick]> +mbhistorysearchfull %[line:Что искать?]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbhistorysearchdate = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local sPattern, sDate = GetArgStringDate(arg)
+			if not sDate then
+				BotSayToUser(sUser,"***Ошибка: Введите дату.( Пример: 2007 или 2007/06 или 2007/06/15 )")
+				return 1
+			end
+			--BotSayToUser(sUser,"sPattern: "..(sPattern or "ERR"))
+			--local hourfile = string.gsub(sDate, "\d{4}/\d{2}/\d{2}/(\d{2})","%1")
+			if sPattern then
+				--local iKey, sResult = os.execute("grep -Rns -B"..(iBnum or "0").." -A"..(iAnum or "0").." '"..sPattern.."' /etc/verlihub/scripts/MAINBOT/LOGS/*")
+				os.execute("grep -REns '"..sPattern.."' "..LOGSPATH..""..sDate.."/* > "..HOMEPATH..".search.result")
+				--BotSayToUser(sUser,"sResult:\r\n"..(sResult or "ERR").."\r\niKey:["..(iKey or "ERR").."]")
+				local sResult = loadtext(HOMEPATH..".search.result")
+				--BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+				sResult=string.gsub(sResult,LOGSPATH,"")
+				BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+				os.execute("rm "..HOMEPATH..".search.result")
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Поиск по логам за дату",
+		sName = "mbhistorysearchdate",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Логи\\Поиск\\По дате$<%[mynick]> +mbhistorysearchdate %[line:Что искать?] %[line:Дата (Примеры:2007;2007/06;2007/06/05)]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbhistorysearchdatesys = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local sPattern, sDate = GetArgStringDate(arg)
+			if not sDate then
+				BotSayToUser(sUser,"***Ошибка: Введите дату.( Пример: 2007 или 2007/06 или 2007/06/15 )")
+				return 1
+			end
+			--local _,_,sYear,sMonth,sDay = string.find(sDate, "(%d%4).(%d%2).(%d%2)")
+			--VH:SendDataToUser("$To: Palmer From: mbhistorysearchdatesys $<mbhistorysearchdatesys> sYear["..(sYear or "").."] sMonth["..(sMonth or "").."] sDay["..(sDay or "").."]|","Palmer")
+			local sDateLength = string.len(sDate)
+			--if not sMonth and not sDay then
+			if sDateLength==4 then
+				if sPattern then
+					--sDate = (sYear or "")
+					os.execute("grep -REns '"..sPattern.."' "..LOGSPATH..sDate.."/* > "..HOMEPATH..".search_sys_full.result")
+					os.execute("grep -REns '^"..LOGSPATH..sDate.."/.*_sys.log.*' "..HOMEPATH..".search_sys_full.result > "..HOMEPATH..".search_sys.result")
+					os.execute("rm "..HOMEPATH..".search_sys_full.result")
+					local sResult = loadtext(HOMEPATH..".search_sys.result")
+					sResult=string.gsub(sResult,LOGSPATH,"")
+					BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+					os.execute("rm "..HOMEPATH..".search_sys.result")
+				end
+			else
+				--if not sDay then
+				if sDateLength==7 then --введён месяц
+					--sDate = (sYear or "").."/"..(sMonth or "").."/*"
+					sDate=sDate.."/*"
+				--else
+					--sDate = (sYear or "").."/"..(sMonth or "").."/"..(sDay or "")
+				end
+				if sPattern then
+					os.execute("grep -REns '"..sPattern.."' "..LOGSPATH..""..sDate.."/*_sys.log > "..HOMEPATH..".search_sys.result")
+					local sResult = loadtext(HOMEPATH..".search_sys.result")
+					sResult=string.gsub(sResult,LOGSPATH,"")
+					BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+					os.execute("rm "..HOMEPATH..".search_sys.result")
+				end
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Поиск по логам за дату (sys)",
+		sName = "mbhistorysearchdatesys",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Логи\\Поиск\\По дате (sys)$<%[mynick]> +mbhistorysearchdatesys %[line:Что искать?] %[line:Дата (Примеры:2007;2007/06;2007/06/05)]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbhistorysearchdatemainchat = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local sPattern, sDate = GetArgStringDate(arg)
+			if not sDate then
+				BotSayToUser(sUser,"***Ошибка: Введите дату.( Пример: 2007 или 2007/06 или 2007/06/15 )")
+				return 1
+			end
+			local sDateLength = string.len(sDate)
+			if sDateLength==4 then 
+				if sPattern then
+					os.execute("grep -REns '"..sPattern.."' "..LOGSPATH..sDate.."/* > "..HOMEPATH..".search_mainchat_full.result")
+					os.execute("grep -REns '^"..LOGSPATH..sDate.."/.*_mainchat.log.*' "..HOMEPATH..".search_mainchat_full.result > "..HOMEPATH..".search_mainchat.result")
+					os.execute("rm "..HOMEPATH..".search_mainchat_full.result")
+					local sResult = loadtext(HOMEPATH..".search_mainchat.result")
+					sResult=string.gsub(sResult,LOGSPATH,"")
+					BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+					os.execute("rm "..HOMEPATH..".search_mainchat.result")
+				end
+			else
+				if sDateLength==7 then --введён месяц
+					sDate=sDate.."/*"
+				end
+				if sPattern then
+					os.execute("grep -REns '"..sPattern.."' "..LOGSPATH..""..sDate.."/*_mainchat.log > "..HOMEPATH..".search_mainchat.result")
+					local sResult = loadtext(HOMEPATH..".search_mainchat.result")
+					sResult=string.gsub(sResult,LOGSPATH,"")
+					BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+					os.execute("rm "..HOMEPATH..".search_mainchat.result")
+				end
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Поиск по логам за дату (mainchat)",
+		sName = "mbhistorysearchdatemainchat",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			local tRC = "1 1 Логи\\Поиск\\По дате (mainchat)$<%[mynick]> +mbhistorysearchdatemainchat %[line:Что искать?] %[line:Дата (Примеры:2007;2007/06;2007/06/05)]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbhistorysearchdatechatroom = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local sPattern, sChatRoom, sDate = GetArgStringRoomDate(arg)
+			if not sDate then
+				BotSayToUser(sUser,"***Ошибка: Введите дату.( Пример: 2007 или 2007/06 или 2007/06/15 )")
+				return 1
+			end
+			local sDateLength = string.len(sDate)
+			if sDateLength==4 then
+				if sPattern then
+					os.execute("grep -REns '"..sPattern.."' "..LOGSPATH..sDate.."/* > "..HOMEPATH..".search_"..sChatRoom.."_full.result")
+					os.execute("grep -REns '^"..LOGSPATH..sDate.."/.*_"..sChatRoom.."_CR.log.*' "..HOMEPATH..".search_"..sChatRoom.."_full.result > "..HOMEPATH..".search_"..sChatRoom..".result")
+					os.execute("rm "..HOMEPATH..".search_"..sChatRoom.."_full.result")
+					local sResult = loadtext(HOMEPATH..".search_"..sChatRoom..".result")
+					sResult=string.gsub(sResult,LOGSPATH,"")
+					BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+					os.execute("rm "..HOMEPATH..".search_"..sChatRoom..".result")
+				end
+			else
+				if sDateLength==7 then
+					sDate=sDate.."/*"
+				end --введён месяц
+				if sPattern then
+					os.execute("grep -REns '"..sPattern.."' "..LOGSPATH..""..sDate.."/*_"..sChatRoom.."_CR.log > "..HOMEPATH..".search_"..sChatRoom..".result")
+					local sResult = loadtext(HOMEPATH..".search_"..sChatRoom..".result")
+					sResult=string.gsub(sResult,LOGSPATH,"")
+					BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+					os.execute("rm "..HOMEPATH..".search_"..sChatRoom..".result")
+				end
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Поиск по логам за дату (chatroom)",
+		sName = "mbhistorysearchdatechatroom",
+		tMenu = function(sUser)
+			local tRC = "1 1 Логи\\Поиск\\По дате ("..OPCHATNAME..")$<%[mynick]> +mbhistorysearchdatechatroom %[line:Что искать?] "..OPCHATNAME.." %[line:Дата (Примеры:2007;2007/06;2007/06/05)]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+			---------
+			local query = "SELECT nick FROM pi_chatroom"
+			local res, rows = VH:SQLQuery(query)
+			local tempChatRooms = {}
+			if res and rows~=0  then
+				if rows > 1 then
+					for x=0, rows-1 do
+						local res,nick = VH:SQLFetch(x)
+						tempChatRooms[x+1] = {}
+						tempChatRooms[x+1].nick = nick
+					end
+				else
+					local res,nick = VH:SQLFetch(0)
+					tempChatRooms[1] = {}
+					tempChatRooms[1].nick = nick
+					if (nick == "could not fetch row") or (nick == "could not seek data") then tempChatRooms = nil end
+				end
+			end
+			if tempChatRooms ~= nil then
+				for i,v in pairs(tempChatRooms) do
+					tRC = "1 1 Логи\\Поиск\\По дате ("..tempChatRooms[i].nick..")$<%[mynick]> +mbhistorysearchdatechatroom %[line:Что искать?] "..tempChatRooms[i].nick.." %[line:Дата (Примеры:2007;2007/06;2007/06/05)]"
+					VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+				end
+			end
+		end,
+	},
+	mbuserinfofromlistbyip = {
+		tFunc = function(sUser,arg,cmd,sData)
+			if arg then
+				--BotSayToUser(sUser,"arg"..(arg or "ERR"))
+				ii(sUser,arg)
+				ClearMem()
+			end
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Информация по IP из списка пользователей",
+		sName = "mbuserinfofromlistbyip",
+		tMenu = function(sUser)
+			local tRC = "1 2 Информация\\Информация по IP$<%[mynick]> +mbuserinfofromlistbyip %[ip]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbfullhubinfo = {
+		tFunc = function(sUser,arg,cmd,sData)
+			showHubInfo(sUser)
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1, [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Статистика хаба",
+		sName = "mbfullhubinfo",
+		tMenu = function(sUser)
+			local tRC = "1 1 Информация\\Статистика хаба$<%[mynick]> +mbfullhubinfo"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbreinitmainbufer = {
+		tFunc = function(sUser,arg,cmd,sData)
+			ReInitBufers()
+			BotSayToUser(sUser,"Перезапись буферов произведена.")
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,-- [4] = 1, [3] = 1, [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Перезапись буферов бота",
+		sName = "mbreinitmainbufer",
+		tMenu = function(sUser)
+			local tRC = "1 1 Управление\\Бот\\Перезапись буферов$<%[mynick]> +mbreinitmainbufer"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbreloadtexts = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local sTexts = ReLoadTexts();
+			BotSayToUser(sUser,"Тексты перечитаны. "..(sTexts or "ERR"))
+			ClearMem();
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1,-- [4] = 1, [3] = 1, [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Перечитывание текстовых файлов",
+		sName = "mbreloadtexts",
+		tMenu = function(sUser)
+			local tRC = "1 1 Управление\\Бот\\Перечитать тексты$<%[mynick]> +mbreloadtexts"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbsetopchatnews = {
+		tFunc = function(sUser,arg,cmd,sData)
+			if arg then
+				setopchatnews(sUser, arg);
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Новости ОпЧата",
+		sName = "mbsetopchatnews",
+		tMenu = function(sUser)
+			local tRC = "1 1 Управление\\Новости ОпЧата$<%[mynick]> +mbsetopchatnews %[line:ОпЧат новости]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbbashcommand = {
+		tFunc = function(sUser,arg,cmd,sData)
+			if arg then
+				os.execute(arg)
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1,-- [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Bash",
+		sName = "mbbashcommand",
+		tMenu = function(sUser)
+			local tRC = "1 1 Управление\\Bash$<%[mynick]> +mbbashcommand %[line:Команда]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbfindluaerrors = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--LUA error:
+			os.execute("grep -REns -A 1 -B 1 'LUA error:' "..VERLIPATH.."log > "..VERLIPATH..".search_lua_errors.result")
+			local sResult = loadtext(VERLIPATH..".search_lua_errors.result")
+			BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+			os.execute("rm "..VERLIPATH..".search_lua_errors.result")
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1,-- [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Поиск LUA ошибок",
+		sName = "mbfindluaerrors",
+		tMenu = function(sUser)
+			local tRC = "1 1 Управление\\Поиск LUA ошибок$<%[mynick]> +mbfindluaerrors"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbsearchinoldusersarchive = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local sParam, iNumA, iNumB, sPattern, sDate = GetParam2NumPatternDate(arg)
+			--VH:SendDataToUser("$To: Palmer From: mbsearchinoldusersarchive $<mbsearchinoldusersarchive> sParam["..(sParam or "err").."] iNumA["..(iNumA or "err").."] iNumB["..(iNumB or "err").."] sPattern["..(sPattern or "err").."] sDate["..(sDate or "err").."]|","Palmer")
+			if not sPattern then
+				BotSayToUser(sUser,"***Ошибка: Введите параметр поиска")
+				return 1
+			end
+			if not sDate then
+				BotSayToUser(sUser,"***Ошибка: Введите дату.( Пример: 2007 или 2007/06 или 2007/06/15 )")
+				return 1
+			end
+			local sDateLength = string.len(sDate)
+			if sDateLength==4 then
+				if sPattern then
+					os.execute("grep -REns -A "..iNumA.." -B "..iNumB.." '\\[\\\""..sParam.."\\\"\\] = \\\""..sPattern.."' "..ARCHIVEPATH..sDate.."/* > "..HOMEPATH..".search_olduserarch_full.result")
+					--os.execute("grep -REns '^"..ARCHIVEPATH..sDate.."/.*_UsersDB_Archive.dat.*' "..HOMEPATH..".search_olduserarch_full.result > "..HOMEPATH..".search_olduserarch.result")
+					--os.execute("rm "..HOMEPATH..".search_olduserarch_full.result")
+					local sResult = loadtext(HOMEPATH..".search_olduserarch_full.result")
+					sResult=string.gsub(sResult,ARCHIVEPATH,"")
+					sResult=string.gsub(sResult,"_UsersDB_Archive.dat"," ")
+					BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+					os.execute("rm "..HOMEPATH..".search_olduserarch_full.result")
+				end
+			else
+				if sDateLength==7 then --введён месяц
+					sDate=sDate.."/*" 
+				end
+				if sPattern then
+					--os.execute("grep -REns -A "..iNumA.." -B "..iNumB.." '\\[\\\""..sParam.."\\\"\\] = \\\""..sPattern.."' "..ARCHIVEPATH..""..sDate.."/*_UsersDB_Archive.dat > "..HOMEPATH..".search_olduserarch.result")
+					os.execute("grep -REns -A "..iNumA.." -B "..iNumB.." '\\[\\\""..sParam.."\\\"\\] = \\\""..sPattern.."' "..ARCHIVEPATH..""..sDate.."/*_UsersDB_*.dat > "..HOMEPATH..".search_olduserarch.result")
+					local sResult = loadtext(HOMEPATH..".search_olduserarch.result")
+					sResult=string.gsub(sResult,ARCHIVEPATH,"")
+					sResult=string.gsub(sResult,"_UsersDB_[Archive,Deleted].dat"," ")
+					sResult=string.gsub(sResult,"_UsersDB_Archive.dat"," ")
+					sResult=string.gsub(sResult,"_UsersDB_Deleted.dat"," ")
+					BotSayToUser(sUser,"Результат поиска:\r\n"..(sResult or "ERR"))
+					os.execute("rm "..HOMEPATH..".search_olduserarch.result")
+				end
+			end
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Поиск в архивах пользователей",
+		sName = "mbsearchinoldusersarchive",
+		tMenu = function(sUser)
+			local tParameters={
+				[1] = {"ip","29","13"},
+				[2] = {"nick","42","0"},
+				[3] = {"bancount","24","18"},
+				[4] = {"status","25","17"},
+				[5] = {"forwhat","21","21"},
+				[6] = {"whenexpires","27","15"},
+				[7] = {"when","3","39"},
+				[8] = {"by","26","16"},
+				[9] = {"context","23","19"},
+				[10] = {"lastonline","2","40"},
+				[11] = {"noleech","22","20"},
+				[12] = {"maxnoleech","1","41"},
+				[13] = {"locknick","28","14"},
+				[14] = {"sharesize","4","38"},
+				[15] = {"fl","0","42"},
+				[16] = {"InetDown","8","34"},
+				[17] = {"rank","5","37"},
+				[18] = {"sessiontime","6","36"},
+				[19] = {"totaltime","7","35"},
+			};
+			for i=1,19 do
+				local tRC = "1 1 Юзера\\Архив\\Поиск\\"..tParameters[i][1].."$<%[mynick]> +mbsearchinoldusersarchive "..tParameters[i][1].." "..tParameters[i][2].." "..tParameters[i][3].." %[line:Введите "..tParameters[i][1].."] %[line:Дата (Примеры:2007;2007/06;2007/06/05)]"
+				VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+				--VH:SendDataToUser("$To: Palmer From: mbsearchinoldusersarchive $<mbsearchinoldusersarchive> tParameters[i][1]["..(tParameters[i][1] or "err").."] tParameters[i][2]["..(tParameters[i][2] or "err").."] tParameters[i][3]["..(tParameters[i][3] or "err").."]|","Palmer")
+			end
+		end,
+	},
+	mbdeluserfrombd = {
+		tFunc = function(sUser,arg,cmd,sData)
+			if arg then
+				local vUser = {};
+				--VH:SendDataToUser("$To: Palmer From: mbdeluserfrombd $<mbdeluserfrombd> arg["..(arg or "err").."]|","Palmer")
+				vUser.sIP = arg;
+				local luser=SQL_FindInUserListByIP(vUser);
+				--BotSayToUser(sUser,"***Ошибка: Пользователь с таким ip не обнаружен!")
+				if luser~=nil then
+					luser.lastnicks = {};
+					luser.lastnicks = SQL_FindInLastnicksList(luser.ip);
+					luser.lastcuss = {};
+					luser.lastcuss = SQL_FindInLastcussList(luser.ip);
+				else
+					BotSayToUser(sUser,"***Ошибка: Пользователь с таким ip не обнаружен!")
+				end
+				if luser~=nil then
+					if type(luser)~="function" and type(luser)=="table" then
+						local archivedir_ok=0;
+						local Data_Path = tostring(os.date("%Y/%m/%d")).."/"
+						local handle,err = io.open(ARCHIVEPATH..Data_Path..os.date("%H.%M.%S").."_UsersDB_Deleted.dat","w");
+						if (handle) then
+							Serialize(luser, "tOldUsers", handle);
+							handle:flush();
+							handle:close();
+							archivedir_ok=1;
+						else
+							local Y_Dir = os.date("%Y")
+							local M_Dir = os.date("%m")
+							local D_Dir = os.date("%d")
+							local handle,err = io.open(ARCHIVEPATH..Y_Dir.."/.tmp","a+")
+							if not (handle) then os.execute("mkdir -m 775 "..ARCHIVEPATH..Y_Dir) else handle:close(); end
+							handle,err = io.open(ARCHIVEPATH..Y_Dir.."/"..M_Dir.."/.tmp","a+")
+							if not (handle) then os.execute("mkdir -m 775 "..ARCHIVEPATH..Y_Dir.."/"..M_Dir) else handle:close(); end
+							handle,err = io.open(ARCHIVEPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir.."/.tmp","a+")
+							if not (handle) then os.execute("mkdir -m 775 "..ARCHIVEPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir) else handle:close(); end
+							handle,err = io.open(ARCHIVEPATH..Data_Path..os.date("%H.%M.%S").."_UsersDB_Deleted.dat","w");
+							if (handle) then
+								Serialize(luser, "tOldUsers", handle);
+								handle:flush();
+								handle:close();
+								archivedir_ok=1;
+							end
+						end
+						BotSayToUser(sUser,"Удалён пользователь: ip["..(luser.ip or "ERR").."] nick["..(luser.nick or "ERR").."] lastonline["..(luser.lastonline or "ERR").."] fl["..(luser.fl or "ERR").."] sharesize["..(getNormalShare(luser.sharesize) or "ERR").."] bancount["..(luser.bancount or "ERR").."]")
+						SQL_DeleteFromUserList(luser.ip);
+						--VH:SendDataToUser("$To: "..sUser.sName.." From: "..BOTNAME.." $<"..BOTNAME.."> Удалён пользователь: ip["..(luser.ip or "ERR").."] nick["..(luser.nick or "ERR").."] lastonline["..(luser.lastonline or "ERR").."] fl["..(luser.fl or "ERR").."] sharesize["..(getNormalShare(luser.sharesize) or "ERR").."] bancount["..(luser.bancount or "ERR").."]|",sUser.sName)
+					else
+						BotSayToUser(sUser,"***Ошибка: Данные не удовлетворяют типу.")
+					end
+				else
+					BotSayToUser(sUser,"***Ошибка: Пользователь с таким ip не обнаружен!")
+				end
+				luser=nil;
+				if archivedir_ok == 1 then 
+					os.execute("chmod -R 775 "..ARCHIVEPATH..Data_Path);
+				end
+				ClearMem();
+			else
+				BotSayToUser(sUser,"***Ошибка: Введите ip.")
+			end
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, --[5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Удаление пользователя из базы",
+		sName = "mbdeluserfrombd",
+		tMenu = function(sUser)
+			local tRC = "1 1 Юзера\\Удалить из БД$<%[mynick]> +mbdeluserfrombd %[line:Введите ip]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mblistmainbuffer = {
+		tFunc = function(sUser,arg,cmd,sData)
+			ListMainBufer(sUser);
+			ClearMem();
+			return 1
+		end,
+		tLevels = {
+			[10] = 1,-- [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Листинг основного буфера",
+		sName = "mblistmainbuffer",
+		tMenu = function(sUser)
+			local tRC = "1 1 Управление\\Листинг основного буфера$<%[mynick]> +mblistmainbuffer"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbtestfunction = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--[[
+			local nick, howlong, bantype = GetArgNick2Num(arg)
+			VH:Ban(nick, howlong, bantype)
+			local str = "Параметры. Ник: "..nick.." Время: "..howlong.." Тип: "..bantype.." "
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..str.."|", sUser.sName)
+			]]--
+			----------------------------------------------
+			--[[
+			local nick = "TestBanListAdding"
+			local bantime = CFG.BANTIME*10
+			local nick_op = "MainBot"
+			local reason = "Testing"
+			AddIPToHubBanList(nick,bantime,nick_op,reason)
+			]]--
+			----------------------------------------------
+			--[[
+			for indx,val in pairs(TTHNewList) do
+				SQL_TTHAdd(val)
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH: "..val.."|", sUser.sName)
+			end
+			]]--
+			----------------------------------------------
+			--[[
+			local curUserlastnicks = {}
+			local uinfo = ""
+			curUserlastnicks = SQL_FindInLastnicksList(arg)
+			if curUserlastnicks ~= nil then
+				local str = ""
+				for i,val in pairs(curUserlastnicks) do
+					str = str.." "..val
+				end
+				uinfo = uinfo .. "\r\n\t".. messages[209] .. str
+			end
+			VH:SendPMToAll("uinfo: "..uinfo.."|",BOTNAME,10,10)
+			--]]--
+			----------------------------------------------
+			--[[
+			--local ID = "325";
+			local tth="63VQJMGI2CBOXRHVPXKT2SERWOV4QVBSIURE65I"
+			--VH:SendDataToAll("$Search Hub:"..BOTNAME.." F?T?0?9?TTH:"..TTH.."|",0,10)
+			--VH:SendDataToAll("$Search Hub:"..BOTNAME.."_SysFile_"..ID.." F?T?0?9?TTH:"..tth.."|",0,10)
+			--VH:SendDataToAll("$Search Hub:MainBot-SysFile-"..ID.." F?T?0?9?TTH:"..tth.."|",0,10)
+			VH:SendDataToAll("$Search Hub:"..arg.." F?T?0?9?TTH:"..tth.."|",0,10)
+			--VH:SendDataToAll("$Search Hub:SysFile"..ID.." F?T?0?9?TTH:"..tth.."|",0,10)
+			VH:SendPMToAll("Отправлен запрос $Search Hub:"..arg.." F?T?0?9?TTH:"..tth.."|",BOTNAME,10,10)
+			]]--
+			----------------------------------------------
+			--[[
+			local sFileName = "Helplisting.txt"
+			local sLine = nil;
+			os.execute("ls -1 "..INFOTEXTSPATH.." > "..sFileName);
+			local ahFile,e = io.open(sFileName,"r")  
+			sLine = ahFile:read("*l");
+			sLine = string.sub(sLine, 1, (string.len(sLine)-4))
+			AsciiTable[sLine] = 1
+			while ( sLine ) do
+				sLine = ahFile:read("*l");
+				if sLine ~= nil then
+					sLine = string.sub(sLine, 1, (string.len(sLine)-4))
+					AsciiTable[sLine] = 1
+				end
+	   		end
+			ahFile:close()
+	   		os.remove(sFileName);
+			]]--
+			----------------------------------------------
+			--[[
+			local testtable={
+				["1_1234567890"]={
+					sName="1_Name",
+					TTH="1_1234567890",
+				},
+				["2_1234567890"]={
+					sName="2_Name",
+					TTH="2_1234567890",
+				},
+				["3_1234567890"]={
+					sName="3_Name",
+					TTH="3_1234567890",
+				},
+				["4_1234567890"]={
+					sName="4_Name",
+					TTH="4_1234567890",
+				},
+				["5_1234567890"]={
+					sName="5_Name",
+					TTH="5_1234567890",
+				},
+			}
+			local insert_1={
+				sName="in1_Name",
+				TTH="in1_1234567890",
+			}
+			local insert_2={
+				sName="in2_Name",
+				TTH="in2_1234567890",
+			}
+			local msg="1:";
+			for indx, val in pairs(testtable) do
+				msg = msg.."\r\n indx["..indx.."] name["..val.sName.."] tth["..val.TTH.."]";
+			end
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			table.insert(testtable,insert_1)
+			msg="2:";
+			for indx, val in pairs(testtable) do
+				msg = msg.."\r\n indx["..indx.."] name["..val.sName.."] tth["..val.TTH.."]";
+			end
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			table.remove(testtable)
+			msg="3:";
+			for indx, val in pairs(testtable) do
+				msg = msg.."\r\n indx["..indx.."] name["..val.sName.."] tth["..val.TTH.."]";
+			end
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			table.insert(testtable,insert_2)
+			msg="4:";
+			for indx, val in pairs(testtable) do
+				msg = msg.."\r\n indx["..indx.."] name["..val.sName.."] tth["..val.TTH.."]";
+			end
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			table.remove(testtable, 1)
+			msg="5:";
+			for indx, val in pairs(testtable) do
+				msg = msg.."\r\n indx["..indx.."] name["..val.sName.."] tth["..val.TTH.."]";
+			end
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			testtable["3_1234567890"]=nil;
+			msg="6:";
+			for indx, val in pairs(testtable) do
+				msg = msg.."\r\n indx["..indx.."] name["..val.sName.."] tth["..val.TTH.."]";
+			end
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			]]--
+			--[[
+			Timer_ClearDB()
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> syslog\r\n\t"..syslog.."|", sUser.sName)
+			]]--
+			--[[
+			SQL_TTHFix_Archive(1)
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Done|", sUser.sName)
+			]]--
+			--ArchiveUsersDB();
+			--VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> Done|", sUser.sName)
+			---------
+			--[[
+			local msg ="Вывод:"
+			--msg = msg.."\r\n base32todec: "..(SysFunctions:base32todec("6M2UCYKSGSIXCHRQKYC5RA6BYMFXFR6QAGPZF2Q") or "ERR")..""
+			msg = msg.."\r\n strtohex: "..(SysFunctions:strtohex("6M2UCYKSGSIXCHRQKYC5RA6BYMFXFR6QAGPZF2Q") or "ERR")..""
+			--msg = msg.."\r\n lock2key: "..(SysFunctions:lock2key(lock) or "ERR")..""
+			msg = msg.."\r\n DoShareUnits: "..(SysFunctions:DoShareUnits(146775900908) or "ERR")..""
+			--msg = msg.."\r\n SaveToFile: "..(SysFunctions:SaveToFile(sFileWay, tTable, sTableName) or "ERR")..""
+			msg = msg.."\r\n IpToNumber: "..(SysFunctions:IpToNumber("192.168.52.205") or "ERR")..""
+			msg = msg.."\r\n NumberToIp: "..(SysFunctions:NumberToIp((SysFunctions:IpToNumber("192.168.52.205") or "ERR")) or "ERR")..""
+			msg = msg.."\r\n ToLower: "..(SysFunctions:ToLower("6M2UCYKSGSIXCHRQKYC5RA6BYMFXFR6QAGPZF2Q") or "ERR")..""
+			msg = msg.."\r\n ToUpper: "..(SysFunctions:ToUpper((SysFunctions:ToLower("6M2UCYKSGSIXCHRQKYC5RA6BYMFXFR6QAGPZF2Q") or "test_err")) or "ERR")..""
+			msg = msg.."\r\n GetNormalShare: "..(SysFunctions:GetNormalShare(146775900908) or "ERR")..""
+			msg = msg.."\r\n GetLongShare: "..(SysFunctions:GetLongShare(146775900908) or "ERR")..""
+			local Data = tostring(os.date("%y/%m/%d %H:%M:%S"))
+			msg = msg.."\r\n ConvertDate: "..(SysFunctions:ConvertDate(Data) or "ERR")..""
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			]]--
+			local ttext = "224: "..messages[224].."]\r\n";
+			ttext = "225: "..messages[225].."]\r\n";
+			ttext = "226: "..messages[226].."]\r\n";
+			ttext = "227: "..messages[227].."]\r\n";
+			ttext = "228: "..messages[228].."]\r\n";
+			ttext = "229: "..messages[229].."]\r\n";
+			ttext = "230: "..messages[230].."]\r\n";
+			ttext = "231: "..messages[231].."]\r\n";
+			ttext = "232: "..messages[232].."]\r\n";
+			BotSayToUser(sUser,ttext)
+			ClearMem()
+			return 1
+		end,
+		tLevels = {
+			[10] = 1,-- [5] = 1,--[4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Тестовая функция",
+		sName = "mbtestfunction",
+		tMenu = function(sUser)
+			--VH:SendDataToAll("addbadtthtolist tMenu: ОК|",10,10)
+			--local tRC = "1 1 Управление\\Тестовая$<%[mynick]> +mbtestfunction %[line:Введитеnick] %[line:Введите время] %[line:Введите тип]"
+			local tRC = "1 1 Управление\\Тестовая$<%[mynick]> +mbtestfunction"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+}
+--------------------------------------------------------------------------------------------------------------------------------------------
+TTHNewList = {
+}
+--------------------------------------------------------------------------------------------------------------------------------------------
+tJokeFunctions = {
+	otherhubcommandsblocker = {
+		tFunc = function(sUser,sData,tRetVal)
+			--VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> sData:[ "..sData.." ]|", sUser.sName)
+			VH:SendDataToUser("<"..BOTNAME..">\r\nКоманда "..tRetVal["prefix"]..tRetVal["cmd"].." НЕ РАБОТАЕТ на этом хабе!\r\nНаберите +mbhelp для просмотра доступных вам команд.\r\nТакже вы можете прочитать правила данного хаба и часто задаваемые вопросы набрав команды +mbrules и +mbfaq.|", sUser.sName)
+			return 0
+		end,
+		tLevels = {
+			--[10] = 1, [5] = 1, [4] = 1, [3] = 1,
+			[2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Блокировка команд с других хабов",
+		sName = "otherhubcommandsblocker",
+		tPattern = function(sUser,sData)
+			local _,_,prefix,cmd,arg=string.find(sData, "(%S)(%S+)%s*(.*)")
+			if (prefix~=nil) and (cmd~=nil) then
+				local crctpr1,crctpr2=string.find(prefix, "[%!%+]")
+				if crctpr1 and crctpr2 then
+					local tcmdlisting = {
+						["regme"]=1,["regmehelp"]=1,["faq"]=1,["rules"]=1,["help"]=1,["minshare"]=1,["reghelp"]=1,["hubs"]=1,
+					}
+					if (tcmdlisting[cmd]==1) then
+						local tRetVal = {
+						["prefix"]=prefix, ["cmd"]=cmd,
+						}
+						AddSysLog("tJokeFunctions:otherhubcommandsblocker. ip ["..(sUser.sIP or "").."] nick ["..(sUser.sName or "").."] cmd["..(cmd or "").."] sData["..sData.."]")
+						return 0, tRetVal;
+					end
+				end
+			end
+			return 1, nil;
+		end,
+	},
+}
+--------------------------------------------------------------------------------------------------------------------------------------------

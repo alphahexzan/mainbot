@@ -1,0 +1,1528 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Служебный стафф
+--------------------------------------------------------------------------------------------------------------------------------------------
+function checkSingleIp(sUser)--+
+	--local res, class = User.IsOperator(sUser.sName)
+	if User.IsOperator(sUser.sName) then return 0 end
+	--if sUser.iProfile == 0 then return 0 end -- master
+	--local users = frmHub:GetOnlineUsers()
+	local res, users = VH:GetNickList()
+	for i,u in pairs(users) do
+		local UtempIP = User.GetIP(u)
+		if sUser.sIP == UtempIP then 
+			tText = SINGLEIPTEXT
+			tText = string.gsub(tText, "%[NICK%]", u)
+			tText = string.gsub(tText, "%[IP%]", sUser.sIP)
+			tText = string.gsub(tText, "%[HUBOWNER%]", OWNER)
+			tText = string.gsub(tText, "%[OWNERCONTACT%]", OWNERContact)
+			VH:SendDataToUser("<"..BOTNAME.."> "..tText.."|",sUser.sName)	
+			VH:CloseConnection(sUser.sName);
+			return 0 
+		end
+	end		
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function inDiap(ip,Diap)--+
+	local _, _, ip11,ip12,ip13,ip14 = string.find(ip, "(%d+)%.(%d+)%.(%d+)%.(%d+)")
+	local ipval=(((tonumber(ip11) or 0)*256+(tonumber(ip12) or 0))*256+(tonumber(ip13) or 0))*256+(tonumber(ip14) or 0)
+	--local ipval=(tonumber(ip11) or 0) *256*256*256+(tonumber(ip12) or 0) *256*256+(tonumber(ip13) or 0) *256+(tonumber(ip14) or 0)
+	for i,v in pairs(Diap) do
+		if ipval>= Diap[i].ips and ipval<= Diap[i].ipe then 
+			--BotSayToAll(Diap[i].ips.."-".. Diap[i].ipe..", "..ipval.."("..ip .."), YES")
+			--VH:SendDataToUser("$To: Palmer From: inDiap $<inDiap> ip["..(ip or "ERR").."] ipval["..ipval or "ERR").."] Diap[i].ips["..Diap[i].ips or "ERR").."] Diap[i].ipe["..Diap[i].ipe or "ERR").."]|","Palmer")
+			return true
+		else
+			--BotSayToAll(Diap[i].ips.."-".. Diap[i].ipe..", "..ipval.."("..ip .."), NO")
+		end
+	end
+	return false	
+end	
+--------------------------------------------------------------------------------------------------------------------------------------------
+function GetItemByName(whoTo)--+
+	local sUser = {}
+	MakeUserTable(whoTo, sUser)
+	return sUser
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function isOP(whoTo)--+
+    --local vUser = GetItemByName(whoTo)
+	local vUser = ONLINEUSERS[whoTo]
+	if vUser~= nil then 
+		if tCheck[vUser.iProfile][1] >= 3 then 
+			return true 
+		else
+			return false
+		end
+	else
+		return false
+	end
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--проверка ника и описания ресурсов на матершину.	
+--------------------------------------------------------------------------------------------------------------------------------------------
+function checkNickDescr(sUser)--+
+	if CFG.NickDescrCheck==1 then
+		if User.IsOperator(sUser.sName) then return 0 end
+		--if sUser.iProfile == 0 then return 0 end-- master
+		--local retval=0
+		local checkVal=sUser.sName
+		if sUser.sDescription ~= nil then
+			checkVal=checkVal.." "..sUser.sDescription
+		end	
+		local isbadword,badword, pos, context = isbad2(checkVal,BAD_NICK)
+		--local curUser=US[sUser.sIP];
+		--local curUser=SQL_FindInUserListByIP(sUser)
+		--[[
+		local query = "SELECT user_status FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+		local res, row = VH:SQLQuery(query)
+		local res, value = VH:SQLFetch(0)
+		local curUserstatus = tonumber(value)
+		--VH:SendDataToAll("curUserstatus: "..curUserstatus.."|",10,10)
+		]]--
+		if (isbadword ==1 ) then
+			--[[
+			if curUserstatus==6 or curUserstatus==2 then 
+				--в момент нарушения пользователь уже был навсегда лишен права говорить в чате, поэтому за матюки в нике и описании ресурсов - вечный бан
+				ChangeStatus(sUser.sIP,5,3,BOTNAME,messages[12] .." ["..context.."] + ".. messages[115])
+				--if sUser.sIP then AddSysLog("checkNickDescr:"..getSysLogBanMsg(sUser,nil)) else VH:SendPMToAll("checkNickDescr1|",BOTNAME,10,10) end
+			else
+				--за матюки в нике и описании ресурсов - временный бан
+				ChangeStatus(sUser.sIP,3,3,BOTNAME,messages[12] .." ["..context.."]")
+				--if sUser.sIP then AddSysLog("checkNickDescr:"..getSysLogBanMsg(sUser,nil)) else VH:SendPMToAll("checkNickDescr2|",BOTNAME,10,10) end
+			end	
+			--BotSayToAll(genBanMessage(sUser.sIP))
+			alertByIP(sUser.sIP,getBanInfo(sUser.sIP),true)
+			--BotSayToUser(sUser,getBanInfo(sUser.sIP))
+			--DisconnectUser(sUser)
+			]]--
+			--return 1
+			return isbadword,badword,pos,context;
+		end
+	end
+	--параноидальная проверка описания ресурсов на матершину 
+	if CFG.ParanoidDescrCheck==1 and sUser.sDescription~=nil then
+		paranoid = string.gsub(sUser.sDescription, "[%p%s%c]", "");
+		local par_badword, par_pos, par_context;
+		local par_isbadword = 0
+		par_isbadword, par_badword, par_pos, par_context = isbad2(paranoid,BAD_PARANOID_NICK)
+		if par_isbadword == 1 then
+			msg="\n"..messages[28].."\n";
+			msg=msg.. "["..os.date("%Y-%m-%d %H:%M:%S").."] <"..BOTNAME.. "> ".. messages[153] .. "\n";
+			msg=msg.. messages[128].. " "..sUser.sName.. " ["..sUser.sIP .."]\n"
+			msg=msg.. messages[37]..sUser.sDescription.."\n";	
+			msg=msg.. messages[103].." ["..par_context.. "]\n";
+			msg=msg.. messages[102].." "..par_badword.."\n";
+			msg=msg.. messages[28].."\n";
+			AddParanoidLog(msg);
+			--if CFG.ReportParanoidToOp==1 or CFG.ReportParanoidToMaster==1 then
+				if CFG.ReportParanoidToOp==1 then
+					VH:SendPMToAll(msg, BOTNAME, 3, 4)
+					--BotSayToUser(op,msg)				
+				end
+				if CFG.ReportParanoidToMaster==1 then
+					VH:SendPMToAll(msg, BOTNAME, 5, 10)
+				end
+			--end
+		end	
+	end
+	-----------------------------------------------------------
+	--[[
+	--проверка анти-рекламы 2
+	if (sUser.iProfile<3) and (sUser.sDescription~=nil) then
+		--local res=AntiAdvCheckText(sUser,sUser.sDescription);
+		local BadAdv, Context = isbadantiadv(sUser.sDescription, ADV_patDNS01, ADV_patMSigns, ADV_patDom, ADV_patDNS02)
+		if (BadAdv == 1) and Context then
+			checkName(sUser)
+			local bantime = CFG.BANTIME*5
+			--VH:SendDataToUser("$To: "..from.." From: "..to.." $<"..BOTNAME.. "> "..string.gsub(messages[176],"%[WHO%]",sUser.sName).."|", from)
+			--AddIPToHubBanList(from,bantime,BOTNAME,messages[175])
+			AddIPToHubBanList(sUser.sName,bantime,BOTNAME,"Реклама в описании.")
+			--AddSysLog("AntiAdvCheckText.checkNickDescr: "..string.gsub(messages[177],"%[WHO%]",sUser.sName.." ("..sUser.sIP ..")").." Data["..data.."]");
+			AddSysLog("AntiAdvCheckText.checkNickDescr: Обнаружено: nick ["..sUser.sName.."] ip["..sUser.sIP.."] context ["..Context.."]")
+			DisconnectUser(sUser)
+			ONLINEUSERS[sUser.sName] = nil
+			sUser=nil
+			return 0
+		end
+	end
+	]]--
+	-----------------------------------------------------------
+	return 0
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--проверка банов
+--------------------------------------------------------------------------------------------------------------------------------------------
+function checkBan(sUser)--+
+	if User.IsOperator(sUser.sName) then return 0 end
+	local retval = 0;
+	--query = "SELECT ip, status FROM MainBot_userlist"
+	--res, err = VH:SQLQuery(query)
+	--result, nick, password = VH:SQLFetch(1)
+	--curUser=US[UserIp];
+	--local curUser=SQL_FindInUserListByIP(sUser)
+	local query = "SELECT user_status FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	local res, row = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	local curUserstatus = tonumber(value)
+	--VH:SendDataToAll("curUserstatus: "..curUserstatus.."|",10,10)
+	if 	curUserstatus==0 then 
+		retval = 0;
+	elseif curUserstatus==1 then
+		retval = 0;
+	elseif curUserstatus==2 then
+		retval = 0;
+	elseif curUserstatus==3 then
+		BotSayToUser(sUser,getBanInfo (sUser.sIP))
+		local msg=messages[34];
+		msg=string.gsub(msg,"%[WHO%]",sUser.sName.. " ["..sUser.sIP .."]");
+		msg=string.gsub(msg,"%[STATUS%]",curUserstatus.."("..txtStatus[curUserstatus] ..")");
+		--AddSysLog("<"..BOTNAME.. "> ".. msg);		
+		retval = 1 
+	elseif curUserstatus==4 then
+		retval = 0;
+	elseif curUserstatus==6 then
+		retval = 0;
+	elseif curUserstatus==5 then	--постоянный бан
+		BotSayToUser(sUser,getBanInfo (sUser.sIP))
+		local msg=messages[34];
+		msg=string.gsub(msg,"%[WHO%]",sUser.sName.. " ["..sUser.sIP .."]");
+		msg=string.gsub(msg,"%[STATUS%]",curUserstatus.."("..txtStatus[curUserstatus] ..")");
+		AddSysLog("checkBan: ".. msg);		
+		retval= 1 
+	end
+	return retval
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Защита от псевдоботов
+function chekBotName(sUser)--+
+	if User.IsOperator(sUser.sName) then return 0 end
+	--if sUser.iProfile == 0 then return 0 end
+	local retval=0;
+	local start_g, end_g = string.find(sUser.sName, BOTPattern)
+	if start_g ~= nil then
+		--US[sUser.sIP].name=sUser.sName;
+		SQL_ModToUserList("nick", sUser.sName, "ip", sUser.sIP)
+		ChangeStatus(sUser.sIP,5,4,BOTNAME,messages[156].." [".. sUser.sName .."]")
+		BotSayToUser(sUser,getBanInfo(sUser.sIP))
+		--if sUser.sIP then AddSysLog("chekBotName: "..getSysLogBanMsg(sUser,nil)) else VH:SendPMToAll("chekBotName|",BOTNAME,10,10) end
+		--sUser:Ban()
+		--VH:Ban(sUser.sName, bantime)
+		--VH:KickUser(BOTNAME, curUser.sName, "_BAN_1h")
+		local reason = "Неверный ник"
+		ChangeStatus(sUser.sIP,3,"4",BOTNAME,reason)
+		DisconnectUser(sUser)
+		--VH:Ban(curUser.sName, number::howlong, number::bantype) ---> Not implemented yet!
+		retval=1;
+	end	
+	return retval
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Проверка глобального ограничения на шару
+function checkMinimumShare(sUser,sData)--+
+	if User.IsOperator(sUser.sName) then return 0 end
+	if sUser.iShareSize < CFG.GlobalMinimumShare then
+		local ttext = string.gsub(SMALLSHARETEXT , "%[SIZE%]", getNormalShare(CFG.GlobalMinimumShare))
+		ttext = string.gsub(ttext , "%[YOURSIZE%]", getNormalShare(sUser.iShareSize))
+		BotSayToUser(sUser,ttext);
+		local msg=messages[152];
+		msg = string.gsub(msg, "%[WHO%]",sUser.sName.. " ["..sUser.sIP .."]");
+		msg = string.gsub(msg, "%[YOURSIZE%]", getNormalShare(sUser.iShareSize))
+		msg = string.gsub(msg, "%[SIZE%]", getNormalShare(CFG.GlobalMinimumShare))
+		AddSysLog("checkMinimumShare:".. msg);		
+		--sUser:Disconnect();
+		VH:CloseConnection(sUser.sName);
+		return true
+	end
+end
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- проверка настройки ограничений
+function checkShare(sUser,sData)--+
+	--MainBot_userlist
+	--local curUser=SQL_FindInUserListByIP(sUser)
+	local query = "SELECT noleech, maxnoleech FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	local res, row = VH:SQLQuery(query)
+	local res, value1, value2 = VH:SQLFetch(0)
+	--VH:SendDataToAll("noleech"..noleech.."|",0,10)
+	local noleech = tonumber(value1)
+	--VH:SendDataToAll("noleech"..noleech.."|",0,10)
+	local maxnoleech = tonumber(value2)
+	--VH:SendDataToAll("maxnoleech"..maxnoleech.."|",0,10)
+	if maxnoleech==1 then
+		--US[sUser.sIP].noleech= math.ceil(sUser.iShareSize / CFG.NoLeechRatio);
+		SQL_ModToUserList("noleech", math.ceil(sUser.iShareSize / CFG.NoLeechRatio), "ip", sUser.sIP)
+	else
+		if noleech and sUser.iShareSize then
+			if sUser.iShareSize < noleech*CFG.NoLeechRatio then
+				--US[sUser.sIP].noleech= math.ceil(sUser.iShareSize / CFG.NoLeechRatio);
+				SQL_ModToUserList("noleech", math.ceil(sUser.iShareSize / CFG.NoLeechRatio), "ip", sUser.sIP)
+				local ttext = messages[89] 
+				ttext = string.gsub(ttext , "%[RATIO%]", CFG.NoLeechRatio)
+				ttext = string.gsub(ttext , "%[MINSHARE%]", getNormalShare(noleech))
+				ttext = string.gsub(ttext  , "%[CURSHARE%]", getNormalShare(sUser.iShareSize))
+				BotSayToUser(sUser,ttext)
+				ttext = string.gsub(messages[90] , "%[MINSHARE%]", getNormalShare(noleech))
+				AddSysLog("checkShare: ".. sUser.sName.. ": " ..ttext);		
+			end
+		end
+	end	
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- проверка права скачивать для активного юзера--+
+function checkDL(sUser,towho)--+
+	--local vUser = GetItemByName(towho)
+	--VH:SendDataToAll("sUser: "..sUser.sName.."|",0,10)
+	local vUser = ONLINEUSERS[towho]
+	--VH:SendDataToAll("vUser: "..vUser.sName.."|",0,10)
+	--if sUser.sName == vUser.sName then return 0 end
+	if vUser~= nil then
+		if inDiap(vUser.sIP,IPCHECKS.CHAT_ONLY) then 
+			local ttext = messages[178] 
+			ttext = string.gsub(ttext , "%[NICK%]", towho)
+			BotSayToUser(sUser,ttext)
+			return 0
+		end
+		if getNLCHECK(vUser.sIP,sUser.sIP)==1 then
+			--VH:SendDataToAll("getNLCHECK: 1|",0,10)
+			NLCHECK[vUser.sIP][sUser.sIP]=nil;
+			return 1
+		end
+		--local curUser=SQL_FindInUserListByIP(sUser)
+		--[[
+		local query = "SELECT noleech FROM MainBot_userlist WHERE ip='"..vUser.sIP.."'"
+		local res, row = VH:SQLQuery(query)
+		local res, value = VH:SQLFetch(0)
+		local curUserNoleech = tonumber(value)
+		]]--
+		--VH:SendDataToAll("curUserNoleech: "..curUserNoleech.."|",0,10)
+		--if not curUserNoleech then curUserNoleech=0 end
+		local curUserNoleech=0;
+		--if not tMainBufer.NoLeechBufer[vUser.sIP] then curUserNoleech=0 end
+		if (tMainBufer.NoLeechBufer[vUser.sIP]) and (sUser.iShareSize) then
+			curUserNoleech = tMainBufer.NoLeechBufer[vUser.sIP]
+			--VH:SendDataToUser("$To: Palmer From: checkDL $<checkDL> vUser.sIP ["..(vUser.sIP or "").."] curUserNoleech ["..(curUserNoleech or "").."] sUser.sIP ["..(sUser.sIP or "").."]  sUser.sName ["..(sUser.sName or "").."]|","Palmer")
+			if sUser.iShareSize <= curUserNoleech then 
+				if CFG.NoLeechTime>0 then
+					local curtime=os.time();
+					if (NLT[sUser.sName]) then
+						if (NLT[sUser.sName][vUser.sName]) then
+							if (curtime - NLT[sUser.sName][vUser.sName] > CFG.NoLeechTime) then
+								NLT[sUser.sName][vUser.sName]=curtime;
+							else
+								return 0
+							end
+						else
+							NLT[sUser.sName][vUser.sName]=curtime;
+						end						
+					else
+						NLT[sUser.sName]={}
+						NLT[sUser.sName][vUser.sName]=curtime;
+					end
+				end
+				--[[
+				local tNOLEECHText =NOLEECHTEXT
+				tNOLEECHText = string.gsub(tNOLEECHText , "%[USER%]", towho)
+				tNOLEECHText = string.gsub(tNOLEECHText , "%[MINSHARE%]", getNormalShare(curUserNoleech))
+				tNOLEECHText = string.gsub(tNOLEECHText , "%[CURSHARE%]", getNormalShare(sUser.iShareSize))
+				BotSayToUser(sUser,tNOLEECHText)
+				]]--
+				return 0
+			end
+		end	
+	end
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- проверка права скачивать для пассивного юзера--+
+function checkDLP(sUser,towho)--+
+	--local vUser = GetItemByName(towho)
+	--VH:SendDataToAll("P.sUser: "..sUser.sName.."|",0,10)
+	local vUser = ONLINEUSERS[towho]
+	--VH:SendDataToAll("P.vUser: "..vUser.sName.."|",0,10)
+	--if sUser.sName == vUser.sName then return 0 end
+	if vUser~= nil then
+		if inDiap(vUser.sIP,IPCHECKS.CHAT_ONLY) then 
+			local ttext = messages[178] 
+			ttext = string.gsub(ttext , "%[NICK%]", towho)
+			BotSayToUser(sUser,ttext)
+			return 0
+		end
+		--[[
+		local query = "SELECT noleech FROM MainBot_userlist WHERE ip='"..vUser.sIP.."'"
+		local res, row = VH:SQLQuery(query)
+		local res, value = VH:SQLFetch(0)
+		local curUserNoleech = tonumber(value)
+		]]--
+		local curUserNoleech=0;
+		--local UserShareSize = sUser.iShareSize
+		--if not curUserNoleech then curUserNoleech=0 end
+		--if UserShareSize==nil then UserShareSize=0 end
+		--tMainBufer.NoLeechBufer[vUser.sIP]
+		if (tMainBufer.NoLeechBufer[vUser.sIP]) and (sUser.iShareSize) then
+			curUserNoleech = tMainBufer.NoLeechBufer[vUser.sIP]
+			--VH:SendDataToUser("$To: Palmer From: checkDL $<checkDL> vUser.sIP ["..(vUser.sIP or "").."] curUserNoleech ["..(curUserNoleech or "").."] sUser.sIP ["..(sUser.sIP or "").."]  sUser.sName ["..(sUser.sName or "").."]|","Palmer")
+			if sUser.iShareSize <= curUserNoleech then 
+				if CFG.NoLeechTime>0 then
+					local curtime=os.time();
+					if (NLT[sUser.sName]) then
+						if (NLT[sUser.sName][vUser.sName]) then
+							if (curtime - NLT[sUser.sName][vUser.sName] > CFG.NoLeechTime) then
+								NLT[sUser.sName][vUser.sName]=curtime;
+							else
+								return 0
+							end
+						else
+							NLT[sUser.sName][vUser.sName]=curtime;
+						end						
+					else
+						NLT[sUser.sName]={}
+						NLT[sUser.sName][vUser.sName]=curtime;
+					end
+				end
+				--[[
+				local tNOLEECHText =NOLEECHTEXT
+				tNOLEECHText = string.gsub(tNOLEECHText , "%[USER%]", towho)
+				tNOLEECHText = string.gsub(tNOLEECHText , "%[MINSHARE%]", getNormalShare(curUserNoleech))
+				tNOLEECHText = string.gsub(tNOLEECHText , "%[CURSHARE%]", getNormalShare(sUser.iShareSize))
+				BotSayToUser(sUser,tNOLEECHText)
+				]]--
+				return 0
+			end
+		end	
+		if curUserNoleech~=0 then
+			if sUser.iShareSize <= curUserNoleech then 
+				setNLCHECK(sUser.sIP,vUser.sIP,1)
+				return 0
+			end	
+		end
+	end	
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function setNLCHECK(ip1,ip2,val)--+
+	if NLCHECK[ip1]==nil then 
+		NLCHECK[ip1]={} 
+	end
+	NLCHECK[ip1][ip2]=val;
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function getNLCHECK(ip1,ip2,val)--+
+	if NLCHECK[ip1]==nil then 
+		return 0
+	end
+	if NLCHECK[ip1][ip2]==nil then
+		return 0
+	end
+	return NLCHECK[ip1][ip2]
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function ClearMem()--+
+	collectgarbage(gc) 
+end	
+--------------------------------------------------------------------------------------------------------------------------------------------
+function LogStats()--+
+	local curtime=os.time()
+	local res, value = VH:GetUsersCount()
+	UserCount = tonumber(value)
+	--VH:SendDataToAll("UserCount : "..UserCount.."|",10,10)
+	--VH:SendDataToAll("STATS.MaxUsers : "..STATS.MaxUsers.."|",10,10)
+	if UserCount and (UserCount > STATS.MaxUsers) then
+		STATS.MaxUsers = UserCount
+		STATS.MaxUsersDate = os.date("%Y-%m-%d %H:%M:%S");
+		--saveArray(STATS,F_STATS)
+		SQL_ModStats(UserCount, "MaxUsers")
+		SQL_ModStats(os.date("%Y-%m-%d %H:%M:%S"), "MaxUsersDate")
+		----[[
+		--os.difftime(curtime, STATS_U_LSTime)
+		local diffuser = STATS.MaxUsers-STATS_U_LSVal
+		local diffusertime = os.difftime(curtime, STATS_U_LSTime)
+		if (diffusertime > CFG.STATS_U_TIME) or (diffuser > CFG.STATS_U_VAL) then
+			STATS_U_LSVal=STATS.MaxUsers;
+			STATS_U_LSTime=curtime;
+			--STATS.MaxUsers=UserCount;
+			BotSayToAll(string.gsub(messages[119], "%[VAL%]", STATS.MaxUsers))
+			--VH:SendDataToAll(string.gsub(messages[119],"%[VAL%]",STATS.MaxUsers).."|",3,10)
+			AddSysLog("LogStats:STATS.MaxUsers - UserCount["..(UserCount or "ERR").."] time ["..os.date("%Y-%m-%d %H:%M:%S").."] diffuser ["..diffuser.."] difftime["..diffusertime.."]")
+		end
+		--]]--
+	end
+	local res, value = VH:GetTotalShareSize()
+	TotalShareSize = tonumber(value)
+	--VH:SendDataToAll("TotalShareSize : "..TotalShareSize.."|",10,10)
+	--VH:SendDataToAll("STATS.MaxShare : "..STATS.MaxShare.."|",10,10)
+	if TotalShareSize and (TotalShareSize > STATS.MaxShare) then
+		STATS.MaxShare = TotalShareSize
+		STATS.MaxShareDate  = os.date("%Y-%m-%d %H:%M:%S");
+		SQL_ModStats(TotalShareSize, "MaxShare")
+		SQL_ModStats(os.date("%Y-%m-%d %H:%M:%S"), "MaxShareDate")
+		--saveArray(STATS,F_STATS)
+		----[[
+		local diffshare = STATS.MaxShare - STATS_S_LSVal
+		local diffsharetime = os.difftime(curtime, STATS_S_LSTime)
+		if (diffsharetime > CFG.STATS_S_TIME) or (diffshare > CFG.STATS_S_VAL) then
+			STATS_S_LSVal=STATS.MaxShare;
+			STATS_S_LSTime=curtime;
+			--STATS.MaxShare=TotalShareSize;
+			BotSayToAll(string.gsub(messages[120], "%[VAL%]", getNormalShare(STATS.MaxShare)))
+			--VH:SendDataToAll(string.gsub(messages[120],"%[VAL%]",getNormalShare(STATS.MaxShare)).."|",3,10)
+			AddSysLog("LogStats:STATS.MaxShare - TotalShareSize["..(TotalShareSize or "ERR").."] time["..os.date("%Y-%m-%d %H:%M:%S").."] diffshare ["..diffshare.."] difftime["..diffsharetime.."]")
+		end
+		--]]--
+	end
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function getNormalShare(share)--+
+	local sshare = 0;
+	if tonumber (share) then
+		sshare = tonumber (share)
+	else
+		sshare =0;
+	end
+	local tshare=""
+	if sshare >=Tbyte then
+		tshare = tostring(math.floor(1000*sshare/Tbyte)/1000).." "..messages[162]
+	elseif sshare >=Gbyte then
+		tshare = tostring(math.floor(1000*sshare/Gbyte)/1000).." "..messages[163]
+	elseif sshare >=Mbyte then
+		tshare = tostring(math.floor(1000*sshare/Mbyte)/1000).." "..messages[164]
+	elseif sshare >=Kbyte  then
+		tshare = tostring(math.floor(1000*sshare/Kbyte)/1000).." "..messages[165]
+	else		
+		tshare = tostring(sshare).." "..messages[166]
+	end
+	return tshare
+end
+-----------------------------------------------------------
+function getDateAfter(secs)--+
+	return os.date("%Y-%m-%d %H:%M:%S",os.time()+secs)
+end
+------------------------------------------------
+function DisconnectUser(sUser)--+
+	--US[vUser.sIP].lastonline = os.date("%Y-%m-%d %H:%M:%S");
+	SQL_ModToUserList("lastonline", os.date("%Y-%m-%d %H:%M:%S"), "ip", sUser.sIP)
+	--vUser:Disconnect()
+	VH:CloseConnection(sUser.sName);
+end
+------------------------------------------------------------------
+function AddMainChatLog(msg)
+	mainChatLog = mainChatLog.."["..os.date("%H:%M:%S").."] "..msg.."\n"
+	--VH:SendPMToAll("["..os.date("%H:%M:%S").."] "..msg.."|",BOTNAME,10,10)
+	--syslog = syslog .. "<M>-[".. os.date("%H:%M:%S").."] "..msg .. "\n"
+end
+-----------------------------------------------------------------------------------------------------------------
+function AddSysLog(msg)
+	syslog = syslog.."["..os.date("%H:%M:%S").."] "..msg.."\n"
+	--VH:SendPMToAll("["..os.date("%H:%M:%S").."] "..msg.."|",BOTNAME,10,10)
+end
+-----------------------------------------------------------------------------------------------------------------
+function AddParanoidLog(msg)
+	paranoidLog = paranoidLog.."["..os.date("%H:%M:%S").."] "..msg.."\n"
+	--VH:SendPMToAll("["..os.date("%H:%M:%S").."] "..msg.."|",BOTNAME,10,10)
+	--syslog = syslog .. "<PARANOID>-["..  os.date("%H:%M:%S").."] ".. msg
+end
+-----------------------------------------------------------------------------------------------------------------
+function AddChatRoomLog(name,msg)
+	local aEntry = ChatRoomLog[name]
+	aEntry.chatname = name
+	aEntry.chatlog = aEntry.chatlog.."["..os.date("%H:%M:%S").."] "..msg.."\n"
+end
+-----------------------------------------------------------------------------------------------------------------
+function AddDebugLog(func,msg)
+	if CFG.DebugMode == 1 then
+		local aEntry = DebugLog[func]
+		aEntry.funcname = func
+		aEntry.funclog = aEntry.funclog.."["..os.date("%H:%M:%S").."] "..msg.."\n"
+	end
+end 
+-----------------------------------------------------------------------------------------------------------------
+function checkTags(sUser)--+
+	--[[
+	local _,_,d,t = string.find(sUser.sMyInfoString, "^%$MyINFO %$ALL [^ ]+ ([^$]*)(%b<>)%$ $[^$]*[^$]%$[^$]*%$%s*%d*%$")
+	if t== nil then t= "<NoTag V:0,M:P,H:0,S:0>" end
+	if d== nil then d= "" end
+	local _,_,t2 = string.find(d, "(%b<>)")
+	if t2==nil then t2="" end
+	local resTag = t2..t
+	]]--
+	--local _,_,client,version,mode= string.find(resTag, "<*%A*%a*%s*[%.%d]*>*<(%S*)%s*V:%s*(.*)%s*,M:([5SAP])")
+	local client = sUser.sClient
+	--VH:SendDataToAll("client: "..sUser.sClient.." 1|",10,10)
+	local version = sUser.sClientVersion
+	--VH:SendDataToAll("client: "..sUser.sClientVersion.." 1|",10,10)
+	if sUser.sClient==nil or sUser.sClientVersion ==nil or sUser.sMode==nil then
+		AddSysLog("checkTags [tag error]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."]");
+		client= "ошибка в теге клиента" 
+		version="ошибка в теге клиента"
+		mode=""
+	end
+	
+	-----------------------------------------------------------
+	--проверка на пассивный режим
+	if sUser.sMode == "P" then
+		if not inDiap(sUser.sIP,IPCHECKS.NO_P) then 
+			BotSayToUser(sUser,PASSIVETEXT)
+			--AddSysLog("checkTags: ".. string.gsub(messages[85], "%[WHO%]",sUser.sName.. " ["..sUser.sIP .."]"));		
+		end	
+	end	
+	local come_msg=messages[109]..sUser.sName.."["..sUser.sIP.. "] "
+
+	if not inDiap(sUser.sIP,IPCHECKS.NO_V) then 
+		-----------------------------------------------------------
+		-- Проверка версии клиента
+		if VERSIONS[client] ~=nil then
+			--VH:SendDataToAll("VERSIONS[client]: есть|",10,10)
+			if VERSIONS[client][version]~=nil then
+				-- точное соответствие
+				if VERSIONS[client][version].todo=="s" then
+					BotSayToUser(sUser,VERSIONS[client][version].text)
+					--AddSysLog("checkTags [s]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+				elseif VERSIONS[client][version].todo=="k" then
+					BotSayToUser(sUser,VERSIONS[client][version].text)
+					AddSysLog("checkTags [k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+					VH:CloseConnection(sUser.sName);
+					ONLINEUSERS[sUser.sName] = nil
+				end	
+			elseif VERSIONS[client]["*"]~=nil then 
+					-- с версией "*" - для всех версий клиента
+					if VERSIONS[client]["*"].todo=="s" then
+						BotSayToUser(sUser,VERSIONS[client]["*"].text)
+						--AddSysLog("checkTags [*s]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+					elseif VERSIONS[client]["*"].todo=="k" then
+						BotSayToUser(sUser,VERSIONS[client]["*"].text)
+						AddSysLog("checkTags [*k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+						VH:CloseConnection(sUser.sName);
+						ONLINEUSERS[sUser.sName] = nil
+					end	
+			else
+				--come_msg=come_msg..	messages[151].. " клиент={" .. client.."} версия={" .. version.."}"	
+			end
+		else
+			--come_msg=come_msg..	messages[151].. " клиент={" .. client.."} версия={" .. version.."}"	
+		end
+		-----------------------------------------------------------
+	end	
+	-----------------------------------------------------------
+	-- запись в лог инфы о юзере
+	--local curUser=SQL_FindInUserListByIP(sUser)
+	--local query = "SELECT locknick FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	--local res, locknick = VH:SQLQuery(query)
+	--local res, row = VH:SQLQuery(query)
+	--local res, value = VH:SQLFetch(0)
+	--local locknick = value
+	--if not bancount then bancount = 0 end
+	--if (locknick~="" and locknick~=sUser.sName) then
+		--come_msg=come_msg..messages[110]..locknick	
+	--end	
+	--AddSysLog(come_msg);		
+end
+-----------------------------------------------------------------------------------------------------------------
+function saveUSExpress()--Не используется.
+	SaveFile(US,"US",F_USERS);
+	SaveFile(SHARES,"SHARES",F_SHARES)
+end	
+-----------------------------------------------------------------------------------------------------------------
+function getBestShares(sUser)--+
+	if CFG.ShareTopOn~=1 then
+		return 0,0,0,0
+	end
+	if sUser then
+		local indx=1;
+		local counter=0
+		local query = "SELECT COUNT(ip) FROM MainBot_userlist WHERE sharesize > 0"
+		local res, rows = VH:SQLQuery(query)
+		local res, value = VH:SQLFetch(0)
+		counter = tonumber(value)
+		local pos=0
+		query = "SELECT COUNT(ip) FROM MainBot_userlist WHERE sharesize > "..(sUser.iShareSize or 0)
+		res, rows = VH:SQLQuery(query)
+		res, value = VH:SQLFetch(0)
+		pos = tonumber(value)+1
+		query = "SELECT MAX(sharesize) FROM MainBot_userlist"
+		res, rows = VH:SQLQuery(query)
+		res, value = VH:SQLFetch(0)
+		bestsize = tonumber(value)
+		query = "SELECT nick FROM MainBot_userlist WHERE sharesize ="..bestsize..""
+		res, rows = VH:SQLQuery(query)
+		res, value = VH:SQLFetch(0)
+		bestnick = value
+		return bestnick,bestsize,pos,counter
+	else
+		return 0,0,0,0
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function ToLowerCase(to)--+
+	to=string.lower(to);
+	for b,s in pairs(RusLetters) do
+		to=string.gsub(to, b, RusLetters[b])
+	end	
+	return to
+end
+-----------------------------------------------------------------------------------------------------------------
+function InetTagsCheck(sUser) -- Функция проверки тэга --+
+	for list, value in pairs(ISP) do
+		if (string.len(sUser.sName) >= string.len(value) and string.sub(string.lower(sUser.sName),1,string.len(value)) == string.lower(value)) then
+			return 0
+		end
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function ShowTags() -- показать разрешенные тэги --+
+	   local line = "\r\n\t"
+	   for key,value in pairs(ISP) do
+		line = "\t"..line.." "..value
+	   end
+	   return line
+end
+-----------------------------------------------------------------------------------------------------------------
+function LastNickCheck(sUser) -- Проверка ников --+
+	local query = "SELECT nick FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	local res, row = VH:SQLQuery(query)
+	local res, curUserNick = VH:SQLFetch(0)
+	if (sUser.sName==curUserNick) then
+		return 0
+	end
+	for i=1,10 do
+		local query = "SELECT lastnick"..i.." FROM MainBot_userlist_lastnicks WHERE ip='"..sUser.sIP.."'"
+		local res, row = VH:SQLQuery(query)
+		local res, lastnick = VH:SQLFetch(0)
+		if lastnick == sUser.sName then
+			if lastnick == curUserNick then
+				return 0
+			end
+		end
+	end
+	local query = "SELECT lastnickcount FROM MainBot_userlist_lastnicks WHERE ip='"..sUser.sIP.."'"
+	local res, row = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(row)
+	local lastnickcount = tonumber(value)
+	if lastnickcount == 10 then 
+		local query = "UPDATE MainBot_userlist_lastnicks SET lastnick1='"..SQL_Escape(curUserNick).."' WHERE ip='"..sUser.sIP.."'"
+		local res, err = VH:SQLQuery(query)
+		query = "UPDATE MainBot_userlist_lastnicks SET lastnickcount='1' WHERE ip='"..sUser.sIP.."'"
+		res, err = VH:SQLQuery(query)
+	else
+		lastnickcount = lastnickcount+1
+		local query = "UPDATE MainBot_userlist_lastnicks SET lastnick"..lastnickcount.."='"..SQL_Escape(curUserNick).."' WHERE ip='"..sUser.sIP.."'"
+		local res, err = VH:SQLQuery(query)
+		query = "UPDATE MainBot_userlist_lastnicks SET lastnickcount='"..lastnickcount.."' WHERE ip='"..sUser.sIP.."'"
+		res, err = VH:SQLQuery(query)
+	end	
+end
+-----------------------------------------------------------------------------------------------------------------
+function JDateHMS(d,m,y,ho,mi,se) -- (by Palmer)
+		local a, b, c = 0, 0, 0
+		if m <= 2 then y = y - 1 m = m + 12 end
+		if (y*10000 + m*100 + d) >= 15821015 then a = math.floor(y/100) b = 2 - a + math.floor(a/4) end
+		if y <= 0 then c = 0.75 end
+		return math.floor(365.25*y - c) + math.floor(30.6001*(m+1) + d + 1720994 + b),ho*3600+mi*60+se
+	end
+-----------------------------------------------------------------------------------------------------------------
+function TimeIntervalCheck(sTime) --  Разница во времени(by Palmer)
+	--sTime= "2006-10-26 07:04:20"
+	local _,_, y, m, d, ho, mi, se = string.find(sTime, "(%d%d%d%d)\-(%d%d)\-(%d%d)%s(%d%d):(%d%d):(%d%d)")
+	if y and m and d and ho and mi and se then
+		y = tonumber(string.sub(y,string.len(y)-2,string.len(y))); m = tonumber(m); d = tonumber(d); ho = tonumber(ho); mi = tonumber(mi); se = tonumber(se);
+		local iCurDay,iCurSec = JDateHMS(tonumber(os.date("%d")),tonumber(os.date("%m")),tonumber(os.date("%y")),tonumber(os.date("%H")),tonumber(os.date("%M")),tonumber(os.date("%S")))
+		local iSylDay,iSylSec = JDateHMS(d,m,y,ho,mi,se)
+		local tmp = math.abs(iCurSec-iSylSec)
+		local iHours, iMinutes, iSeconds = math.floor(math.mod(tmp/3600, 60)), math.floor(math.mod(tmp/60, 60)), math.floor(math.mod(tmp/1, 60))
+		local iDays = math.abs(iCurDay-iSylDay)
+		return iDays, iHours, iMinutes, iSeconds
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function ClearUserDB() --  Очистка базы от старых записей (by Palmer)
+	local tempdate = nil
+	local iDays = nil
+	local tOldRecord = {}
+	local tDBErrors = {}
+	for i,v in pairs(US) do
+		if v.lastonline ~= nil then
+			tempdate = v.lastonline
+			iDays = TimeIntervalCheck(tempdate)
+			if iDays then
+				if iDays == CFG.TimeOldRecords or iDays > CFG.TimeOldRecords then
+					tOldRecord[v.ip] = US[i]
+					US[i] = nil
+				end
+			else
+				tDBErrors[v.ip] = US[i]
+				US[i] = nil
+			end
+		end	
+	end
+	if next(tOldRecord) then
+		local filename = OLDRECORDSPATH.."oldrecords_"..os.date("%Y_%m_%d_%H_%M_%S")..".dat"
+		SaveFile(tOldRecord , "tOldRecord", filename)
+	end
+	if next(tDBErrors) then
+		local filename_err = OLDRECORDSPATH.."dberrors_"..os.date("%Y_%m_%d_%H_%M_%S")..".dat"
+		SaveFile(tDBErrors, "tDBErrors", filename_err)
+	end
+	tOldRecord = nil
+	tDBErrors = nil
+end
+-----------------------------------------------------------------------------------------------------------------
+function ClearRegUsers() --  Очистка базы зарегистрированных пользователей (by Palmer)
+	local tRegUsers = {}
+	local tempdate = nil
+	local iDays = nil
+	local NickIPs = {}
+	local UserPasswd = {}
+	tRegUsers = frmHub:GetNonOperators()
+	for i,v in pairs(tRegUsers) do
+		for j,w in pairs(US) do
+			if w.nick == v.sNick then
+				if w.lastonline ~= nil then
+					if not (type(NickIPs[w.nick])=="table") then
+						NickIPs[w.nick] ={}
+					end
+					local length = TableMaxSize(NickIPs[w.nick])
+					NickIPs[w.nick][length+1] = w.lastonline
+					NickIPs[w.nick]["nick"] = w.nick
+				end
+			end
+			for l,z in pairs(w.lastnicks) do
+				if z == v.sNick then
+					if w.lastonline ~= nil then
+						if not (type(NickIPs[z])=="table") then
+							NickIPs[z] ={}
+						end
+						local length = TableMaxSize(NickIPs[z])
+						NickIPs[z][length+1] = w.lastonline
+						NickIPs[z]["nick"] = z
+					end
+				end
+			end
+		end
+	end
+	local iFullOld = 1
+	local msg = ""
+	for k,x in pairs(NickIPs) do
+		for l,y in pairs(x) do
+			tempdate = y
+			iDays = TimeIntervalCheck(tempdate)
+			if iDays and (iDays < CFG.TimeOldRecords) then
+				iFullOld = 0
+			end
+		end
+		if iFullOld == 0 then
+			NickIPs[k] = nil
+		end
+		if iFullOld == 1 then
+			if not (type(UserPasswd[x.nick])=="table") then
+				UserPasswd[x.nick] ={}
+			end
+			UserPasswd[x.nick]["nick"] = x.nick
+			UserPasswd[x.nick]["passwd"] = frmHub:GetUserPassword(x.nick);
+			msg = msg.."\tНик: "..UserPasswd[x.nick]["nick"].."\tПароль: "..UserPasswd[x.nick]["passwd"].."\r\n" 
+			DelRegUser(x.nick);
+		end
+		iFullOld = 1
+	end
+	if msg ~= "" then
+		msg = "\r\nСписок удалённых записей зарегистрированных пользователей:\r\n"..msg
+		SendPmToOps(BOTNAME, msg)
+	end
+	if next(NickIPs) then
+		local filename = OLDRECORDSPATH.."nickstime_"..os.date("%Y_%m_%d_%H_%M_%S")..".dat"
+		SaveFile(NickIPs, "NickIPs", filename)
+	end
+	if next(UserPasswd) then
+		local filename_up = OLDRECORDSPATH.."userpasswd_"..os.date("%Y_%m_%d_%H_%M_%S")..".dat"
+		SaveFile(UserPasswd, "UserPasswd", filename_up)
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function MakeUserTable(sNick, sUser)
+	-----------------------------------------------
+	sUser.sIP = User.GetIP(sNick)
+	-----------------------------------------------
+	sUser.sName = sNick
+	sUser.bConnected = true
+	-----------------------------------------------
+	local res, value = VH:GetUserClass(sNick)
+	local class = tonumber(value)
+	if not res then
+		sUser.bOperator = nil
+		sUser.bRegistered = nil
+	else
+		if class >= 3 then
+			sUser.bOperator = true
+			sUser.iOpHubs = 1
+		end
+		if class >= 1 then
+			sUser.bRegistered = true
+		else
+			sUser.bRegistered = nil
+		end
+	end
+	-----------------------------------------------
+	sUser.iProfile = class
+	-----------------------------------------------
+	local res, myinfo = VH:GetMyINFO(sNick)
+	if myinfo~=nil then
+		sUser.sMyInfoString = myinfo
+	else
+		sUser.sMyInfoString = "unknown"
+	end
+	-----------------------------------------------
+    local description, tag, connection, email, sharesize = "", "", "", "", 0
+	local temp = string.sub(myinfo, 15 + string.len(sNick), string.len(myinfo))
+	description = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%1")
+	local descidc = string.sub(description, 1, 1)
+	if descidc == "<" then
+		local lungh = string.len(description) 
+		temp = string.sub(myinfo, 15 + string.len(sNick) + lungh, string.len(myinfo) )               
+		tag = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%2")
+    else
+		tag = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%2")
+    end
+	sUser.sTag = tag
+	-----------------------------------------------
+	sUser.sDescription = description
+	-----------------------------------------------
+	local hub2 = string.gsub(tag, "(.*)H:(%d*)/?(%d*)/?(%d*)(.*)","%3")
+	-----------------------------------------------
+	sUser.iHub2 = tonumber(hub2)
+	-----------------------------------------------
+	local hub3 = string.gsub(tag, "(.*)H:(%d*)/?(%d*)/?(%d*)(.*)","%4")
+	-----------------------------------------------
+	sUser.iHub3 = tonumber(hub3)
+	-----------------------------------------------
+	local version0 = string.gsub(tag, "(.*)V:([%d%.]*)(.*)", "%1") 
+	local version =  string.gsub(tag, "(.*)V:(.*),M(.*),H(.*)", "%2")
+	-----------------------------------------------
+	version0 = string.sub(version0, 1, string.len(version0)-1)
+	sUser.sClient = version0
+	sUser.sClientVersion = version
+	--VH:SendDataToUser("$To: Palmer From: MakeUserTable $<MakeUserTable> sUser.sClient["..(sUser.sClient or "ERR").."] sUser.sClientVersion["..(sUser.sClientVersion or "ERR").."] tag["..(tag or "ERR").."]|","Palmer")
+	-----------------------------------------------
+    connection = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%3")
+	sUser.sConnection = connection
+    connection = string.sub(connection, 1, string.len(connection)-1)
+	-----------------------------------------------
+	-----------------------------------------------
+	email = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%4")
+	-----------------------------------------------
+	sUser.sEmail = email
+	-----------------------------------------------
+	sharesize = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%5")
+	local share_other = 0;
+	_, _, share_other = string.find(myinfo, "$MyINFO $ALL [^$]+$ $[^$]*$[^$]*$([^$]+)")
+	sharesize = tonumber(sharesize)
+	share_other = tonumber(share_other)
+	-----------------------------------------------
+	sUser.iShareSize = (sharesize or share_other)
+	-----------------------------------------------
+	local slots = 0
+	slots = string.gsub(tag, "(.*)S:([%d]*)(.*)", "%2")
+	slots = tonumber(slots)
+	-----------------------------------------------
+	sUser.iSlots = (slots or 0)
+	-----------------------------------------------
+	local hubs = 0
+    hubs = string.gsub(tag, "(.*)H:([%d]*)(.*)", "%2")
+    hubs = tonumber(hubs)
+	-----------------------------------------------
+	sUser.iHubs = hubs
+	-----------------------------------------------
+    local mode = ""
+    mode = string.gsub(tag, "(.*)M:([%d]*)(.*)", "%3")
+    local modet = string.sub(mode, 1, 1)
+	
+	if modet == "A" then
+		sUser.bActive = true
+	end
+	sUser.sMode = modet
+end
+-----------------------------------------------------------------------------------------------------------------
+function MakeOnlineUserTable(ONLINEUSERS)
+	local res, nicks = VH:GetNickList()
+	--VH:SendDataToUser("$To: Palmer From: MakeOnlineUserTable $<MakeOnlineUserTable> nicks full ["..(nicks or "ERR").."]|","Palmer")
+	nicks = string.gsub(nicks,"$NickList ","")
+	local tNicks = {}
+	local counter = 1
+	local find_dev = true
+	while find_dev do
+		local start_dev, end_dev = string.find(nicks, "[\$][\$]")
+		local end_text = string.len(nicks)
+		if start_dev then
+			tNicks[counter] = string.sub(nicks, 1, start_dev-1 )
+			if (tMainBufer.ChatRoomsBufer[tNicks[counter]]==1) or (tNicks[counter]==SHUBNAME) or (tNicks[counter]==BOTNAME) then
+			--local first_str, last_str = string.find(tNicks[counter], "[\#\@\•]", 1) --завязано на особенностях фильтрации ников на хабе
+			--if first_str == 1 then
+				--VH:SendDataToUser("$To: Palmer From: MakeOnlineUserTable $<MakeOnlineUserTable> counter ["..(counter or "ERR").."] tNicks["..(tNicks[counter] or "ERR").."]|","Palmer")
+				tNicks[counter] = nil
+			else
+				counter = counter+1
+			end
+			nicks = string.sub(nicks, end_dev+1, end_text)
+		else
+			find_dev = nil
+		end
+	end
+	for i,v in pairs(tNicks) do
+		ONLINEUSERS[v] = {}
+		MakeUserTable(v, ONLINEUSERS[v])
+	end
+	tNicks = nil
+end
+-----------------------------------------------------------------------------------------------------------------
+function CheckOnlineAndDBUsers(sUser)
+	local query = "SELECT nick FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	local res, rows = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	if value ~= "could not fetch row" then
+		local query = "UPDATE MainBot_userlist SET nick='"..SQL_Escape(sUser.sName).."',"
+		query = query.."lastonline='"..os.date("%Y-%m-%d %H:%M:%S").."',"
+		query = query.."sharesize='"..sUser.iShareSize.."'"
+		query = query.." WHERE ip='"..sUser.sIP.."'"
+		local res, rows = VH:SQLQuery(query)
+	else
+		SQL_AddToUserList(sUser)
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function CheckBadNick2(sUser)
+	if User.IsOperator(sUser.sName) then return 0 end
+	local message = "\r\nВНИМАНИЕ: Ник "..sUser.sName.." заблокирован.\r\n"
+	local isbadword = isbadnick(sUser.sName,BAD_NICK_FULL)
+	local isbadword_part = isbadnick_part(sUser.sName,BAD_NICK_PART)
+	if (isbadword == 1) or (isbadword_part == 1) then
+		if (isbadword_part == 1) then
+			message = message.."\r\nЗапрешено использование спец. символов множество раз подряд\r\n"
+		end
+		local reason = "Неверный ник"
+		BotSayToUser(sUser, message)
+		local bantime = CFG.BANTIME*2
+		AddIPToHubBanList(sUser.sName,bantime,BOTNAME,reason)
+		DisconnectUser(sUser)
+		return 1
+	end
+	return 0
+end
+-----------------------------------------------------------------------------------------------------------------
+function AntiAdvCheckText(sUser, sData)
+	if sData then
+		if User.IsOperator(sUser.sName) then return 0 end
+		local BadAdv, Context = isbadantiadv(sData, ADV_patDNS01wDom, ADV_patMSigns, ADV_patDNS02)
+		if (BadAdv == 1) and Context then
+			AddSysLog("AntiAdvCheckText. Обнаружено: nick ["..sUser.sName.."] ip["..sUser.sIP.."] context ["..Context.."]")
+			local curtime=os.time();
+			local aEntry = NOADV2[sUser.sIP]
+			local retval=1;
+			if CFG.NoAdvBan==0 then
+				return 2
+			else
+				local banPos=aEntry.curindex-CFG.NoAdvBan;
+				if banPos>=0 then
+					if curtime - aEntry.times[banPos] < CFG.NoAdvTime then
+						NOADV2[sUser.sIP]=nil
+						return 2
+					end
+					aEntry.times[banPos]=nil;
+				end
+			end	
+			if CFG.NoAdvWarn==0	then 
+				retval=1;
+			else	
+				local indx=aEntry.curindex-CFG.NoAdvWarn;
+				while (indx>=0) and (aEntry.times[indx]) do
+					if curtime - aEntry.times[indx] < CFG.NoAdvTime then
+						retval=1;
+						break;
+					end	
+					indx=indx-1;
+				end
+			end	
+			aEntry.times[aEntry.curindex]=curtime;
+			aEntry.curindex=aEntry.curindex+1;
+			return retval
+		end
+	end
+	return 0
+end
+-----------------------------------------------------------------------------------------------------------------
+function CheckIPSecurity(sUser)
+	if (type(tMainBufer.IPSecBufer[sUser.sName])=="table") then
+		for indx, value in pairs(tMainBufer.IPSecBufer[sUser.sName]) do
+			if value==sUser.sIP then
+				VH:SendDataToUser("Проверка ip пройдена|",sUser.sName)
+				--BotSayToUser(sUser.sName, "Проверка ip пройдена")
+				return 0
+			end
+		end
+		return 1
+	else
+		return 0
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function CheckIPSpy(sUser)
+	if sUser then
+		if tMainBufer.IPSpyBufer[sUser.sIP] then
+			VH:SendPMToAll("Отслежен: "..sUser.sName.." ["..sUser.sIP.."] - "..tMainBufer.IPSpyBufer[sUser.sIP].."|", BOTNAME, 3, 10)
+		end
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function ChatHistory(sNick, sData)
+	local maxhistory = 100
+	local when = os.date("[%H:%M:%S] ")
+	local msg = "<"..sNick..">["..(ONLINEUSERS[sNick].sIP or "").."] "..sData..""
+	table.insert(CHATHISTORY,when..msg)
+	if TableMaxSize(CHATHISTORY) > maxhistory then table.remove(CHATHISTORY, 1) end
+end
+-----------------------------------------------------------------------------------------------------------------
+function SendChatHistory(nick)
+	local linecount = 20
+	if linecount ~= 0 then
+		local n1 = TableMaxSize(CHATHISTORY)
+		local n2 = linecount
+		local n3 = n1-(n2-1)
+		if n1 <= linecount then n3 = 1 end
+		local str = "\r\n\t[ Последние ( "..linecount.." ) сообщений чата ]"
+		for i = n3,n1 do str = str.."\r\n"..CHATHISTORY[i] end
+		str = str.."\r\n\t[ Конец истории чата ]"
+		VH:SendDataToUser("$To: " .. nick .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..str.."|", nick)
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function BadTTHFilter(nick, path)--Not in use
+	local curtime=os.time();
+	local sIP = User.GetIP(nick)
+	local aEntry = NOTTH[sIP]
+	local retval=0;
+	if CFG.NoAdvWarn==0	then 
+		retval=1;
+	else	
+		if (aEntry.curindex>=CFG.NoAdvWarn) then
+			retval=1;
+		end
+	end	
+	aEntry.warntime=curtime;
+	aEntry.curindex=aEntry.curindex+1;
+	local text = "Удалите из шары запрещённыю информацию ("..path..") или вы будите забанены. Осталось "..CFG.NoAdvWarn-aEntry.curindex.." предупреждений."
+	VH:SendDataToUser("$To: " .. nick .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..text.."|", nick)
+	return retval
+end
+-----------------------------------------------------------------------------------------------------------------
+function AddIPToHubBanList(snick,bantime,nick_op,reason)
+	--ip,nick,bantype,host,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size,email
+	-- bantime обязательно в секундах.
+	-------------------------------------
+	local ip = User.GetIP(snick);
+	--local ip = "192.166.100.110"
+	if ip and bantime and nick_op and reason then
+		local query = "SELECT bancount FROM MainBot_userlist WHERE ip='"..ip.."'"
+		local res, rows = VH:SQLQuery(query)
+		local res, value = VH:SQLFetch(0)
+		local bancount = (tonumber(value) or 0)
+		if bancount then bancount = bancount+1 else bancount = 1 end
+		SQL_ModToUserList("bancount", bancount, "ip", ip)
+		-------------------------------------
+		if bancount <= CFG.Bancount_Limit_Full then
+			bantime = bantime*bancount
+		else
+			bantime = bantime*math.exp(bancount)*math.pow(bancount,2)
+		end
+		local nick = "_ipban_"
+		local bantype = 1;
+		local range_fr = 0;
+		local range_to = 0;
+		local date_start = "unix_timestamp(now())";
+		local date_limit = "unix_timestamp(now())+"..bantime.."";
+		local share_size = 0;
+		SQL_AddToHubBanList(ip,nick,bantype,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size)
+		AddSysLog("AddIPToHubBanList: nick: "..snick.." ip: "..ip.." bantime:"..bantime.."")
+		-------------------------------------
+		local res, value = VH:GetUserClass(snick)
+		local class = tonumber(value)
+		if (class > 0) and (class < 3)then
+			if bancount > CFG.Bancount_Limit_Reg then
+				SQL_DelFromHubReglist(snick);
+			end
+			bantype = 2;
+			ip="_nickban_";
+			SQL_AddToHubBanList(ip,snick,bantype,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size)
+		end
+		------------------------------------
+	else
+		VH:SendPMToAll("Неудачная попытка записать данные в banlist !!|",BOTNAME,4,10)
+		AddSysLog("AddIPToHubBanList_[ERR]: Неудачная попытка записать данные в banlist !!")
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function LowShareFilter(nick, ip, share)
+	local curtime=os.time();
+	if CFG.LowShareWarns==0	then
+		local text = "Вы не расшарили "..share.." информации. Вы будете отключены от хаба."
+		VH:SendDataToUser("$To: "..nick.." From: "..BOTNAME.." $<"..BOTNAME.."> "..text.."|", nick)
+		aEntry.logs=aEntry.logs..":[0] time["..(tostring(os.date("%H.%M.%S")) or "").."]:"
+		return 1
+	end
+	local aEntry = NOLOW[ip]
+	if CFG.LowShareWarns~=0	then	
+		if (aEntry.curindex>=CFG.LowShareWarns) then
+			local text = "Вы не расшарили "..share.." информации. Вы будете отключены от хаба."
+			if nick and text then
+				VH:SendDataToUser("$To: "..nick.." From: "..BOTNAME.." $<"..BOTNAME.."> "..text.."|", nick)
+				aEntry.logs=aEntry.logs..":["..((aEntry.curindex+1) or "").."] time["..(tostring(os.date("%H.%M.%S")) or "").."]:"
+			end
+			return 1
+		end
+	end
+	aEntry.warntime=curtime;
+	aEntry.curindex=aEntry.curindex+1;
+	aEntry.logs=aEntry.logs..":["..(aEntry.curindex or "").."] time["..(tostring(os.date("%H.%M.%S")) or "").."]:"
+	local text = "Вы расшарили слишком мало информации. Расшарьте "..share..", иначе вы будете отключены от хаба. Осталось "..CFG.LowShareWarns-aEntry.curindex.." предупреждений."
+	if nick and text then
+		VH:SendDataToUser("$To: "..nick.." From: "..BOTNAME.." $<"..BOTNAME.."> "..text.."|", nick)
+	end
+	return 0
+end
+-----------------------------------------------------------------------------------------------------------------
+--function SystemFilesFilter(nick, path, id)
+function SystemFilesFilter(nick, ip)--Not in use
+	local curtime=os.time();
+	if CFG.SysFilesWarns==0	then
+		local text = "Обнаружены системные файлы, нарушающие правила хаба. В соответствии с ними вы будите временно лишены доступа на хаб. Рекомендуется удалить данную информацию из шары."
+		VH:SendDataToUser("$To: "..nick.." From: "..BOTNAME.." $<"..BOTNAME.."> "..text.."|", nick)
+		return 1
+	end
+	local aEntry = NOSYSFLS[ip]
+	if CFG.SysFilesWarns~=0	then	
+		if (aEntry.curindex>=CFG.SysFilesWarns) then
+			local text = "Обнаружены системные файлы, нарушающие правила хаба. В соответствии с ними вы будите временно лишены доступа на хаб. Рекомендуется удалить данную информацию из шары."
+			if nick and text then
+				VH:SendDataToUser("$To: "..nick.." From: "..BOTNAME.." $<"..BOTNAME.."> "..text.."|", nick)
+			end
+			return 1
+		end
+	end
+	aEntry.warntime=curtime;
+	aEntry.curindex=aEntry.curindex+1;
+	local text = "Обнаружены системные файлы, нарушающие правила хаба. Рекомендуется удалить данную информацию из шары и перезайти на хаб, иначе вы будете отключены от хаба. Осталось "..CFG.SysFilesWarns-aEntry.curindex.." предупреждений."
+	if nick and text then
+		VH:SendDataToUser("$To: "..nick.." From: "..BOTNAME.." $<"..BOTNAME.."> "..text.."|", nick)
+	end
+	return 0
+end
+-----------------------------------------------------------------------------------------------------------------
+function AntiRawGarbageCollector()
+end
+-----------------------------------------------------------------------------------------------------------------
+function BanException(sNameOrIP, sType)
+	if tBanException[sNameOrIP] then
+		if tBanException[sNameOrIP][sType]==1 then
+			AddSysLog("BanException. sNameOrIP["..(sNameOrIP or "").."]  sType["..(sType or "").."]")
+			return 1
+		end
+	end
+	return nil
+end
+-----------------------------------------------------------------------------------------------------------------
+function TTHBufferInit(bufminid, bufmaxid)
+	if bufminid~=nil and bufmaxid~=nil then
+		local query = "SELECT MAX(id) FROM MainBot_TTH"
+		local res, err = VH:SQLQuery(query)
+		local res, value = VH:SQLFetch(0)
+		local fullmaxid = tonumber(value)
+		if value == "could not fetch row" then fullmaxid=nil end
+		if fullmaxid~=nil and bufmaxid <= fullmaxid+1 then
+			SQL_TTHBuffer(bufminid, bufmaxid);
+		elseif fullmaxid~=nil and  bufminid < fullmaxid and bufmaxid > fullmaxid+1 then
+			AddSysLog("TTHBufferInit. [2] bufminid ["..(bufminid or "").."] bufmaxid ["..(bufmaxid or "").."] fullmaxid ["..(fullmaxid or "").."]")
+			SQL_TTHBuffer(bufminid, fullmaxid+1);
+		elseif fullmaxid~=nil and bufminid >= fullmaxid then
+			AddSysLog("TTHBufferInit. [3] bufminid [0] bufmaxid ["..((tMainBufer.tSearchTTHBufer.limiter+1) or "").."] fullmaxid ["..(fullmaxid or "").."]")
+			tMainBufer.tSearchTTHBufer.mintthid = nil;
+			tMainBufer.tSearchTTHBufer.maxtthid = nil;
+			SQL_TTHBuffer(0, tMainBufer.tSearchTTHBufer.limiter+1);
+		end
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function ArchiveTTHBufferInit(bufminid, bufmaxid)
+	if bufminid~=nil and bufmaxid~=nil then
+		local query = "SELECT MAX(id) FROM MainBot_TTH_Archive"
+		local res, err = VH:SQLQuery(query)
+		local res, value = VH:SQLFetch(0)
+		local fullmaxid = tonumber(value)
+		if value == "could not fetch row" then fullmaxid=nil end
+		if fullmaxid~=nil and bufmaxid <= fullmaxid+1 then
+			SQL_TTHBuffer_Archive(bufminid, bufmaxid);
+		elseif fullmaxid~=nil and  bufminid < fullmaxid and bufmaxid > fullmaxid+1 then
+			AddSysLog("ArchiveTTHBufferInit. [2] bufminid ["..(bufminid or "").."] bufmaxid ["..(bufmaxid or "").."] fullmaxid ["..(fullmaxid or "").."]")
+			SQL_TTHBuffer_Archive(bufminid, fullmaxid+1);
+		elseif fullmaxid~=nil and bufminid >= fullmaxid then
+			AddSysLog("ArchiveTTHBufferInit. [3] bufminid [0] bufmaxid ["..((tMainBufer.tSearchTTHBufer.tArchivePref.limiter+1) or "").."] fullmaxid ["..(fullmaxid or "").."]")
+			tMainBufer.tSearchTTHBufer.tArchivePref.mintthid = nil;
+			tMainBufer.tSearchTTHBufer.tArchivePref.maxtthid = nil;
+			SQL_TTHBuffer_Archive(0, tMainBufer.tSearchTTHBufer.tArchivePref.limiter+1);
+		end
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function UserTTHBufferInit(TTH, sUName)
+	if (tMainBufer.tSearchTTHBufer.tUserTTH.Curent.id==nil) or (tMainBufer.tSearchTTHBufer.tUserTTH.Curent.id >= tMainBufer.tSearchTTHBufer.tUserTTH.limiter) then
+		---
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[TTH]={}
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[TTH].sName=sUName;
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[TTH].TTH=TTH;
+		---
+		if (tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH~=nil) then
+			if (tMainBufer.tSearchTTHBufer.tUserTTH.TTH[tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH].nextTTH~=nil) then
+				tMainBufer.tSearchTTHBufer.tUserTTH.TTH[tMainBufer.tSearchTTHBufer.tUserTTH.TTH[tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH].nextTTH]=nil
+			end
+			tMainBufer.tSearchTTHBufer.tUserTTH.TTH[tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH].nextTTH=TTH;
+		end
+		---
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[TTH].nextTTH=nil;
+		---
+		tMainBufer.tSearchTTHBufer.tUserTTH.Curent.id=1;
+		tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH=TTH;
+	elseif (tMainBufer.tSearchTTHBufer.tUserTTH.Curent.id < tMainBufer.tSearchTTHBufer.tUserTTH.limiter) then
+		---
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[TTH]={}
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[TTH].sName=sUName;
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[TTH].TTH=TTH;
+		---
+		if (tMainBufer.tSearchTTHBufer.tUserTTH.TTH[tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH].nextTTH~=nil) then
+			tMainBufer.tSearchTTHBufer.tUserTTH.TTH[tMainBufer.tSearchTTHBufer.tUserTTH.TTH[tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH].nextTTH]=nil
+		end
+		---
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[TTH].nextTTH=nil;
+		tMainBufer.tSearchTTHBufer.tUserTTH.TTH[tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH].nextTTH=TTH;
+		---
+		tMainBufer.tSearchTTHBufer.tUserTTH.Curent.id=tMainBufer.tSearchTTHBufer.tUserTTH.Curent.id+1;
+		local UpperTTH = tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH
+		tMainBufer.tSearchTTHBufer.tUserTTH.Curent.TTH=TTH;
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function IPSecBufferInit()
+	local temptable = SQL_IPSecurityListing();
+	for indx, value in pairs(temptable) do
+		if (type(tMainBufer.IPSecBufer[value.nick])=="table") then
+			tMainBufer.IPSecBufer[value.nick][value.id]=value.ip;
+		else
+			tMainBufer.IPSecBufer[value.nick]={};
+			tMainBufer.IPSecBufer[value.nick][value.id]=value.ip;
+		end
+	end
+	temptable = nil;
+end
+-----------------------------------------------------------------------------------------------------------------
+function IPSpyBufferInit()
+	local temptable = SQL_IPSpyListing();
+	for indx, value in pairs(temptable) do
+		tMainBufer.IPSpyBufer[value.ip]=value.text
+	end
+	temptable = nil;
+end
+-----------------------------------------------------------------------------------------------------------------
+function NoLeechBufferInit()
+	tMainBufer.NoLeechBufer=SQL_GetNoLeechTable();
+end
+-----------------------------------------------------------------------------------------------------------------
+function MailBufferInit()
+	tMainBufer.MailBufer.IP, tMainBufer.MailBufer.Nick=SQL_GetMailListing()
+end
+-----------------------------------------------------------------------------------------------------------------
+function ChatRoomsBufferInit()
+	tMainBufer.ChatRoomsBufer=SQL_GetChatRoomsTable()
+end
+-----------------------------------------------------------------------------------------------------------------
+function ViolationsBufferInit()
+	tMainBufer.ViolationsBufer.MuteChat, tMainBufer.ViolationsBufer.MutePM, tMainBufer.ViolationsBufer.Ban=SQL_GetViolationsTable()
+end
+-----------------------------------------------------------------------------------------------------------------
+function InetDownBufferInit()
+	tMainBufer.InetDown=SQL_GetInetDownTable()
+end
+-----------------------------------------------------------------------------------------------------------------
+function ReInitBufers()
+	IPSecBufferInit();
+	IPSpyBufferInit();
+	NoLeechBufferInit();
+	MailBufferInit();
+	ChatRoomsBufferInit();
+	ViolationsBufferInit();
+	InetDownBufferInit();
+	AddSysLog("Перезаписаны буферы.")
+end
+function ListMainBufer(sUser)
+	local handle,err = io.open(HUBDATAPATH.."ListMainBufer.dat","w");
+	if (handle) then
+		Serialize(tMainBufer, "tMainBufer", handle);
+		handle:flush();
+		handle:close();
+		local sResult = loadtext(HUBDATAPATH.."ListMainBufer.dat")
+		BotSayToUser(sUser,(sResult or "ERR"))
+		os.execute("rm "..HUBDATAPATH.."ListMainBufer.dat")
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function ReLoadTexts()
+	local sTexts="Файлы:\r\n\t"
+	BAD_CHAT = 			readWords (F_BAD_CHAT)
+	sTexts=sTexts.."[ "..(F_BAD_CHAT or "ERR").." ]\r\n\t"
+	BAD_PARANOID_CHAT =	readWords (F_BAD_PARANOID_CHAT)
+	sTexts=sTexts.."[ "..(F_BAD_PARANOID_CHAT or "ERR").." ]\r\n\t"
+	BAD_NICK = 			readWords (F_BAD_NICK)
+	sTexts=sTexts.."[ "..(F_BAD_NICK or "ERR").." ]\r\n\t"
+	BAD_PARANOID_NICK =	readWords (F_BAD_PARANOID_NICK)
+	sTexts=sTexts.."[ "..(F_BAD_PARANOID_NICK or "ERR").." ]\r\n\t"
+	ANTIADV	=			readWords (F_ANTIADV)
+	sTexts=sTexts.."[ "..(F_ANTIADV or "ERR").." ]\r\n\t"
+	PASSCOMMANDS = 		loadchecklist (F_PASSCOMMANDS)
+	sTexts=sTexts.."[ "..(F_PASSCOMMANDS or "ERR").." ]\r\n\t"
+	BAD_NICK_FULL = readWords(F_BAD_NICK_FULL)
+	sTexts=sTexts.."[ "..(F_BAD_NICK_FULL or "ERR").." ]\r\n\t"
+	BAD_NICK_PART = readWords(F_BAD_NICK_PART)
+	sTexts=sTexts.."[ "..(F_BAD_NICK_PART or "ERR").." ]\r\n\t"
+	ADV_patDNS01wDom = readWords(F_ADV_sDNS01wDom)
+	sTexts=sTexts.."[ "..(F_ADV_sDNS01wDom or "ERR").." ]\r\n\t"
+	ADV_patDNS02 = readWords(F_ADV_sDNS02)
+	sTexts=sTexts.."[ "..(F_ADV_sDNS02 or "ERR").." ]\r\n\t"
+	ADV_patMSigns = readWords(F_ADV_sMSigns)
+	sTexts=sTexts.."[ "..(F_ADV_sMSigns or "ERR").." ]\r\n\t"
+	tMainBufer.AdminNicksRegExp = readWords(F_ADMNICKREGEXP)
+	sTexts=sTexts.."[ "..(F_ADMNICKREGEXP or "ERR").." ]\r\n\t"
+	tMainBufer.Anti_Search_Text = readWords(F_ANTI_SEARCH_TEXT)
+	sTexts=sTexts.."[ "..(F_ANTI_SEARCH_TEXT or "ERR").." ]\r\n\t"
+	-----------------------------------------------
+	IPCHECKS.NO_P=			readIPs(F_NO_P_IP)
+	sTexts=sTexts.."[ "..(F_NO_P_IP or "ERR").." ]\r\n\t"
+	IPCHECKS.NO_V=			readIPs(F_NO_V_IP)
+	sTexts=sTexts.."[ "..(F_NO_V_IP or "ERR").." ]\r\n\t"
+	IPCHECKS.ALLOW_ENTER =	readIPs(F_ALLOW_ENTER_IP)
+	sTexts=sTexts.."[ "..(F_ALLOW_ENTER_IP or "ERR").." ]\r\n\t"
+	IPCHECKS.NO_CHAT =		readIPs(F_NO_CHAT_IP)
+	sTexts=sTexts.."[ "..(F_NO_CHAT_IP or "ERR").." ]\r\n\t"
+	IPCHECKS.CHAT_ONLY=		readIPs(F_CHAT_ONLY_IP)
+	sTexts=sTexts.."[ "..(F_CHAT_ONLY_IP or "ERR").." ]\r\n\t"
+	IPCHECKS.INET_DOWN=		readIPs(F_INET_DOWN_IP)
+	sTexts=sTexts.."[ "..(F_INET_DOWN_IP or "ERR").." ]\r\n\t"
+	IPCHECKS.MULTI_NICK = 	readIPs(F_MULTI_NICK_IP)
+	sTexts=sTexts.."[ "..(F_MULTI_NICK_IP or "ERR").." ]\r\n\t"
+	-----------------------------------------------
+	CMDLANG  = 			readArray (F_CMDLANG)
+	sTexts=sTexts.."[ "..(F_CMDLANG or "ERR").." ]\r\n\t"
+	UC		=			readArray (F_UC)
+	sTexts=sTexts.."[ "..(F_UC or "ERR").." ]\r\n\t"
+	-----------------------------------------------
+	VERSIONS	=  	readVersions(F_VERSIONS)
+	sTexts=sTexts.."[ "..(F_VERSIONS or "ERR").." ]\r\n\t"
+	FAQTEXT= 		loadtext(F_FAQTEXT)
+	sTexts=sTexts.."[ "..(F_FAQTEXT or "ERR").." ]\r\n\t"
+	SHARETEXT = 	loadtext(F_SHARETEXT)
+	sTexts=sTexts.."[ "..(F_SHARETEXT or "ERR").." ]\r\n\t"
+	HALLOTEXT = 	loadtext(F_HALLOTEXT)
+	sTexts=sTexts.."[ "..(F_HALLOTEXT or "ERR").." ]\r\n\t"
+	HALLOTEXTSHORT=	loadtext(F_HALLOTEXTSHORT)
+	sTexts=sTexts.."[ "..(F_HALLOTEXTSHORT or "ERR").." ]\r\n\t"
+	HUBINFOTEXT=	loadtext(F_HUBINFOTEXT)
+	sTexts=sTexts.."[ "..(F_HUBINFOTEXT or "ERR").." ]\r\n\t"
+	PASSIVETEXT = 	loadtext(F_PASSIVETEXT)
+	sTexts=sTexts.."[ "..(F_PASSIVETEXT or "ERR").." ]\r\n\t"
+	SHORTRULESTEXT= loadtext(F_SHORTRULESTEXT)
+	sTexts=sTexts.."[ "..(F_SHORTRULESTEXT or "ERR").." ]\r\n\t"
+	NOLEECHTEXT = 	loadtext(F_NOLEECHTEXT)
+	sTexts=sTexts.."[ "..(F_NOLEECHTEXT or "ERR").." ]\r\n\t"
+	SMALLSHARETEXT =loadtext(F_SMALLSHARETEXT)
+	sTexts=sTexts.."[ "..(F_SMALLSHARETEXT or "ERR").." ]\r\n\t"
+	SINGLEIPTEXT =	loadtext(F_SINGLEIPTEXT)
+	sTexts=sTexts.."[ "..(F_SINGLEIPTEXT or "ERR").." ]\r\n\t"
+	CHATQTEXT	=	loadtext(F_CHATQTEXT)
+	sTexts=sTexts.."[ "..(F_CHATQTEXT or "ERR").." ]\r\n\t"
+	NO_ENTER_TEXT = loadtext(F_NO_ENTER_TEXT)
+	sTexts=sTexts.."[ "..(F_NO_ENTER_TEXT or "ERR").." ]\r\n\t"
+	CHAT_ONLY_TEXT =loadtext(F_CHAT_ONLY_TEXT)
+	sTexts=sTexts.."[ "..(F_CHAT_ONLY_TEXT or "ERR").." ]\r\n\t"
+	INET_DOWN_TAG_TEXT = loadtext(F_INET_DOWN_TAG_TEXT)
+	sTexts=sTexts.."[ "..(F_INET_DOWN_TAG_TEXT or "ERR").." ]\r\n\t"
+	NO_CHAT_TEXT=	loadtext(F_NO_CHAT_TEXT)
+	sTexts=sTexts.."[ "..(F_NO_CHAT_TEXT or "ERR").." ]\r\n\t"
+	-----------------------------------------------
+	messages = readArray(F_MESSAGES)
+	sTexts=sTexts.."[ "..(F_MESSAGES or "ERR").." ]\r\n\t"
+	txtStatus = readArray(F_STATUS)
+	sTexts=sTexts.."[ "..(F_STATUS or "ERR").." ]\r\n\t"
+	UCLang = readArray(F_UCLang)
+	sTexts=sTexts.."[ "..(F_UCLang or "ERR").." ]\r\n\t"
+	AddSysLog("Перечитаны тексты. "..sTexts)
+	return sTexts;
+end
+-----------------------------------------------------------------------------------------------------------------
+function CheckForAdmExp(sNick)
+	if User.IsOperator(sNick) then
+		return 0;
+	end
+	local isbadword = isbadnick(sNick,tMainBufer.AdminNicksRegExp);
+	if (isbadword == 1) then
+		local reason = "Копирование ника. Использован ник ["..sNick.."]._BAN_30m";
+		local message = "<"..BOTNAME.."> Правила хаба\r\nРаздел 4. Нарушения в чате.\r\nП.4.11 Использование некорректных ников. Под некорректными никами в данном контексте подразумевается:\r\n\t*ники, умышленно копирующие другие ники (в том числе подделка ников Операторов)|";
+		VH:SendDataToUser(message, sNick);
+		VH:KickUser(BOTNAME, sNick, reason);
+		VH:SendPMToAll("CheckForAdmExp. Попытка войти под ником: "..(sNick or "").." с IP: "..(ONLINEUSERS[sNick].sIP or "").." была отклонена|", BOTNAME, 3, 10);
+		AddSysLog("CheckForAdmExp: nick["..(sNick or "").."] ip["..(ONLINEUSERS[sNick].sIP or "").."]");
+		ONLINEUSERS[sNick] = nil;
+		return 1;
+	end
+	return 0;
+end
+-----------------------------------------------------------------------------------------------------------------
+function CheckPermisionsLevel(sNickAct, sNickPass)
+	if sNickAct then
+		if sNickPass then
+			local res, value = VH:GetUserClass(sNickAct)
+			local sNickAct_class = tonumber(value)
+			res, value = VH:GetUserClass(sNickPass)
+			sNickPass_class = tonumber(value)
+			if sNickAct_class then
+				if sNickPass_class then
+					if sNickAct_class > sNickPass_class then
+						AddSysLog("CheckPermisionsLevel: sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] > sNickPass["..(sNickPass or "").."] sNickPass_class["..(sNickPass_class or "").."]");
+						--VH:SendDataToUser("$To: Palmer From: CheckPermisionsLevel $<CheckPermisionsLevel> sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] > sNickPass["..(sNickPass or "").."] sNickPass_class["..(sNickPass_class or "").."]|","Palmer")
+						return ">", 1;
+					else
+						if sNickAct_class == sNickPass_class then
+							AddSysLog("CheckPermisionsLevel: sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] == sNickPass["..(sNickPass or "").."] sNickPass_class["..(sNickPass_class or "").."]");
+							--VH:SendDataToUser("$To: Palmer From: CheckPermisionsLevel $<CheckPermisionsLevel> sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] == sNickPass["..(sNickPass or "").."] sNickPass_class["..(sNickPass_class or "").."]|","Palmer")
+							return "=", 2;
+						else
+							AddSysLog("CheckPermisionsLevel: sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] < sNickPass["..(sNickPass or "").."] sNickPass_class["..(sNickPass_class or "").."]");
+							--VH:SendDataToUser("$To: Palmer From: CheckPermisionsLevel $<CheckPermisionsLevel> sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] < sNickPass["..(sNickPass or "").."] sNickPass_class["..(sNickPass_class or "").."]|","Palmer")
+							return "<", 3;
+						end
+					end
+				else
+					AddDebugLog("CheckPermisionsLevel","CheckPermisionsLevel_ERR: sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] sNickPass["..(sNickPass or "").."] - no user class")
+					AddSysLog("CheckPermisionsLevel_ERR: sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] sNickPass["..(sNickPass or "").."] - no user class");
+					--VH:SendDataToUser("$To: Palmer From: CheckPermisionsLevel $<CheckPermisionsLevel> sNickAct["..(sNickAct or "").."] sNickAct_class["..(sNickAct_class or "").."] sNickPass["..(sNickPass or "").."] - no user class|","Palmer")
+					return nil, nil;
+				end
+			else
+				AddDebugLog("CheckPermisionsLevel","CheckPermisionsLevel_ERR: sNickAct["..(sNickAct or "").."] - no user class. sNickPass["..(sNickPass or "").."]")
+				AddSysLog("CheckPermisionsLevel_ERR: sNickAct["..(sNickAct or "").."] - no user class. sNickPass["..(sNickPass or "").."]");
+				--VH:SendDataToUser("$To: Palmer From: CheckPermisionsLevel $<CheckPermisionsLevel> sNickAct["..(sNickAct or "").."] - no user class. sNickPass["..(sNickPass or "").."]|","Palmer")
+				return nil, nil;
+			end
+		else
+			AddDebugLog("CheckPermisionsLevel","CheckPermisionsLevel_ERR: sNickAct["..(sNickAct or "").."] sNickPass - NIL")
+			AddSysLog("CheckPermisionsLevel_ERR: sNickAct["..(sNickAct or "").."] sNickPass - NIL");
+			--VH:SendDataToUser("$To: Palmer From: CheckPermisionsLevel $<CheckPermisionsLevel> sNickAct["..(sNickAct or "").."] sNickPass - NIL|","Palmer")
+			return nil, nil;
+		end
+	else
+		AddDebugLog("CheckPermisionsLevel","CheckPermisionsLevel_ERR: sNickAct - NIL")
+		AddSysLog("CheckPermisionsLevel_ERR: sNickAct - NIL");
+		--VH:SendDataToUser("$To: Palmer From: CheckPermisionsLevel $<CheckPermisionsLevel> sNickAct - NIL|","Palmer")
+		return nil, nil;
+	end
+end
+-----------------------------------------------------------------------------------------------------------------

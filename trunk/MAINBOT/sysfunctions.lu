@@ -1,0 +1,247 @@
+SysFunctions={};
+function SysFunctions:base32todec(tth)
+	local base32="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    local byte=0
+    local bits=0
+    local rez=""
+    string.gsub(tth, "(["..base32.."])", function(ch)
+        local n=string.find(base32,ch)
+        n=n-1
+        byte=byte*32+n
+        bits=bits+5
+        if bits>=8 then
+            bits=bits-8
+            rez=rez..string.char(math.floor(byte/(2^bits)))
+            byte=math.fmod(byte,(2^bits))
+        end
+    end)
+    if bits>0 then
+        rez=rez..string.char(byte*(2^(8-bits)))
+    end
+    return rez
+end
+function SysFunctions:strtohex(str)
+        local thex={"0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F"}
+        local hex=""
+        for i=1,string.len(str) do
+            local digit = str:byte(i)
+            local firstd=math.floor(digit/16)
+            local secondd=digit-(firstd*16)
+            hex=hex..thex[firstd+1]..thex[secondd+1]
+        end
+        return hex
+end
+function SysFunctions:bODD(x)
+    return x ~= math.floor(x / 2) * 2
+end
+function SysFunctions:bitwise(x, y, bw)
+    local c, p = 0, 1
+    while x > 0 or y > 0 do
+        if bw == "xor" then
+         if (self:bODD(x) and not self:bODD(y)) or (self:bODD(y) and not self:bODD(x)) then
+              c = c + p
+         end
+        elseif bw == "and" then
+         if self:bODD(x) and self:bODD(y) then
+              c = c + p
+         end
+        elseif bw == "or" then
+         if self:bODD(x) or self:bODD(y) then
+              c = c + p
+         end
+        end
+        x = math.floor(x / 2)
+        y = math.floor(y / 2)
+        p = p * 2
+    end
+    return c
+end
+function SysFunctions:nibbleswap(bits)
+    return self:bitwise(self:bitwise(bits*(2^4),240,"and"),self:bitwise(math.floor(bits/(2^4)),15,"and"),"or")
+end
+function SysFunctions:lock2key(lock)
+    local key = {}
+    table.insert(key,self:bitwise(self:bitwise(self:bitwise(string.byte(lock,1),string.byte(lock,-1),"xor"),string.byte(lock,-2),"xor"),5,"xor"))
+    for i=2,string.len(lock),1 do
+        table.insert(key,self:bitwise(string.byte(lock,i),string.byte(lock,i - 1),"xor"))
+    end
+    local g = {["5"]=1,["0"]=1,["36"]=1,["96"]=1,["124"]=1,["126"]=1}
+    for i=1,table.getn(key),1 do
+        local b = self:nibbleswap(rawget(key,i))
+        rawset(key,i,(g[tostring(b)] and string.format("/%%DCN%03d%%/",b) or string.char(b)))
+    end
+    return table.concat(key)
+end
+function SysFunctions:DoShareUnits(iSize)
+	local iKbyte = 1024
+	local tShareUnits = {"Б", "КБ", "МБ", "ГБ", "ТБ", "ПБ"}
+    local iTableSize = TableMaxSize(tShareUnits)
+    local iSize = tonumber(iSize)
+    local sUnits = ""
+    for iTablePos = 1, iTableSize do
+        if iSize < iKbyte or iTablePos == iTableSize then
+            sUnits = tShareUnits[iTablePos]
+            break
+        else
+            iSize = iSize / iKbyte
+        end
+    end
+    local sSize = string.format("%0.2f %s", iSize, sUnits)
+    local sSize = string.gsub(sSize, "%.", ",")
+    local _,_, s1stChar, s2ndChar = string.find(sSize, "%d+,(%d)(%d)")
+    local s1stChar, s2ndChar = tonumber(s1stChar), tonumber(s2ndChar)
+    if s2ndChar == 0 then
+        sSize = string.gsub(sSize, ","..s1stChar..s2ndChar, ","..s1stChar)
+        if s1stChar == 0 then
+            sSize = string.gsub(sSize, ","..s1stChar, "")
+        end
+    end
+    return sSize
+end
+function SysFunctions:SaveToFile(sFileWay, tTable, sTableName)
+    local sHandle = io.open(sFileWay,"w+")
+    self:Serialize(tTable, sTableName, sHandle)
+    sHandle:flush()
+    sHandle:close()
+end
+function SysFunctions:Serialize(tTable, sTableName, sHandle, sTab)
+    local sTab = sTab or ""
+    sHandle:write(sTab..sTableName.." = {\n")
+    for key, value in pairs(tTable) do
+        local sKey = (type(key) == "string") and string.format("[%q]",key) or string.format("[%d]",key)
+        if type(value) == "table" then
+            Serialize(value, sKey, sHandle, sTab.."\t")
+        else
+            local sValue = (type(value) == "string") and string.format("%q",value) or tostring(value)
+            sHandle:write(sTab.."\t"..sKey.." = "..sValue)
+        end
+        sHandle:write(",\n")
+    end
+    sHandle:write(sTab.."}")
+end
+--функции проверки типа - "таблица"
+function SysFunctions:Table(t) if t and type(t)=="table" then return true else return false end end
+function SysFunctions:TableDef(t,d) if self:Table(t) then return t else return d end end
+function SysFunctions:ToTable(t) if self:Table(t) then return t else return {} end end
+function SysFunctions:Table2(t,s) if self:Table(t) and self:Table(t[s]) then return true else return false end end
+function SysFunctions:Table2Def(t,s,d) if self:Table(t) and self:Table(t[s]) then return t else return d end end
+function SysFunctions:ToTable2(t,s) if self:Table(t) then if self:Table(t[s]) then return t else t[s]={} return t end else t={} t[s]={} end return t end
+--функции проверки типа - "строка"
+function SysFunctions:String(s) if s and type(s)=="string" then return true else return false end end
+function SysFunctions:StringDef(s,d) if self:String(s) then return s else return d end end
+function SysFunctions:ToString(s) if self:String(s) then return s else return "" end end
+function SysFunctions:String2(t,s) if self:Table(t) and self:String(t[s]) then return true else return false end end
+function SysFunctions:String2Def(t,s,d) if self:Table(t) and self:String(t[s]) then return t else return d end end
+function SysFunctions:ToString2(t,s) if self:Table(t) then if self:String(t[s]) then return t else t[s]="" return t end else t={} t[s]="" end return t end
+--функции проверки типа - "число"
+function SysFunctions:Number(s) if s and type(s)=="number" then return true else return false end end
+function SysFunctions:NumberDef(s,d) if self:Number(s) then return s else return d end end
+function SysFunctions:ToNumber(s) if self:Number(s) then return s else return 0 end end
+--функция проверки типа - "строка" или "число"
+function SysFunctions:StrOrNum(s) if s and (type(s)=="string" or type(s)=="number") then return true else return false end end
+--не пусто
+function SysFunctions:NoVoidStr(s) if self:String(s) and s~="" then return true else return false end end
+function SysFunctions:NoVoid(s) if self:NoVoidStr(s) or self:Number(s) then return true else return false end end
+--равенства числу
+function SysFunctions:Eq1(s) if self:Number(s) and s==1 then return true else return false end end
+function SysFunctions:Eq0(s) if self:Number(s) and s==0 then return true else return false end end
+function SysFunctions:Eq01(s) if self:Number(s) and (s==0 or s==1) then return true else return false end end
+--функция возвращает размерность таблицы
+function SysFunctions:GetN(t)
+    local c=0 for _ in pairs(t) do c=c+1 end return c
+end
+--функция приводит ip к числу
+function SysFunctions:IpToNumber(ip)
+    local _,_,a,b,c,d=string.find(ip,"^(%d+)%.(%d+)%.(%d+)%.(%d+)")
+    a=(tonumber(a) or 0)*16777216+(tonumber(b) or 0)*65536+(tonumber(c) or 0)*256+(tonumber(d) or 0)
+    return a
+end
+--функция приводит число к ip
+function SysFunctions:NumberToIp(n)
+    n=self:ToNumber(n)
+    local r,l=""
+    if n>=16777216 then l=math.floor(n/16777216) r=tostring(l).."." n=n-16777216*l else r="0." end
+    if n>=65536 then l=math.floor(n/65536) r=r..tostring(l).."." n=n-65536*l else r=r.."0." end
+    if n>=256 then l=math.floor(n/256) r=r..tostring(l).."." n=n-256*l else r=r.."0." end
+    if n>0 then r=r..tostring(n) else r=r.."0" end
+    return r
+end
+--функции приведения к регистрам
+function SysFunctions:ToLower(s)
+    local r,b=""
+    if s then s=string.lower(s)
+        for i=1,string.len(s) do
+            b=string.byte(s,i)
+            if b>191 and b<224 then b=b+32
+            elseif b==168 or b==184 then b=229 end
+            r=r..string.char(b)
+        end
+    end
+    return r
+end
+function SysFunctions:ToUpper(s)
+    local r,b=""
+    if s then s=string.upper(s)
+        for i=1,string.len(s) do
+            b=string.byte(s,i)
+            if b>223 then b=b-32
+            elseif b==168 or b==184 then b=197 end
+            r=r..string.char(b)
+        end
+    end
+    return r
+end
+--функции "шары"
+function SysFunctions:GetNormalShare(s)
+    s=self:ToNumber(s)
+    if s>=1099511627776 then return tostring(math.floor(1000*s/1099511627776)/1000).." TБ"
+    elseif s>=1073741824 then return tostring(math.floor(1000*s/1073741824)/1000).." ГБ"
+    elseif s>=1048576 then return tostring(math.floor(1000*s/1048576)/1000).." МБ"
+    elseif s>=1024 then return tostring(math.floor(1000*s/1024)/1000).." КБ"
+    else return tostring(s).." Б" end
+end
+function SysFunctions:GetLongShare(s)
+    s=self:ToNumber(s)
+    local r,l=""
+    if s>=1099511627776 then l=math.floor(s/1099511627776) if r=="" then r=r..tostring(l).." TБ" else r=r.." "..tostring(l).." TБ" end s=s-1099511627776*l end
+    if s>=1073741824 then l=math.floor(s/1073741824) if r=="" then r=r..tostring(l).." ГБ" else r=r.." "..tostring(l).." ГБ" end s=s-1073741824*l end
+    if s>=1048576 then l=math.floor(s/1048576) if r=="" then r=r..tostring(l).." МБ" else r=r.." "..tostring(l).." МБ" end s=s-1048576*l end
+    if s>=1024 then l=math.floor(s/1024) if r=="" then r=r..tostring(l).." КБ" else r=r.." "..tostring(l).." КБ" end s=s-1024*l end
+    if s<1024 then if r=="" then r=r..tostring(s).." Б" else r=r.." "..tostring(s).." Б" end end
+    return r
+end
+function SysFunctions:ConvertDate(D)
+    local _,_,a,b,c,d,e,f=string.find(D,"(%d+)/(%d+)/(%d+)%s(%d+):(%d+):(%d+)")
+    return (f or 0)+(e or 0)*60+(d or 0)*3600+(a or 0)*86400+(b or 0)*2678400+(c or 0)*32140800
+end
+function SysFunctions:replace(data)
+    local _,_,s,data,e = string.find(data, "^(%S)(%S*)(%S)$")
+    local c_data = ""
+    local len = string.len(data)/2
+    for i = 1 , len do
+        c_data = c_data .. string.sub(data, 2, 2) ..string.sub(data, 1, 1)
+        data = string.sub(data, 3, -1)
+        if string.len(data) == 1 then
+            c_data = c_data .. data
+            break
+        end
+    end
+	return s..c_data..e
+end
+function SysFunctions:string_hash(ValString,Sep)
+    if string.find(ValString,Sep,1,false) then
+        local HashedStr = ""
+        local fnd,snd,s,e = "","",1,0
+        ValString = ValString..Sep
+        while (s) do
+            s,e,fnd = string.find(ValString,"^(%S-)"..Sep.."+",e+1,false)
+            if (fnd ~= nil and fnd ~= "") then
+                HashedStr = HashedStr .. Sep .. self:replace(fnd)
+            end
+        end
+        return HashedStr
+    else
+        return ValString
+    end
+end
+-----------------------------------------------------------------------------------------------------------------
