@@ -1,0 +1,244 @@
+PMBlocker_tCommands = {
+	mbpmblockaddnickorip = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--local nickorip = GetNick(sData)
+			local nickorip = arg
+			if nickorip==BOTNAME then
+				BotSayToUser(sUser,PMBlocker_tLangMsgs[5])
+				return 0
+			end
+			if (nickorip==sUser.sIP) or (nickorip==sUser.sName) then
+				BotSayToUser(sUser,PMBlocker_tLangMsgs[9])
+				return 0
+			end
+			local ContIP = PMBlocker:SQL_CheckCountForIP(sUser.sIP)
+			local CountNick = PMBlocker:SQL_CheckCountForNick(sUser.sIP, sUser.sName)
+			if (ContIP~=nil) and (ContIP==PMBlocker.tCountLimit.ForIP or ContIP>PMBlocker.tCountLimit.ForIP) then
+				BotSayToUser(sUser,PMBlocker_tLangMsgs[7])
+				return 0
+			end
+			if (CountNick~=nil) and (CountNick==PMBlocker.tCountLimit.ForNick or CountNick>PMBlocker.tCountLimit.ForNick) then
+				BotSayToUser(sUser,PMBlocker_tLangMsgs[8])
+				return 0
+			end
+			if nickorip and nickorip~="" then
+				if (type(PMBlocker.tBlockList[sUser.sIP])=="table") and (type(PMBlocker.tBlockList[sUser.sIP][sUser.sName])=="table") then
+					for indx, value in pairs(PMBlocker.tBlockList[sUser.sIP][sUser.sName]) do
+						if PMBlocker.tBlockList[sUser.sIP][sUser.sName][indx] == nickorip then
+							BotSayToUser(sUser,PMBlocker_tLangMsgs[6])
+							return 0
+						end
+					end
+				end
+				PMBlocker:SQL_AddNickOrIP(sUser.sIP,sUser.sName,nickorip)
+				AddSysLog("PMBlocker:SQL_AddNickOrIP. Добавлено: ip ["..sUser.sIP.."] nick ["..sUser.sName.."] bnickorip ["..nickorip.."]")
+				if not (type(PMBlocker.tBlockList[sUser.sIP])=="table") then
+					PMBlocker.tBlockList[sUser.sIP]={}
+				end
+				if not (type(PMBlocker.tBlockList[sUser.sIP][sUser.sName])=="table") then
+					PMBlocker.tBlockList[sUser.sIP][sUser.sName] = {}
+				end
+				local length = TableMaxSize(PMBlocker.tBlockList[sUser.sIP][sUser.sName])
+				PMBlocker.tBlockList[sUser.sIP][sUser.sName][length+1] = nickorip
+				BotSayToUser(sUser,"Добавлено: "..nickorip.."")
+			else
+				BotSayToUser(sUser,PMBlocker_tLangMsgs[1])
+			end
+			return 0
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1, [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Добавить ник или ip в блокиратор",
+		sName = "mbpmblockaddnickorip",
+		tMenu = function(sUser)
+			local tRC = "1 1 Функции хаба\\Блокировка привата\\Добавить ник или ip$<%[mynick]> +mbpmblockaddnickorip %[line:Введите ник или ip]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+			local tRC = "1 2 Функции хаба\\Блокировка привата\\Добавить ник или ip$<%[mynick]> +mbpmblockaddnickorip %[nick]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbpmblockdeletenickorip = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--local nickorip = GetNick(sData)
+			local nickorip = arg
+			if nickorip and nickorip~="" then
+				if (type(PMBlocker.tBlockList[sUser.sIP])=="table") then
+					if (type(PMBlocker.tBlockList[sUser.sIP][sUser.sName])=="table") then
+						--VH:SendDataToUser("mbpmblockdeletenickorip.  nickorip ["..(nickorip or "").."]","Palmer")
+						PMBlocker:SQL_DeleteNickOrIP(sUser.sIP,sUser.sName,nickorip)
+						PMBlocker:SQL_FixTable(sUser.sIP,sUser.sName)
+						for indx, val in pairs(PMBlocker.tBlockList[sUser.sIP][sUser.sName]) do
+							if (PMBlocker.tBlockList[sUser.sIP][sUser.sName][indx] == nickorip) then
+									PMBlocker.tBlockList[sUser.sIP][sUser.sName][indx] = nil
+							end
+						end
+						--local length = 0;
+						local length = TableMaxSize(PMBlocker.tBlockList[sUser.sIP][sUser.sName])
+						--VH:SendDataToUser("mbpmblockdeletenickorip1.  nickorip ["..(length or "ERR").."]","Palmer")
+						if length == 0 then PMBlocker.tBlockList[sUser.sIP][sUser.sName] = nil end
+						if not next(PMBlocker.tBlockList[sUser.sIP]) then PMBlocker.tBlockList[sUser.sIP] = nil end
+						--length = TableMaxSize(PMBlocker.tBlockList[sUser.sIP])
+						--VH:SendDataToUser("mbpmblockdeletenickorip2.  nickorip ["..(length or "ERR").."]","Palmer")
+						--if length == 0 then PMBlocker.tBlockList[sUser.sIP] = nil end
+						BotSayToUser(sUser,"Удалено: "..nickorip.."")
+					else
+						BotSayToUser(sUser, PMBlocker_tLangMsgs[3])
+					end
+				else
+					BotSayToUser(sUser, PMBlocker_tLangMsgs[4])
+				end
+			else
+				BotSayToUser(sUser,PMBlocker_tLangMsgs[1])
+			end
+			return 0
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1, [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Удалить ник или ip из блокиратор",
+		sName = "mbpmblockdeletenickorip",
+		tMenu = function(sUser)
+			local tRC = "1 1 Функции хаба\\Блокировка привата\\Удалить ник или ip$<%[mynick]> +mbpmblockdeletenickorip %[line:Введите ник или ip]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+			local tRC = "1 2 Функции хаба\\Блокировка привата\\Удалить ник или ip$<%[mynick]> +mbpmblockdeletenickorip %[nick]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	--[[
+	mbpmblockdeleteall = {
+		tFunc = function(sUser,arg,cmd,sData)
+				PMBlocker:SQL_DeleteNickOrIP(sUser.sIP,sUser.sName,"")
+				if (type(PMBlocker.tBlockList[sUser.sIP][sUser.sName])=="table") then
+					PMBlocker.tBlockList[sUser.sIP][sUser.sName] = nil
+				end
+				if (type(PMBlocker.tBlockList[sUser.sIP])=="table") then
+					local length = TableMaxSize(PMBlocker.tBlockList[sUser.sIP])
+					if length == 0 then PMBlocker.tBlockList[sUser.sIP] = nil end
+				end
+			return 0
+		end,
+		tLevels = {
+			[10] = 1, --[5] = 1,-- [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Добавить ник или ip в блокиратор",
+		sName = "mbpmblockdeleteall",
+		tMenu = function(sUser)
+			local tRC = "1 1 Функции хаба\\Блокировка привата\\Удалить всё$<%[mynick]> +mbpmblockdeleteall"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	]]--
+	mbpmblocklisting = {
+		tFunc = function(sUser,arg,cmd,sData)
+			if (type(PMBlocker.tBlockList[sUser.sIP])=="table") then
+				if (type(PMBlocker.tBlockList[sUser.sIP][sUser.sName])=="table") then
+					local sMsg = "\r\nСписок блоков:"
+					sMsg = sMsg.."\r\nНик: "..sUser.sName.."\r\n"
+					for i, v in pairs(PMBlocker.tBlockList[sUser.sIP][sUser.sName]) do
+						sMsg = sMsg.."\t["..i.."] "..PMBlocker.tBlockList[sUser.sIP][sUser.sName][i].."\r\n"
+					end
+					BotSayToUser(sUser,sMsg)
+				else
+					BotSayToUser(sUser, PMBlocker_tLangMsgs[3])
+				end
+			else
+				BotSayToUser(sUser, PMBlocker_tLangMsgs[4])
+			end
+			return 0
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1, [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Посмотреть список",
+		sName = "mbpmblocklisting",
+		tMenu = function(sUser)
+			local tRC = "1 1 Функции хаба\\Блокировка привата\\Посмотреть список$<%[mynick]> +mbpmblocklisting"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbpmblocklistingfull = {
+		tFunc = function(sUser,arg,cmd,sData)
+			local query = "SELECT * FROM MainBot_PMBloker"
+			local res, rows = VH:SQLQuery(query)
+			local sMsg = "\r\nСписок блоков:"
+			sMsg = sMsg.."\r\nIP\t\t\t\tНик\t\tID\t\tЗаблокировано"
+			local tempcount = 1;
+			if res and rows~=0  then
+				for x=0, rows-1 do
+					local res,tip,tnick,tid,tbnickorip = VH:SQLFetch(x)
+					sMsg = sMsg.."\r\n"..(tip or "").."\t\t"..(tnick or "").."\t\t"..(tid or "").."\t\t"..(tbnickorip or "")
+				end
+			end
+			BotSayToUser(sUser,sMsg)
+			return 0
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Посмотреть полный список",
+		sName = "mbpmblocklistingfull",
+		tMenu = function(sUser)
+			local tRC = "1 1 Функции хаба\\Блокировка привата\\Посмотреть полный список$<%[mynick]> +mbpmblocklistingfull"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+	mbpmblockdeleteothernickorip = {
+		tFunc = function(sUser,arg,cmd,sData)
+			--ip nick id
+			local IP,Nick,UsrNick = GetArgIpNickString(sData)
+			--local nickorip = arg
+			if IP and Nick and UsrNick then
+				if (type(PMBlocker.tBlockList[IP])=="table") then
+					if (type(PMBlocker.tBlockList[IP][Nick])=="table") then
+						--VH:SendDataToUser("mbpmblockdeleteothernickorip.  IP ["..(IP or "").."]  Nick ["..(Nick or "").."]  UsrNick ["..(UsrNick or "").."]","Palmer")
+						PMBlocker:SQL_DeleteNickOrIP(IP,Nick,UsrNick)
+						PMBlocker:SQL_FixTable(IP,Nick)
+						for indx, val in pairs(PMBlocker.tBlockList[IP][Nick]) do
+							if (PMBlocker.tBlockList[IP][Nick][indx] == UsrNick) then
+									PMBlocker.tBlockList[IP][Nick][indx] = nil
+							end
+						end
+						--local length = 0;
+						local length = TableMaxSize(PMBlocker.tBlockList[IP][Nick])
+						if length == 0 then PMBlocker.tBlockList[IP][Nick] = nil end
+						if not next(PMBlocker.tBlockList[IP]) then PMBlocker.tBlockList[IP] = nil end
+						--length = TableMaxSize(PMBlocker.tBlockList[IP])
+						--if length == 0 then PMBlocker.tBlockList[IP] = nil end
+						BotSayToUser(sUser,"Удалено: IP ["..(IP or "").."]  Nick ["..(Nick or "").."]  UsrNick ["..(UsrNick or "").."]")
+					else
+						BotSayToUser(sUser, PMBlocker_tLangMsgs[3])
+					end
+				else
+					BotSayToUser(sUser, PMBlocker_tLangMsgs[4])
+				end
+			else
+				BotSayToUser(sUser,PMBlocker_tLangMsgs[1])
+			end
+			return 0
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Удалить чужой ник или ip из блокиратор",
+		sName = "mbpmblockdeleteothernickorip",
+		tMenu = function(sUser)
+			local tRC = "1 1 Функции хаба\\Блокировка привата\\Удалить чужой ник или ip$<%[mynick]> +mbpmblockdeleteothernickorip %[line:Введите ip] %[line: Введите ник] %[line:Введите удаляемый ник]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+			local tRC = "1 2 Функции хаба\\Блокировка привата\\Удалить чужой ник или ip$<%[mynick]> +mbpmblockdeleteothernickorip %[ip] %[nick] %[line:Введите удаляемый ник]"
+			VH:SendDataToUser("$UserCommand "..tRC.."&#124;|", sUser.sName)
+		end,
+	},
+}
+---------
+PMBlocker_tLangMsgs = {
+	[1] = "*** Ошибка. Не указан ник или ip.",
+	[2] = "*** Пользователь заблокировал приват.",
+	[3] = "*** Ошибка! В базе пока нет ни одной записи с вашим ником",
+	[4] = "*** Ошибка! В базе пока нет ни одной записи с вашим IP",
+	[5] = "*** Ошибка. Нельзя заблокировать бота.",
+	[6] = "*** Ошибка. В базе уже имеется такая запись.",
+	[7] = "*** Ошибка. Вы привысили ограничение количества блокировок на данный ip.",
+	[8] = "*** Ошибка. Вы привысили ограничение количества блокировок на данный ник.",
+	[9] = "*** Ошибка. Вы не можете заблокировать себя",
+}

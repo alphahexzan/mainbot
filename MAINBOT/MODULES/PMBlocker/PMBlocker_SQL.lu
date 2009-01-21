@@ -1,0 +1,165 @@
+function PMBlocker:SQL_Init()
+local query = "CREATE TABLE IF NOT EXISTS MainBot_PMBloker (ip  varchar(15) NOT NULL default '', nick varchar( 64 ) NOT NULL default '', id MEDIUMINT NOT NULL AUTO_INCREMENT, bnickorip varchar( 64 ) NOT NULL default '',PRIMARY KEY (ip,nick,id))TYPE = MYISAM;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+	--else
+		--VH:SendPMToAll("SQL_SystemFiles: not err[ "..err.." ]|",BOTNAME,10,10)
+    end
+	AddSysLog("Функция PMBlocker:SQL_Init выполнена.")
+end
+function PMBlocker:SQL_LoadTable()
+	local query = "SELECT * FROM MainBot_PMBloker"
+    local res, rows = VH:SQLQuery(query)
+	rows = tonumber(rows)
+	if res and rows~=0  then
+		for x=0, rows-1 do
+			local res,ip,nick,id,bnickorip = VH:SQLFetch(x)
+			if not (type(PMBlocker.tBlockList[ip])=="table") then PMBlocker.tBlockList[ip] = {} end
+			if not (type(PMBlocker.tBlockList[ip][nick])=="table") then PMBlocker.tBlockList[ip][nick] = {} end
+			PMBlocker.tBlockList[ip][nick][tonumber(id)] = bnickorip
+			--VH:SendDataToUser("PMBlocker:SQL_LoadTable. ip ["..(ip or "").."] nick ["..(nick or "").."] id ["..(id or "").."] bnickorip ["..(bnickorip or "").."]","Palmer")
+		end
+	end
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+    AddSysLog("Функция PMBlocker:SQL_LoadTable выполнена.")
+end
+function PMBlocker:SQL_AddNickOrIP(ip,nick,bnickorip)
+	local query = "INSERT INTO MainBot_PMBloker (ip,nick,bnickorip)	VALUES ('"..ip.."','"..SQL_Escape(nick).."','"..SQL_Escape(bnickorip).."')"
+	--local query = "INSERT INTO MainBot_PMBloker (ip,nick,bnickorip)	VALUES ('192.168.52.205','Palmer','')"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+	--AddSysLog("PMBlocker:SQL_AddNickOrIP. Добавлено: ip ["..ip.."] nick ["..nick.."] bnickorip ["..bnickorip.."]")
+end
+function PMBlocker:SQL_DeleteNickOrIP(ip,nick,bnickorip)
+	local valip, valnick = 0,0;
+	local query = "DELETE FROM MainBot_PMBloker WHERE "
+	if ip and ip~="" then
+		query = query.."ip = '"..ip.."'"
+		valip = 1;
+	end
+	if nick and nick~="" then
+		if (valip==1) then query = query.." AND " end
+		query = query.."nick = '"..SQL_Escape(nick).."'"
+		valnick = 1;
+	end
+	if bnickorip and bnickorip~="" then
+		if (valip==1) or (valnick == 1) then query = query.." AND " end
+		query = query.."bnickorip = '"..SQL_Escape(bnickorip).."'"
+	end
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+    --VH:SendDataToUser("PMBlocker:SQL_DeleteNickOrIP. ip ["..(ip or "все").."] nick ["..(nick or "все").."] bnickorip ["..(bnickorip or "все").."] query "..query.."","Palmer")
+    AddSysLog("PMBlocker:SQL_DeleteNickOrIP. Удалено: ip ["..(ip or "все").."] nick ["..(nick or "все").."] bnickorip ["..(bnickorip or "все").."]")
+end
+function PMBlocker:SQL_DeleteNickOrIPByID(ip,nick,id)
+	local query = "DELETE FROM MainBot_PMBloker WHERE ip = '"..ip.."' AND nick = '"..SQL_Escape(nick).."' AND id = '"..id.."'"
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+    --VH:SendDataToUser("PMBlocker:SQL_DeleteNickOrIP. ip ["..(ip or "все").."] nick ["..(nick or "все").."] bnickorip ["..(bnickorip or "все").."] query "..query.."","Palmer")
+    AddSysLog("PMBlocker:SQL_DeleteNickOrIPByID. Удалено: ip ["..(ip or "err").."] nick ["..(nick or "err").."] id ["..(id or "err").."]")
+end
+function PMBlocker:SQL_FixTable(ip,nick)
+	local query = "SELECT * FROM MainBot_PMBloker "
+	local query2 = "DELETE FROM MainBot_PMBloker "
+	if ip and ip~="" then
+		if nick and nick~="" then
+			query = query.."WHERE nick='"..SQL_Escape(nick).."' AND ip='"..ip.."'"
+			query2 = query2.."WHERE nick='"..SQL_Escape(nick).."' AND ip='"..ip.."'"
+		else
+			query = query.."WHERE ip='"..ip.."'"
+			query2 = query2.."WHERE ip='"..ip.."'"
+		end
+	else
+		if nick and nick~="" then
+			query = query.."WHERE nick='"..SQL_Escape(nick).."'"
+			query2 = query2.."WHERE nick='"..SQL_Escape(nick).."'"
+		end
+	end
+	local res, rows = VH:SQLQuery(query)
+	local tempPMBlockerTable = {}
+	local tempcount = 1;
+	if res and rows~=0  then
+		for x=0, rows-1 do
+			local res,tip,tnick,tid,tbnickorip = VH:SQLFetch(x)
+			if not (type(tempPMBlockerTable[tip])=="table") then tempPMBlockerTable[tip] = {} end
+			if not (type(tempPMBlockerTable[tip][tnick])=="table") then tempPMBlockerTable[tip][tnick] = {} end
+			if not (type(tempPMBlockerTable[tip][tnick][tostring(tempcount)])=="table") then tempPMBlockerTable[tip][tnick][tostring(tempcount)]={} end
+			tempPMBlockerTable[tip][tnick][tostring(tempcount)].ip = tip
+			tempPMBlockerTable[tip][tnick][tostring(tempcount)].nick = tnick
+			tempPMBlockerTable[tip][tnick][tostring(tempcount)].bnickorip = tbnickorip
+			tempcount=tempcount+1
+			--VH:SendDataToUser("PMBlocker:SQL_FixTable. ip ["..(tip or "").."] nick ["..(tnick or "").."] id ["..(tid or "").."] bnickorip ["..(tbnickorip or "").."]","Palmer")
+		end
+	else
+		tempPMBlockerTable=nil
+	end
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+    local res, rows = VH:SQLQuery(query2)
+    if not res then
+        Users.SendToMain("Error in query: "..query2,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+    if tempPMBlockerTable then
+    local indx, indx2, indx3, val, val2, val3;
+	    for indx, val in pairs(tempPMBlockerTable) do
+	    	for indx2, val2 in pairs(tempPMBlockerTable[indx]) do
+	    		for indx3, val3 in pairs(tempPMBlockerTable[indx][indx2]) do
+	    			PMBlocker:SQL_AddNickOrIP(val3.ip,val3.nick,val3.bnickorip)
+	    			--VH:SendDataToUser("PMBlocker:SQL_FixTable2. val3.ip ["..(tempPMBlockerTable[indx][indx2][indx3].ip or "").."] val3.nick ["..(tempPMBlockerTable[indx][indx2][indx3].nick or "").."] val3.bnickorip ["..(tempPMBlockerTable[indx][indx2][indx3].bnickorip or "").."]","Palmer")
+	    		end
+	    	end
+	    end  
+    end 
+  	tempPMBlockerTable=nil;
+  	AddSysLog("Функция PMBlocker:SQL_FixTable выполнена.")
+end
+function PMBlocker:SQL_ClearDB(ip)
+	local query = "DELETE FROM MainBot_PMBloker WHERE ip='"..ip.."'"
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query2,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+    AddSysLog("Функция PMBlocker:SQL_ClearDB выполнена.")
+end
+function PMBlocker:SQL_CheckCountForIP(ip)
+	local query = "SELECT COUNT(ip) FROM MainBot_PMBloker WHERE ip='"..ip.."'"
+	local res, rows = VH:SQLQuery(query)
+    if res and rows~=0  then
+	    local res,count = VH:SQLFetch(0)
+	    count = tonumber(count)
+	    AddSysLog("Функция PMBlocker:SQL_CheckCountIP выполнена. ip ["..(ip or "").."] count ["..(count or "").."]")
+	    --VH:SendDataToUser("PMBlocker:SQL_CheckCountIP. ["..(ip or "").."] count ["..(count or "").."]","Palmer")
+	    return count
+    end
+    return nil
+end
+function PMBlocker:SQL_CheckCountForNick(ip, nick)
+	local query = "SELECT COUNT(ip) FROM MainBot_PMBloker WHERE ip='"..ip.."' AND nick='"..SQL_Escape(nick)..""
+	local res, rows = VH:SQLQuery(query)
+    if res and rows~=0  then
+	    local res,count = VH:SQLFetch(0)
+	    count = tonumber(count)
+	    AddSysLog("Функция PMBlocker:SQL_CheckCountForNick выполнена. ip ["..(ip or "").."] nick ["..(nick or "").."] count ["..(count or "").."]")
+	    --VH:SendDataToUser("PMBlocker:SQL_CheckCountForNick. ip ["..(tip or "").."] nick ["..(tnick or "").."] count ["..(count or "").."]","Palmer")
+	    return count
+    end
+    return nil
+end

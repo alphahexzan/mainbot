@@ -1,0 +1,313 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+sCommand = {
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbhelp",CMD.CHELP,AHELP,UC.HELP, function(sUser,arg,cmd,sData) DoHelp(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbshowbans",CMD.CSHOWBANS,ASHOWBANS,UC.SHOWBANS, function(sUser,arg,cmd,sData) return Showbans(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbhbanip",CMD.CBANIP,ABANIP,UC.BANIP, function(sUser,arg,cmd,sData) return banip(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbhbannick",CMD.CBANNICK,ABANNICK,UC.BANNICK, function(sUser,arg,cmd,sData) return bannick(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbhunbanip",CMD.CUNBANIP,AUNBANIP,UC.UNBANIP, function(sUser,arg,cmd,sData) return unbanip(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmute",CMD.CMUTE,AMUTE,UC.MUTE, function(sUser,arg,cmd,sData) return mute(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmutenick",CMD.CMUTENICK,AMUTENICK,UC.MUTENICK, function(sUser,arg,cmd,sData) return mutenick(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmuteforever",CMD.CMUTEFRVR,AMUTEFRVR,UC.MUTEFRVR, function(sUser,arg,cmd,sData) return muteforever(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmutenickforever",CMD.CMUTENICKFRVR,AMUTENICKFRVR,UC.MUTENICKFRVR, function(sUser,arg,cmd,sData) return mutenickforever(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbunmute",CMD.CUNMUTE,AUNMUTE,UC.UNMUTE, function(sUser,arg,cmd,sData) return unmute(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbunmutenick",CMD.CUNMUTENICK,AUNMUTENICK,UC.UNMUTENICK, function(sUser,arg,cmd,sData) return unmutenick(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmutepm",CMD.CMUTEPM,AMUTEPM, UC.MUTEPM, function(sUser,arg,cmd,sData) return mutePM(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmutenickpm",CMD.CMUTENICKPM,AMUTENICKPM, UC.MUTENICKPM, function(sUser,arg,cmd,sData) return mutenickPM(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmuteforeverpm",CMD.CMUTEFRVRPM,AMUTEFRVRPM, UC.MUTEFRVRPM, function(sUser,arg,cmd,sData) return muteforeverPM(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmutenickforeverpm",CMD.CMUTENICKFRVRPM,AMUTENICKFRVRPM, UC.MUTENICKFRVRPM, function(sUser,arg,cmd,sData) return mutenickforeverPM(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbunmutepm",CMD.CUNMUTEPM,AUNMUTEPM, UC.UNMUTEPM, function(sUser,arg,cmd,sData) return unmutePM(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbunmutenickpm",CMD.CUNMUTENICKPM,AUNMUTENICKPM, UC.UNMUTENICKPM, function(sUser,arg,cmd,sData) return unmutenickPM(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbkillip",CMD.CKILLIP,AKILLIP,UC.KILLIP, function(sUser,arg,cmd,sData) killip(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbkillnick",CMD.CKILLNICK,AKILLNICK,UC.KILLNICK, function(sUser,arg,cmd,sData) killnick(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbui",CMD.CUI,AUI,UC.UI, function(sUser,arg,cmd,sData) ui(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbii",CMD.CII,AII,UC.II, function(sUser,arg,cmd,sData) ii(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmlog",CMD.CMLOG,AMLOG,UC.MLOG, function(sUser,arg,cmd,sData) return getFullLogs(sUser,arg,"M") end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbslog",CMD.CSLOG,ASLOG,UC.SLOG, function(sUser,arg,cmd,sData) return getFullLogs(sUser,arg,"S") end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbplog",CMD.CPLOG,APLOG,UC.PLOG, function(sUser,arg,cmd,sData) return getFullLogs(sUser,arg,"P") end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmhlog",CMD.CMHLOG,AMHLOG,UC.MHLOG, function(sUser,arg,cmd,sData) return getHourLogs(sUser,arg,"M") end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbshlog",CMD.CSHLOG,ASHLOG,UC.SHLOG, function(sUser,arg,cmd,sData) return getHourLogs(sUser,arg,"S") end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbphlog",CMD.CPHLOG,APHLOG,UC.PHLOG, function(sUser,arg,cmd,sData) return getHourLogs(sUser,arg,"P") end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbfaq",CMD.CFAQ,AFAQ,UC.FAQ, function(sUser,arg,cmd,sData) showfaq(sUser) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbrules",CMD.CRULES,ARULES,UC.RULES, function(sUser,arg,cmd,sData) showrules(sUser) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbwhenwas",CMD.CWHENWAS,AWHENWAS,UC.WHENWAS,function(sUser,arg,cmd,sData) whenwas(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbwhenwasip",CMD.CWHENWASIP,AWHENWASIP,UC.WHENWASIP, function(sUser,arg,cmd,sData) whenwasip(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbregme",CMD.CREGME,AREGME,UC.REGME, function(sUser,arg,cmd,sData) regme(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbpassword",CMD.CPASSWD,APASSWD,UC.PASSWD, function(sUser,arg,cmd,sData) passwd(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbminshare",CMD.CNLON,ANLON,UC.NLON, function(sUser,arg,cmd,sData) nlon(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbminshareoff",CMD.CNLOF,ANLOF,UC.NLOF, function(sUser,arg,cmd,sData) nlof(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbshowminshares",CMD.CNLSHOW,ANLSHOW,UC.NLSHOW, function(sUser,arg,cmd,sData) nlshow(sUser) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmyinfo",CMD.CMYINFO,AMYINFO,UC.MYINFO, function(sUser,arg,cmd,sData) return showmyinfo(sUser) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mblocknick",CMD.CLOCKNICK,ALOCKNICK,UC.LOCKNICK, function(sUser,arg,cmd,sData) return locknick(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mboptions",CMD.COPTIONS,AOPTIONS,UC.OPTIONS, function(sUser,arg,cmd,sData) return options(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbset",CMD.CSETOPTIONS,ASETOPTIONS,UC.SETOPTIONS, function(sUser,arg,cmd,sData) return setoptions(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbsetbancount",CMD.CSETBANCOUNT,ASETBANCOUNT, UC.SETBANCOUNT, function(sUser,arg,cmd,sData) return setbancount(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbsetnews",CMD.CNEWS,ANEWS,UC.NEWS, function(sUser,arg,cmd,sData) return setnews(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmsgnick",CMD.CPMNICK,APMNICK,UC.PMNICK, function(sUser,arg,cmd,sData) return msgnick(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbmsgip",CMD.CPMIP,APMIP, UC.PMIP, function(sUser,arg,cmd,sData) return msgip(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbtopic",CMD.CTOPIC,ATOPIC, UC.TOPIC, function(sUser,arg,cmd,sData) return topic(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbsharetop",CMD.CSHARETOP,ASHARETOP, UC.SHARETOP, function(sUser,arg,cmd,sData) return sharetop(sUser,arg) end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbdropnick",CMD.CDROPNICK,ADROPNICK,UC.DROPNICK, function(sUser,arg,cmd,sData) dropname(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbdropip",CMD.CDROPIP,ADROPIP,UC.DROPIP, function(sUser,arg,cmd,sData) dropip(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbsetreg",CMD.CSETREG,ASETREG,UC.SETREG, function(sUser,arg,cmd,sData) setreg(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"mbinetdown",CMD.CINETDOWN,AINETDOWN,UC.INETDOWN, function(sUser,arg,cmd,sData) inetdown(sUser,arg) return 1 end},
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+{"hubbasay",CMD.CHUBBASAY,AHUBBASAY,UC.HUBBASAY, function(sUser,arg,cmd,sData) hubbasay(sUser,arg) return 1 end},
+-----------------------------------------------------------------------------------------------------------------------------------
+}
+tVHCommandsTab = {
+	[1] ={
+		"1 1 Функции хаба\\Пожаловаться$<%[mynick]> +report %[line:Ник] %[line:Причина]&#124;|",
+	},
+	[2] ={},
+	[3] = {
+		"1 1 Юзера\\Бан\\Кик$<%[mynick]> !kick %[line:Ник] %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Кик(hide)$<%[mynick]> !hidekick %[line:Ник] %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Флуд$<%[mynick]> !flood %[line:Ник]&#124;|",
+		"1 1 Юзера\\Бан\\ГаГ$<%[mynick]> !gag %[line:Ник] %[line:Время(пример:1s,1m,1h)]&#124;|",
+		"1 1 Юзера\\Бан\\АнГаГ$<%[mynick]> !ungag %[line:Ник]&#124;|",
+		"1 1 Информация\\Получить IP$<%[mynick]> !getip %[line:Ник]&#124;|",
+		"1 1 Информация\\Инфо о пользователе(reg)$<%[mynick]> !reginfo %[line:Ник]&#124;|",
+		"1 1 Информация\\Пользователи из списка по ip$<%[mynick]> !whoip %[line:IP]&#124;|",
+		"1 1 Информация\\Список ников(ip)$<%[mynick]> !whoip %[line:IP]&#124;|",
+		"1 1 Информация\\Список ников(range)$<%[mynick]> !whorange %[line:Диапазон IP]&#124;|",
+		"1 1 Информация\\Инфобан$<%[mynick]> !infoban %[line:IP или Ник]&#124;|",
+		"1 1 Информация\\Список банов(ip)$<%[mynick]> !infoban_ipban_&#124;|",
+		"1 1 Информация\\Список банов(nick)$<%[mynick]> !infoban_nickban_&#124;|",
+		"1 1 Информация\\Список банов(range)$<%[mynick]> !infoban_rangeban_&#124;|",
+		"1 1 Информация\\Топ N банов$<%[mynick]> !lsban %[line:Число]&#124;|",
+		"1 1 Юзера\\Бан\\Бан(ip,time)$<%[mynick]> !banip%[line:Время(пример:_1s,_1m,_1h)] %[line:IP] %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Бан(nick,time)$<%[mynick]> !bannick%[line:Время(пример:_1s,_1m,_1h)] %[line:Ник] %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Бан(time)$<%[mynick]> !ban%[line:Время(пример:_1s,_1m,_1h)] %[line:IP] %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Бан(prefix,time)$<%[mynick]> !banprefix%[line:Время(пример:_1s,_1m,_1h)] %[line:Префикс] %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Бан(range)$<%[mynick]> !banrange%[line:Время(пример:_1s,_1m,_1h)] %[line:Диапазон IP] %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Снять бан$<%[mynick]> !unban %[line:IP или Ник]  %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Снять бан(prefix)$<%[mynick]> !unbanprefix %[line:Префикс] %[line:Причина]&#124;|",
+		"1 1 Юзера\\Бан\\Снять бан(range)$<%[mynick]> !unbanrange %[line:Диапазон IP] %[line:Причина]&#124;|",
+		"1 1 Чат комнаты\\#4Флуд\\Пригласить$$To: #4Флуд From: %[mynick] $<%[mynick]> +invite %[line:Ник]&#124;",
+		"1 1 Чат комнаты\\#4Флуд\\Отключить$$To: #4Флуд From: %[mynick] $<%[mynick]> +out %[line:Ник]&#124;|",
+		"1 1 Чат комнаты\\#4Флуд\\Список$$To: #4Флуд From: %[mynick] $<%[mynick]> +members&#124;|",
+	},
+	[4] = {
+		"1 1 Управление\\Хаб инфо$<%[mynick]> !hubinfo&#124;|",
+		"1 1 Управление\\Топик$<%[mynick]> !topic %[line:Сообщение]&#124;|",
+		"1 1 Юзера\\Приват всем$<%[mynick]> !broadcast %[line:Сообщение]&#124;|",
+		"1 1 Юзера\\Бан\\Дроп$<%[mynick]> !drop %[line:Ник]&#124;|",
+		"1 1 Юзера\\Зарегить$<%[mynick]> !regnew %[line:Ник] %[line:Класс]&#124;|",
+		"1 1 Юзера\\Удалить$<%[mynick]> !regdelete %[line:Ник]&#124;|",
+		"1 1 Юзера\\Профили\\Сменить класс$<%[mynick]> !regclass %[line:Ник] %[line:Класс]&#124;|",
+		"1 1 Юзера\\Профили\\Сменить класс(temp)$<%[mynick]> !class %[line:Ник] %[line:Класс]&#124;|",
+	},
+	[5] = {
+		"1 1 Управление\\Конфиг$<%[mynick]> !gc&#124;|",
+		"1 1 Управление\\Обновить$<%[mynick]> !reload&#124;|",
+		"1 1 Юзера\\Приват(all)$<%[mynick]> !protoall_pm&#124;|",
+	},
+	[10] = {
+		"1 1 Управление\\Бот\\Перезапустить$<%[mynick]> !luareload /etc/verlihub/scripts/mainbot_0.9.2.lua&#124;|",
+		"1 1 Управление\\Бот\\Выгрузить$<%[mynick]> !luaunload /etc/verlihub/scripts/mainbot_0.9.2.lua&#124;|",
+		"1 1 Управление\\Бот\\Загрузить$<%[mynick]> !luaload /etc/verlihub/scripts/mainbot_0.9.2.lua&#124;|",
+		"1 1 Управление\\Бот\\Список$<%[mynick]> !lualist&#124;|",
+		"1 1 Управление\\Плагины\\Список подключеных$<%[mynick]> !pluglist all&#124;|",
+		"1 1 Управление\\Плагины\\Подключить$<%[mynick]> !plugin %[line:Имя файла]&#124;|",
+		"1 1 Управление\\Плагины\\Отключить$<%[mynick]> !plugout %[line:Имя плагина]&#124;|",
+		"1 1 Управление\\Плагины\\Переподключить$<%[mynick]> !plugreload %[line:Имя плагина]&#124;|",
+		"1 1 Управление\\Плагины\\Plugman\\Список$<%[mynick]> !lstplug&#124;|",
+		"1 1 Управление\\Плагины\\Plugman\\Подключить$<%[mynick]> !onplug %[line:Имя плагина]&#124;|",
+		"1 1 Управление\\Плагины\\Plugman\\Отключить$<%[mynick]> !offplug %[line:Имя плагина]&#124;|",
+		"1 1 Управление\\Плагины\\Plugman\\Переподключить$<%[mynick]> !replug %[line:Имя плагина]&#124;|",
+		"1 1 Управление\\Плагины\\Forbid\\Список$<%[mynick]> !lstforbid&#124;|",
+		"1 1 Управление\\Плагины\\Forbid\\Добавить$<%[mynick]> !addforbid %[line:Патерн] -C %[line:Макс. класс] -f %[line:Флаг (5-main,6-pm,7-main/pm)] -r \"%[line:Причина]\"&#124;|",
+		"1 1 Управление\\Плагины\\Forbid\\Удалить$<%[mynick]> !delforbid %[line:Патерн]&#124;|",
+	},
+}
+tVHCommandsUsr = {
+	[1] ={
+		"1 2 Функции хаба\\Пожаловаться$<%[mynick]> +report %[nick] %[line:Причина]&#124;|",
+	},
+	[2] ={},
+	[3] = {
+		"1 2 Юзера\\Бан\\Кик$<%[mynick]> !kick %[nick] %[line:Причина]&#124;|",
+		"1 2 Юзера\\Бан\\Кик(hide)$<%[mynick]> !hidekick %[nick] %[line:Причина]&#124;|",
+		"1 2 Юзера\\Бан\\Флуд$<%[mynick]> !flood %[nick]&#124;|",
+		"1 2 Юзера\\Бан\\ГаГ$<%[mynick]> !gag %[nick] %[line:Время(пример:1s,1m,1h)]&#124;|",
+		"1 2 Юзера\\Бан\\АнГаГ$<%[mynick]> !ungag %[nick]&#124;|",
+		"1 2 Информация\\Получить IP$<%[mynick]> !getip %[nick]&#124;|",
+		"1 2 Информация\\Инфо о пользователе(reg)$<%[mynick]> !reginfo %[nick]&#124;|",
+		"1 2 Информация\\Пользователи из списка по ip$<%[mynick]> !whoip %[ip]&#124;|",
+		"1 2 Информация\\Инфобан$<%[mynick]> !infoban %[nick]&#124;|",
+		"1 2 Юзера\\Бан\\Бан(time)$<%[mynick]> !bannick%[line:Время(пример:_1s,_1m,_1h)] %[nick] %[line:Причина]&#124;|",
+		"1 2 Чат комнаты\\#4Флуд\\Пригласить$$To: #4Флуд From: %[mynick] $<%[mynick]> +invite %[nick]&#124;|",
+		"1 2 Чат комнаты\\#4Флуд\\Отключить$$To: #4Флуд From: %[mynick] $<%[mynick]> +out %[nick]&#124;|",
+		"1 2 Чат комнаты\\#4Флуд\\Список$$To: #4Флуд From: %[mynick] $<%[mynick]> +members&#124;|",
+	},
+	[4] = {
+		"1 2 Юзера\\Бан\\Дроп$<%[mynick]> !drop %[nick]&#124;|",
+		"1 2 Юзера\\Зарегить$<%[mynick]> !regnew %[nick] %[line:Класс]&#124;|",
+		"1 2 Юзера\\Удалить$<%[mynick]> !regdelete %[nick]&#124;|",
+		"1 2 Юзера\\Профили\\Сменить класс$<%[mynick]> !regclass %[nick] %[line:Класс]&#124;|",
+		"1 2 Юзера\\Профили\\Сменить класс(temp)$<%[mynick]> !class %[nick] %[line:Класс]&#124;|",
+	},
+	[5] = {
+	},
+	[10] = {
+	},
+}
+--------------------------------------------------------------------------------------------------------------------------------------------
+	--[[
+	cDCConsole::mIPRangeRex("^(\\d+\\.\\d+\\.\\d+\\.\\d+)((\\/(\\d+))|(\\.\\.|-)(\\d+\\.\\d+\\.\\d+\\.\\d+))?$",0);
+	mCmdBan(int(eCM_BAN),".(del|rm|un|info|list|ls)?ban([^_\\s]+)?(_(\\d+\\S))?( this (nick|ip))? ?", "(\\S+)( (.*)$)?", &mFunBan),
+	mCmdGag(int(eCM_GAG),".(un)?(gag|nochat|nopm|noctm|nosearch|kvip|maykick|noshare|mayreg|mayopchat) ", "(\\S+)( (\\d+\\w))?", &mFunGag),
+	mCmdTrigger(int(eCM_TRIGGER),".(ft|trigger)(\\S+) ", "(\\S+) (.*)", &mFunTrigger),
+	mCmdSetVar(int(eCM_SET),".(set|=) ", "(\\[(\\S+)\\] )?(\\S+) (.*)", &mFunSetVar),
+	mCmdRegUsr(int(eCM_REG),".r(eg)?(n(ew)?(user)?|del(ete)?|pass(wd)?|(en|dis)able|(set)?class|(protect|hidekick)(class)?|set|=|info) ", "(\\S+)( (((\\S+) )?(.*)))?", &mFunRegUsr),
+	mCmdRaw(int(eCM_RAW),".proto(\\S+)_(\\S+) ","(.*)", &mFunRaw),
+	mCmdCmd(int(eCM_CMD),".cmd(\\S+)","(.*)", &mFunCmd),
+	mCmdWho(int(eCM_WHO),".w(ho)?(\\S+) ","(.*)", &mFunWho),
+	mCmdKick(int(eCM_KICK),".(kick|drop|flood) ","(\\S+)( (.*)$)?", &mFunKick, eUR_KICK ),
+	mCmdInfo(int(eCM_INFO),".(\\S+)info ?", "(\\S+)?", &mFunInfo),
+	mCmdPlug(int(eCM_PLUG),".plug(in|out|list|reg|reload) ","(\\S+)( (.*)$)?", &mFunPlug),
+	mCmdReport(int(eCM_REPORT),"\\+report ","(\\S+)( (.*)$)?", &mFunReport),
+	mCmdBc(int(eCM_BROADCAST),".(bc|broadcast|oc|ops|regs|guests|vips|cheefs|admins|masters)( |\\r\\n)","(.*)$", &mFunBc), // |ccbc|ccbroadcast
+	mCmdRedirConnType(int(eCM_CONNTYPE),".(\\S+)conntype ?","(.*)$",&mFunRedirConnType),
+	mCmdRedirTrigger(int(eCM_TRIGGERS),".(\\S+)trigger ?","(.*)$",&mFunRedirTrigger),
+	mCmdGetConfig(int(eCM_GETCONFIG),".(gc|getconfig) ?","(\\[(\\S+)\\])?", &mFunGetConfig),
+	
+	static const char *bannames[]={"nick", "ip", "nickip", "", "range", "host1", "host2" , "host3", "hostr1",  "share", "email" , "prefix"};
+	static const char *prefixnames[]={"add", "new", "rm", "del", "un", "info", "check", "list", "ls" };
+	]]--
+tParsedOperatorCommands = {
+	ban = {
+		tPatFunc= function(sUser,arg,cmd,sData)
+			local retval = 0;
+			local start_cmd,end_cmd = string.find(cmd,"ban")
+			if start_cmd and end_cmd then
+				local sPattern = "(%S*)ban(%S*)"
+				local sPatternTime = "(%S*)_(%d+)(%a)"
+				local _,_,prefix,postfix=string.find(cmd,sPattern)
+				BotSayToUser(sUser,"prefix ["..(prefix or "err").."] postfix ["..(postfix or "err").."]")
+				if postfix or postfix~="" then
+					local _,_,postfixclear,bantime,bantype=string.find(postfix,sPatternTime)
+					BotSayToUser(sUser," postfixclear ["..(postfixclear or "err").."] bantime ["..(bantime or "err").."] bantype ["..(bantype or "err").."]")
+				end
+				local defineprefix = {"del","rm","un","info","list","ls",};
+				local definepostfix = {"nick","ip",};
+				local definetimetype = {"s","m","h","d","w","M","Y",};
+			end
+			return retval;
+		end,
+		tFunction= function(sUser,arg,cmd,sData)
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Бан пользователя по ip",
+	},
+	--Plugins
+	----Chatrooms
+	-- !addroom !delroom
+	chrm_addroom = {
+		tPatFunc= function(sUser,arg,cmd,sData)
+			local chatroom,topic=string.find(arg, "(%S)%s?(.*)")
+			if (chatroom=="addroom") then
+				return 1;
+			end
+			return 0;
+		end,
+		tFunction= function(sUser,arg,cmd,sData)
+				tMainBufer.ChatRoomsBufer[cmd]=1;
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Добавление чат-комнаты плагином chatroom",
+	},
+	chrm_delroom = {
+		tPatFunc= function(sUser,arg,cmd,sData)
+			--local chatroom,topic=string.find(arg, "(%S)%s?(.*)")
+			if (arg=="delroom") then
+				return 1;
+			end
+			return 0;
+		end,
+		tFunction= function(sUser,arg,cmd,sData)
+			if (tMainBufer.ChatRoomsBufer[cmd]==1) then
+				tMainBufer.ChatRoomsBufer[cmd]=nil
+			end
+			return 1
+		end,
+		tLevels = {
+			[10] = 1, [5] = 1, [4] = 1, [3] = 1,-- [2] = 1, [1] = 1, [0] = 1,
+		},
+		sDesc = "Удаление чат-комнаты плагином chatroom",
+	},
+}

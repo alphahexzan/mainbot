@@ -1,0 +1,613 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Функции ввода - вывода 
+--------------------------------------------------------------------------------------------------------------------------------------------
+function readArray(filename,array)
+	local retval={}
+	if array~=nil then 
+		retval=array; 
+	end
+	local f  = io.open(filename, "r")
+	if (f) then
+		--local line = f:read("*line")
+		--while line do
+		for line in f:lines() do
+			local _, _, key, value = string.find(line , "(%S*)%s*=%s*(.*)")
+			if key then
+				if value == nil then value="" end
+				if tonumber(key) then key= tonumber(key) end
+				if tonumber(value) then 
+					value= tonumber(value) 
+				end
+				retval[key]=value
+				--VH:SendDataToUser("$To: Palmer From: readArray $<readArray> key["..(key or "").."] value["..(value or "").."]|","Palmer")
+			end
+			--line = f:read("*line")
+		end
+		f:close()
+		return retval
+	else
+		return retval ,"readArray failed: "
+	end
+end
+------------------------------------------------------------------------
+
+function readVersions(filename)
+	--VH:SendDataToAll("readVersions"..filename.."|",10,10)
+	local retval={}
+	local f  = io.open(filename, "r")
+	if (f) then
+		--local line = f:read("*line")
+		for line in f:lines() do
+		--while line do
+			--FlylinkDC++|r342|i|_
+			--FlylinkDC++|r329|i|_
+			--FlylinkDC++|*|s|oldflylinkdc.txt
+			local _, _, tag, ver ,todo, textfile = string.find(line , "(%S+)%s*|%s*([^|]*)%s*|%s*(%S*)%s*|%s*(%S*)")
+			--VH:SendDataToAll("tag: "..(tag or "nil").." ver: "..(ver or "nil").." todo: "..(todo or "nil").." textfile: "..(textfile or "nil").." |",10,10)
+			if tag then
+				--VH:SendDataToAll("tag: "..tag.."|",10,10)
+				if retval[tag]==nil then
+					retval[tag]={}
+				end
+				if ver==nil then 
+					ver="*"
+					--VH:SendDataToAll("ver: "..ver.."|",10,10)
+				end
+				--VH:SendDataToAll("ver: "..ver.."|",10,10)
+				--if tonumber(ver) then 
+					--ver=tonumber(ver) 
+				--end
+				if retval[tag][ver] ==nil then 
+					retval[tag][ver]={}
+				end
+				
+				if todo==nil then 
+					todo="i" 
+					--VH:SendDataToAll("todo: "..todo.."|",10,10)
+				end
+				--VH:SendDataToAll("todo: "..todo.."|",10,10)
+				retval[tag][ver].todo=todo
+				--VH:SendDataToAll("textfile: "..textfile.."|",10,10)
+				if textfile~=nil then
+					retval[tag][ver].text=loadtext(CLIENTSPATH..textfile)
+					--retval[tag][ver].text=textfile
+				end
+			end
+			--line = f:read("*l")
+		end
+		f:close()
+		return retval
+	else
+		return retval ,"readVersions failed: "
+	end
+end
+------------------------------------------------------------------------
+function saveArray(arr,filename)
+	local f  = io.open(filename, "w")
+	if (f) then
+		keys={}
+		for key,val in pairs(arr) do
+			table.insert(keys,key)
+		end
+		table.sort(keys)
+
+		for indx,key in pairs(keys) do
+			if type(arr[key]) == "string" or type(arr[key]) == "number" then 
+				f:write(key.."="..arr[key].."\n");
+			end	
+		end
+		f:close()
+		return 1
+	else
+		return nil,"saveArray failed: "
+	end
+end
+------------------------------------------------------------------------
+function readWords(filename)
+	local retval={}
+	local f  = io.open(filename, "r")
+	if (f) then
+		--local line = f:read("*line")
+		--while line do
+		for line in f:lines() do
+			local _, _, key, value = string.find(line , "(%S*)%s*|(.*)")
+			if key and value then
+				--VH:SendDataToUser("$To: Palmer From: readWords $<readWords> filename["..(filename or "ERR").."] key["..(key or "ERR").."]|","Palmer")
+				local record={}
+				record.bad=key
+				record.good={}
+			    local startj=0;
+			    local j = 0;
+			    local i = 0;
+				value=value.. ","
+				while true do
+					i, j, word = string.find(value, "(%S*)%s*,", startj+1)
+					if j == nil then 
+						break 
+					else				  
+						startj=j;
+						table.insert(record.good, word)
+					end
+				end
+				
+				table.insert(retval,record);
+			end
+			--line = f:read("*line")
+		end
+		f:close()
+		return retval
+	else
+		return nil,"readWords failed: "
+	end
+end
+-----------------------------------------------------------
+function SaveFile(table , tablename, file)
+	local hFile = io.open(file, "w")
+	if hFile then
+		Serialize(table, tablename, hFile);
+		hFile:close();
+	end
+end
+------------------------------------------------------------
+function Timer_Logs()--+
+	--savechathistory(F_CHATHISTORY , CHATHISTORY)
+	SaveFile(CHATHISTORY, "CHATHISTORY", F_CHATHISTORY)
+	if CFG.DisableLogs==1 then
+  		mainChatLog=""
+  		syslog=""
+  		paranoidLog=""
+		return 0
+	end
+	local Data_Path = tostring(os.date("%Y/%m/%d")).."/"
+	local logdir_ok = 0;
+	local debuglogdir_ok = 0;
+	--VH:SendPMToAll("Data_Path: "..Data_Path.."|",BOTNAME,10,10)
+	--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> mainChatLog: "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log |","Palmer")
+	if (mainChatLog~="") then
+		local handle,err = io.open(F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log","a+")
+		if (handle) then
+			--VH:SendPMToAll("Запись (a+) "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log|",BOTNAME,10,10)
+			--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> Запись [1] (a+) "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log |","Palmer")
+			handle:write(mainChatLog)
+			--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> [1] handle:write(mainChatLog) |","Palmer")
+	  		mainChatLog=""
+			handle:flush();
+			--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> [1] handle:flush() |","Palmer")
+			handle:close();
+			logdir_ok = 1;
+			--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> [1] handle:close() |","Palmer")
+			--os.execute("chmod 775 "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log")
+		else
+			local Y_Dir = os.date("%Y")
+			local M_Dir = os.date("%m")
+			local D_Dir = os.date("%d")
+			--os.execute("mkdir "..LOGSPATH..Y_Dir)
+			local handle,err = io.open(LOGSPATH..Y_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir) else handle:close(); end
+			--os.execute("mkdir "..LOGSPATH..Y_Dir.."/"..M_Dir)
+			handle,err = io.open(LOGSPATH..Y_Dir.."/"..M_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir.."/"..M_Dir) else handle:close(); end
+			--os.execute("mkdir "..LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir)
+			handle,err = io.open(LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir) else handle:close(); end
+			handle,err = io.open(F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log","a+")
+			if (handle) then
+				--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> Запись [0] (a+) "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log |","Palmer")
+				handle:write(mainChatLog)
+				--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> [0] handle:write(mainChatLog) |","Palmer")
+		  		mainChatLog=""
+				handle:flush();
+				--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> [0] handle:flush() |","Palmer")
+				handle:close();
+				logdir_ok = 1;
+				--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> [0] handle:close() |","Palmer")
+				--os.execute("chmod 775 "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log")
+				--VH:SendDataToUser("$To: Palmer From: Timer_Logs $<Timer_Logs> [0] chmod 755 "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log |","Palmer")
+			--else
+				--VH:SendPMToAll("Ошибка записи: "..err.."|",BOTNAME,10,10)
+			end
+		end
+	end
+	if (syslog~="") then
+		local handle,err = io.open(F_SysLogPath..Data_Path..os.date("%H").."_sys.log","a+");
+		--VH:SendPMToAll("syslog: "..F_SysLogPath..Data_Path..os.date("%H").."_sys.log|",BOTNAME,10,10)
+		if (handle) then
+			--VH:SendPMToAll("Запись "..F_SysLogPath..Data_Path..os.date("%H").."_sys.log|",BOTNAME,10,10)
+			handle:write(syslog)
+	  		syslog=""
+			handle:flush();
+			handle:close();
+			logdir_ok = 1;
+			--os.execute("chmod 775 "..F_MainLogPath..Data_Path..os.date("%H").."_sys.log")
+		else
+			local Y_Dir = os.date("%Y")
+			local M_Dir = os.date("%m")
+			local D_Dir = os.date("%d")
+			--os.execute("mkdir "..LOGSPATH..Y_Dir)
+			local handle,err = io.open(LOGSPATH..Y_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir) else handle:close(); end
+			--os.execute("mkdir "..LOGSPATH..Y_Dir.."/"..M_Dir)
+			handle,err = io.open(LOGSPATH..Y_Dir.."/"..M_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir.."/"..M_Dir) else handle:close(); end
+			--os.execute("mkdir "..LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir)
+			handle,err = io.open(LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir) else handle:close(); end
+			handle,err = io.open(F_SysLogPath..Data_Path..os.date("%H").."_sys.log","a+");
+			if (handle) then
+				--VH:SendPMToAll("Запись (w+) "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log|",BOTNAME,10,10)
+				handle:write(syslog)
+		  		syslog=""
+				handle:flush();
+				handle:close();
+				logdir_ok = 1;
+				--os.execute("chmod 775 "..F_MainLogPath..Data_Path..os.date("%H").."_sys.log")
+			else
+				--VH:SendPMToAll("Ошибка записи: "..err.."|",BOTNAME,10,10)
+			end
+		end
+	end
+	if (paranoidLog~="") then
+		local handle,err = io.open(F_ParanoidLogPath..Data_Path..os.date("%H").."_paranoid.log","a+");
+		--VH:SendPMToAll("paranoidLog: "..F_ParanoidLogPath..Data_Path..os.date("%H").."_paranoid.log|",BOTNAME,10,10)
+		if (handle) and (paranoidLog~="") then
+			--VH:SendPMToAll("Запись "..F_ParanoidLogPath..Data_Path..os.date("%H").."_paranoid.log|",BOTNAME,10,10)
+			handle:write(paranoidLog)
+	  		paranoidLog=""
+			handle:flush();
+			handle:close();
+			logdir_ok = 1;
+			--os.execute("chmod 775 "..F_MainLogPath..Data_Path..os.date("%H").."_paranoid.log")
+		else
+			local Y_Dir = os.date("%Y")
+			local M_Dir = os.date("%m")
+			local D_Dir = os.date("%d")
+			--os.execute("mkdir "..LOGSPATH..Y_Dir)
+			local handle,err = io.open(LOGSPATH..Y_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir) else handle:close(); end
+			--os.execute("mkdir "..LOGSPATH..Y_Dir.."/"..M_Dir)
+			handle,err = io.open(LOGSPATH..Y_Dir.."/"..M_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir.."/"..M_Dir) else handle:close(); end
+			--os.execute("mkdir "..LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir)
+			handle,err = io.open(LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir.."/.tmp","a+")
+			if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir) else handle:close(); end
+			handle,err = io.open(F_ParanoidLogPath..Data_Path..os.date("%H").."_paranoid.log","a+");
+			if (handle) then
+				--VH:SendPMToAll("Запись (w+) "..F_MainLogPath..Data_Path..os.date("%H").."_mainchat.log|",BOTNAME,10,10)
+				handle:write(paranoidLog)
+		  		paranoidLog=""
+				handle:flush();
+				handle:close();
+				logdir_ok = 1;
+				--os.execute("chmod 775 "..F_MainLogPath..Data_Path..os.date("%H").."_paranoid.log")
+			--else
+				--VH:SendPMToAll("Ошибка записи: "..err.."|",BOTNAME,10,10)
+			end
+		end
+	end
+	if next(ChatRoomLog) then
+		for indx,val in pairs(ChatRoomLog) do
+			if type(ChatRoomLog[indx])~="function"then
+				if ChatRoomLog[indx].chatlog~="" then
+					local handle,err = io.open(F_ChatRoomLogPath..Data_Path..os.date("%H").."_"..ChatRoomLog[indx].chatname.."_CR.log","a+");
+					--VH:SendPMToAll("paranoidLog: "..F_ParanoidLogPath..Data_Path..os.date("%H").."_paranoid.log|",BOTNAME,10,10)
+					if (handle) and (ChatRoomLog[indx].chatlog~="") then
+						--VH:SendPMToAll("Запись [1] "..F_ChatRoomLogPath..Data_Path..os.date("%H").."_"..ChatRoomLog[indx].chatname.."_CR.log|",BOTNAME,10,10)
+						handle:write(ChatRoomLog[indx].chatlog)
+				  		ChatRoomLog[indx]=nil
+						handle:flush();
+						handle:close();
+						logdir_ok = 1;
+						--os.execute("chmod 775 "..F_ChatRoomLogPath..Data_Path..os.date("%H").."_"..ChatRoomLog[indx].chatname.."_CR.log")
+					else
+						local Y_Dir = os.date("%Y")
+						local M_Dir = os.date("%m")
+						local D_Dir = os.date("%d")
+						--os.execute("mkdir "..LOGSPATH..Y_Dir)
+						local handle,err = io.open(LOGSPATH..Y_Dir.."/.tmp","a+")
+						if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir) else handle:close(); end
+						--os.execute("mkdir "..LOGSPATH..Y_Dir.."/"..M_Dir)
+						handle,err = io.open(LOGSPATH..Y_Dir.."/"..M_Dir.."/.tmp","a+")
+						if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir.."/"..M_Dir) else handle:close(); end
+						--os.execute("mkdir "..LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir)
+						handle,err = io.open(LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir.."/.tmp","a+")
+						if not (handle) then os.execute("mkdir -m 775 "..LOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir) else handle:close(); end
+						handle,err = io.open(F_ChatRoomLogPath..Data_Path..os.date("%H").."_"..ChatRoomLog[indx].chatname.."_CR.log","a+");
+						if (handle) then
+							--VH:SendPMToAll("Запись [0] "..F_ChatRoomLogPath..Data_Path..os.date("%H").."_"..ChatRoomLog[indx].chatname.."_CR.log|",BOTNAME,10,10)
+							handle:write(ChatRoomLog[indx].chatlog)
+					  		ChatRoomLog[indx]=nil
+							handle:flush();
+							handle:close();
+							logdir_ok = 1;
+							--os.execute("chmod 775 "..F_ChatRoomLogPath..Data_Path..os.date("%H").."_"..ChatRoomLog[indx].chatname.."_CR.log")
+						--else
+							--VH:SendPMToAll("Ошибка записи: "..err.."|",BOTNAME,10,10)
+						end
+					end
+				end
+			end
+		end
+	end
+	if next(DebugLog) then
+		for indx,val in pairs(DebugLog) do
+			if type(DebugLog[indx])~="function"then
+				if DebugLog[indx].funclog~="" then
+					local handle,err = io.open(F_DebugLogPath..Data_Path..os.date("%H").."_"..DebugLog[indx].funcname..".log","a+");
+					if (handle) and (DebugLog[indx].funclog~="") then
+						handle:write(DebugLog[indx].funclog)
+				  		DebugLog[indx]=nil
+						handle:flush();
+						handle:close();
+						debuglogdir_ok = 1;
+						--os.execute("chmod 775 "..F_DebugLogPath..Data_Path..os.date("%H").."_"..DebugLog[indx].funcname..".log")
+					else
+						local Y_Dir = os.date("%Y")
+						local M_Dir = os.date("%m")
+						local D_Dir = os.date("%d")
+						local handle,err = io.open(DEBUGLOGSPATH..Y_Dir.."/.tmp","a+")
+						if not (handle) then os.execute("mkdir -m 775 "..DEBUGLOGSPATH..Y_Dir) else handle:close(); end
+						handle,err = io.open(DEBUGLOGSPATH..Y_Dir.."/"..M_Dir.."/.tmp","a+")
+						if not (handle) then os.execute("mkdir -m 775 "..DEBUGLOGSPATH..Y_Dir.."/"..M_Dir) else handle:close(); end
+						handle,err = io.open(DEBUGLOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir.."/.tmp","a+")
+						if not (handle) then os.execute("mkdir -m 775 "..DEBUGLOGSPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir) else handle:close(); end
+						handle,err = io.open(F_DebugLogPath..Data_Path..os.date("%H").."_"..DebugLog[indx].funcname..".log","a+");
+						if (handle) then
+							handle:write(DebugLog[indx].funclog)
+					  		DebugLog[indx]=nil
+							handle:flush();
+							handle:close();
+							debuglogdir_ok = 1;
+							--os.execute("chmod 775 "..F_DebugLogPath..Data_Path..os.date("%H").."_"..DebugLog[indx].funcname..".log")
+						end
+					end
+				end
+			end
+		end
+	end
+	if logdir_ok == 1 then 
+		os.execute("chmod -R 775 "..LOGSPATH..Data_Path);
+	end
+	if debuglogdir_ok == 1 then
+		os.execute("chmod -R 775 "..DEBUGLOGSPATH..Data_Path);
+	end
+end
+-----------------------------------------------------------
+function ArchiveUsersDB()
+	local tOldUsers = SQL_GetOldUser(CFG.OldUser_Num, CFG.OldUser_Period)
+	if tOldUsers~=nil then
+		if type(tOldUsers)~="function" and type(tOldUsers)=="table" then
+			local archivedir_ok=0;
+			--[[
+			local sOldUsers = "tOldUsers={\r\n\t";
+			for i,val in pairs(tOldUsers) do
+				if val.ip and val.ip~="" and val.ip~=" " then
+					sOldUsers = sOldUsers.."ip=\""..(val.ip or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."nick=\""..(val.nick or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."bancount="..(val.bancount or "0")..",\r\n\t";
+					sOldUsers = sOldUsers.."status="..(val.status or "0")..",\r\n\t";
+					sOldUsers = sOldUsers.."forwhat="..(val.forwhat or "0")..",\r\n\t";
+					sOldUsers = sOldUsers.."whenexpires=\""..(val.whenexpires or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."when=\""..(val.when or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."by=\""..(val.by or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."context=\""..(val.context or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."lastonline=\""..(val.lastonline or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."noleech=\""..(val.noleech or "0").."\",\r\n\t";
+					sOldUsers = sOldUsers.."maxnoleech="..(val.maxnoleech or "0")..",\r\n\t";
+					sOldUsers = sOldUsers.."locknick=\""..(val.locknick or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."sharesize="..(val.sharesize or "0")..",\r\n\t";
+					sOldUsers = sOldUsers.."fl=\""..(val.fl or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."InetDown=\""..(val.InetDown or "").."\",\r\n\t";
+					sOldUsers = sOldUsers.."rank="..(val.rank or "0")..",\r\n\t";
+					sOldUsers = sOldUsers.."sessiontime="..(val.sessiontime or "0")..",\r\n\t";
+					sOldUsers = sOldUsers.."totaltime="..(val.totaltime or "0")..",\r\n\t";
+					if val.lastcuss and type(val.lastcuss)~="function" and type(val.lastcuss)=="table" then
+						sOldUsers = sOldUsers.."lastcuss={\r\n\t";
+						for j,val2 in pairs(val.lastcuss) do
+							sOldUsers = sOldUsers.."\t["..j.."]=\""..(val2 or "").."\",\r\n\t";
+						end
+						sOldUsers = sOldUsers.."},\r\n\t";
+					end
+					if val.lastnicks and type(val.lastnicks)~="function" and type(val.lastnicks)=="table" then
+						sOldUsers = sOldUsers.."lastnicks={\r\n\t";
+						for k,val3 in pairs(val.lastnicks) do
+							sOldUsers = sOldUsers.."\t["..k.."]=\""..(val3 or "").."\",\r\n\t";
+						end
+						sOldUsers = sOldUsers.."},\r\n";
+					end
+				end
+			end
+			sOldUsers = sOldUsers.."}"
+			]]--
+			--VH:SendDataToUser("$To: Palmer From: ArchiveUsersDB $<ArchiveUsersDB> ArchiveUsersDB. \r\n"..sOldUsers.."|","Palmer")
+			---
+			local Data_Path = tostring(os.date("%Y/%m/%d")).."/"
+			local handle,err = io.open(ARCHIVEPATH..Data_Path..os.date("%H.%M.%S").."_UsersDB_Archive.dat","w");
+			if (handle) then
+				--[[
+				handle:write(sOldUsers);
+				]]--
+				Serialize(tOldUsers, "tOldUsers", handle);
+				handle:flush();
+				handle:close();
+				sOldUsers=nil;
+				archivedir_ok=1;
+			else
+				local Y_Dir = os.date("%Y")
+				local M_Dir = os.date("%m")
+				local D_Dir = os.date("%d")
+				local handle,err = io.open(ARCHIVEPATH..Y_Dir.."/.tmp","a+")
+				if not (handle) then os.execute("mkdir -m 775 "..ARCHIVEPATH..Y_Dir) else handle:close(); end
+				handle,err = io.open(ARCHIVEPATH..Y_Dir.."/"..M_Dir.."/.tmp","a+")
+				if not (handle) then os.execute("mkdir -m 775 "..ARCHIVEPATH..Y_Dir.."/"..M_Dir) else handle:close(); end
+				handle,err = io.open(ARCHIVEPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir.."/.tmp","a+")
+				if not (handle) then os.execute("mkdir -m 775 "..ARCHIVEPATH..Y_Dir.."/"..M_Dir.."/"..D_Dir) else handle:close(); end
+				handle,err = io.open(ARCHIVEPATH..Data_Path..os.date("%H.%M.%S").."_UsersDB_Archive.dat","w");
+				if (handle) then
+					--[[
+						handle:write(sOldUsers);
+					]]--
+					Serialize(tOldUsers, "tOldUsers", handle);
+					handle:flush();
+					handle:close();
+					sOldUsers=nil;
+					archivedir_ok=1;
+				end
+			end
+		end
+		---ClearDB
+		for i,val in pairs(tOldUsers) do
+			if val.ip and val.ip~="" and val.ip~=" " then
+				SQL_DeleteFromUserList(val.ip)
+				--VH:SendDataToUser("$To: Palmer From: ArchiveUsersDB $<ArchiveUsersDB> ArchiveUsersDB. ["..(i or "err").."] ip["..(val.ip or "").."] nick["..(val.nick or "").."] lastonline["..(val.lastonline or "").."]|","Palmer")
+			end
+		end
+		tOldUsers=nil;
+		if archivedir_ok == 1 then 
+			os.execute("chmod -R 775 "..ARCHIVEPATH..Data_Path);
+		end
+	end
+end
+-----------------------------------------------------------
+function loadchecklist( filename )
+	local list = {}
+	local f = io.open( filename, "r" )
+	if f then
+		--local line = f:read("*line")
+		--while line do
+		for line in f:lines() do
+			list[line]=1;
+			--line = f:read("*line")
+		end
+		f:close()
+	end
+	return list
+end
+----------------------------------------------------
+function loadlist( filename )
+	local list = {}
+	local f = io.open( filename, "r" )
+	if f then
+		--for line in file:lines() do table.insert(list,line) end
+		--local line = f:read("*line")
+		--while line do
+		for line in f:lines() do
+			table.insert(list,line);
+			--line = f:read("*line")
+		end
+		f:close()
+	end
+	return list
+end
+----------------------------------------------------
+function loadtext(filename)
+	--VH:SendDataToAll("loadtext"..filename.."|",10,10)
+	local message = "";
+	local f = io.open( filename, "r" )
+	if f then
+		message=f:read("*all") 
+		--local line = f:read("*line")
+		--while line do
+			--message = message.."\r\n"..line
+			--line = f:read("*line")
+		--end
+		message=string.gsub(message,"|"," ")
+		--message=string.gsub(message,"\n","\r\n")
+		f:close()
+	end
+	return message
+end
+----------------------------------------------------
+function savetext( filename, data )
+	if type( data ) == "string" then
+		local f,e = io.open( filename, "w" )
+		if f then
+			f:write(data)
+			f:close()
+	    else
+			AddSysLog("savetext: io.open error - filename["..(filename or "").."]");
+			return nil,"savelist failed: ".. e
+		end
+	end	
+end
+----------------------------------------------------
+function LoadCommands(filename)--+
+	local f = assert(io.open( filename, "r" ))
+	if f then
+		--local line = f:read("*line")
+		--while line do
+		for line in f:lines() do
+			local i,v,head,a,b,c,d,e,g,h = string.find(line, "(%S+)%|(%d)(%d)(%d)(%d)(%d)(%d)(%d)")
+			if head then
+				--VH:SendDataToAll("head: "..head.."|",10,10)
+				CMD[head] = {[1]=tonumber(a),[2]=tonumber(b),[3]=tonumber(c),[4]=tonumber(d),[5]=tonumber(e),[6]=tonumber(g),[7]=tonumber(h)}
+			end
+			--line = f:read("*line")
+		end
+		f:close()
+	else
+		AddSysLog("LoadCommands: io.open error - filename["..(filename or "").."]");
+	end
+end
+----------------------------------------------------
+function readIPs(filename,array)
+	local retval={}
+	if array~=nil then 
+		retval=array; 
+	end
+	local f  = io.open(filename, "r")
+	if (f) then
+		--local line = f:read("*line")
+		--while line do
+		for line in f:lines() do
+			local _, _, ip11,ip12,ip13,ip14,ip21,ip22,ip23,ip24 = string.find(line , "(%d+)%.(%d+)%.(%d+)%.(%d+)%D*(%d*)%.*(%d*)%.*(%d*)%.*(%d*)")
+			local ip1=(((tonumber(ip11) or 0)*256+(tonumber(ip12) or 0)) *256+(tonumber(ip13) or 0))*256+(tonumber(ip14) or 0)
+			local ip2=(((tonumber(ip21) or 0)*256+(tonumber(ip22) or 0))*256+(tonumber(ip23) or 0))*256+(tonumber(ip24) or 0)
+			--VH:SendDataToUser("$To: Palmer From: readIPs $<readIPs> ip1["..(ip1 or "ERR").."] ip2["..(ip2 or "ERR").."]|","Palmer")
+			if ip2==0 then ip2=ip1 end
+			if ip1<= ip2 then
+				table.insert(retval,{ips=ip1,ipe=ip2})
+			end	
+			--line = f:read("*line")
+		end
+		f:close()
+		return retval
+	else
+		AddSysLog("readIPs: io.open error - filename["..(filename or "").."]");
+		return retval ,"readArray failed: "
+	end
+end
+----------------------------------------------------
+function savechathistory(filename,array)
+	local f,e = io.open( filename, "w+" )
+	if f then
+		f:write("CHATHISTORY = {\n")
+		  for i = 1, TableMaxSize(array) do
+			local message = string.gsub(array[i],"|"," ")
+		    f:write( "\t"..string.format("%q", message)..",\r\n" )
+		  end
+		f:write("}" )
+		f:close()
+		--return 1
+	else
+		AddSysLog("savechathistory: io.open error - filename["..(filename or "").."]");
+		return nil,"savelist failed: ".. e
+	end
+end

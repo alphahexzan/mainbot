@@ -1,0 +1,2469 @@
+function SQL_Init()
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_settings (name varchar(50), valore varchar(100))TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        --Users.SendToMain("Error in query: "..query,5, 10)
+		VH:SendDataToAll("Error in query: "..query.."|",10,10)
+        --Users.SendToMain("Error: "..err,5, 10)
+		VH:SendDataToAll("Error: "..err.."|",10,10)
+    end
+    --check if settings database is filled
+    query = "SELECT * FROM MainBot_settings WHERE name ='BOTNAME'"
+    res, err = VH:SQLQuery(query)
+    local res, isDb = VH:SQLFetch(0)
+    --VH:SendDataToAll(row.."|",10,10)
+	CFG = {}
+    if isDb == "could not fetch row" then
+			--default...
+            VH:SendDataToAll(" *** •MainBot• записал стандартные настройки.|",10,10)
+            -- todo: scrivere tutti i valori con una unica query
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('BOTNAME', '•MainBot•')"
+            res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('BOTPattern', '[•][MmМм][aAэЭеЕ][iIйЙ][нНnN][бbBВ][оОoO][тТtT][•]')"
+            res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OWNER', 'Palmer')"
+            res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OWNERContact', 'Персональные сообщения')"
+            res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('AdminMail', 'solnet.dc.hub.admin@gmail.com')"
+            res, err = VH:SQLQuery(query)
+			-----------------------------------------------
+			-- Просьба о расшаривании
+			-- 1: Бот просит расшарить пользователя файлы в приват
+			-- 0: Бот просит расшарить пользователя файлы в главный чат	
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('AskShareToPm', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Время наказания по умолчанию, в секундах (86400 = 1 сутки)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('BANTIME', '14400')"
+			res, err = VH:SQLQuery(query)
+			-- Отправка сообщений от бота
+			-- 1: Бот посылает сообщения в приват
+			-- 0: Бот посылает сообщения в главный чат
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('BotMessagesToPm', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Детектор ругани в главном чате
+			-- 1: Включить детектор ругани
+			-- 0: Выключить детектор ругани
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ChatCheck', '1')"
+			res, err = VH:SQLQuery(query)
+			-- "Возрастно-шаровой" ценз в чате
+			-- 2: Бот не дает говорить в чате юзерам, с момента первого подключения которых прошло больше ChatQTime секунд и которые расшарили меньше, чем (текущий_средний_размер_шары_на_хабе) / ChatQRatio.
+			-- 1: Бот не дает говорить в чате юзерам, с момента первого подключения которых прошло больше ChatQTime секунд и которые расшарили меньше ChatQValue байт.
+			-- 0: Отключить ценз
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ChatQMode', '2')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ChatQRatio', '20')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ChatQTime', '432000')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ChatQValue', '1024000000')"
+			res, err = VH:SQLQuery(query)
+			-- Ведение логов
+			-- 1: Отключить ведение логов на хабе
+			-- 0: Включить логи
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('DisableLogs', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Детектор флуда
+			-- 1: 	Бот предупреждает пользователя, если в чате было произнесено более FloodWarn сообщений 
+			--	за последние FLOODTIME секунд, и наказывает его, если если в чате произнесено более FloodValue сообщений за последние FLOODTIME секунд.
+			-- 0: 	Отключить детектор флуда
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('FloodCheck', '1')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('FloodWarn', '3')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('FloodValue', '5')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('FLOODTIME', '10')"
+			res, err = VH:SQLQuery(query)
+			-- Приветственное сообщение (hallo.txt)
+			-- 1: Отсылать сообщение в приват
+			-- 0: Отсылать сообщение в главный чат
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('HalloToPm', '0')"
+			res, err = VH:SQLQuery(query)
+			-- Система сообщений юзерам в оффлайн
+			-- 1: Включить личку в оффланй
+			-- 0: Выключить личку в оффлайн
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('MailOn', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Максимальный размер сообщения в оффлайн
+			-- 0: Проверка не производится
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('MaxMailSize', '512')"
+			res, err = VH:SQLQuery(query)
+			-- Главный чат
+			-- 1: Главный чат отключен
+			-- 0: Главный чат включен
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('MainChatOff', '0')"
+			res, err = VH:SQLQuery(query)
+			-- Количество сообщений юзера, используемое при параноидальной проверке чата
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('MaxParanoidHistory', '10')"
+			res, err = VH:SQLQuery(query)
+			-- Проверка ника и описания ресурсов на ругань
+			-- 1: Проверка включена
+			-- 0: Проверка отключена
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NickDescrCheck', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Детектор рекламы в чате  
+			-- 1:	Если пользователь произнес за последние NoAdvTime секунд больше NoAdvWarn сообщений, 
+			--	принятых фильтром за рекламу, ему отсылается предупреждение о том, что частая реклама 
+			--	на хабе запрещена. Если пользователь произнес за последние NoAdvTime секунд больше 
+			--	NoAdvBan сообщений, принятых фильтром за рекламу, он лишается права говорить в чате.
+			-- 0: 	Детектор отключен
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoAdvCheck', '1')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoAdvWarn', '2')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoAdvTime', '3600')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoAdvBan', '4')"
+			res, err = VH:SQLQuery(query)
+			-- Система ограничений на скачку в зависимости от объема шары
+			-- 1: Ограничения включена
+			-- 0: Ограниченя отключены
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoLeechOn', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Во сколько раз шара пользователя должна быть больше максимального возможного ограничения 
+			-- на скачивание, которое пользователь может установить
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoLeechRatio', '10')"
+			res, err = VH:SQLQuery(query)
+			-- Если у юзера A включено ограничение на скачку, и шара юзера B 
+			-- недостаточна для получения права скачки с А, то сообщение о необходимости 
+			-- расшариться для получения права скачки будет высылаться ботом юзеру B 
+			-- не чаще чем раз в NoLeechTime секунд, даже если клиент B обращается к А чаще.
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoLeechTime', '300')"
+			res, err = VH:SQLQuery(query)
+			-- Детектор ора в чате.  
+			-- Детектор учитывает только фразы, в которых содержится больше чем NoYellSize букв. 
+			-- Ором считаются фразы с процентом содержания заглавных букв среди всех букв больше, чем NoYellVal (0=<NoYellVal=<1)  
+			-- 2: Бот подменяет каждое проораное сообщение юзера, заменяя в нем все прописные буквы на строчные.
+			-- 1: Если юзер проорал больше NoYellCount фраз за последние NoYellTime секунд, бот лишает его права говорить в чате. При NoYellCount=0 наказание назначается за первый же ор
+			-- 0: Детектор отключен
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoYellMode', '1')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoYellSize', '5')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoYellVal', '0.8')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoYellTime', '300')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('NoYellCount', '2')"
+			res, err = VH:SQLQuery(query)
+			-- Параноидальная проверка чата
+			-- 1: Проверка включена
+			-- 0: Проверка отключен
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ParanoidChatCheck', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Параноидальная проверка описания ресурсов на ругань
+			-- 1: Проверка включена
+			-- 0: Проверка отключен
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ParanoidDescrCheck', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Сообщеня с просьбой расшариться от лица случайного ника 
+			-- 1: Функция включена
+			-- 0: Функция отключена
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('RandomAskShareNick', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Инфо о забаненых пользователях при подключении
+			-- 1: Показывать информацию о забаненых пользователях при подключении администратору
+			-- 0: Отключить функцию
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ReportBansToMaster', '0')"
+			res, err = VH:SQLQuery(query)
+			-- Инфо о забаненых пользователях при подключении
+			-- 1: Показывать информацию о забаненых пользователях при подключении ОПераторам хаба
+			-- 0: Отключить функцию
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ReportBansToOp', '0')"
+			res, err = VH:SQLQuery(query)
+			-- Информирование администраторов хаба в личку при срабатывании параноидального детектора ругани в чате
+			-- 1: Информировать
+			-- 0: Не информировать
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ReportParanoidToMaster', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Триггеры для сообщений о рекордах хаба. 
+			-- Сообщение об установке нового рекорда количества он-лайн юзеров на хабе показывается, 
+			-- если со времени прошлого показа прошло больше STATS_U_TIME секунд, 
+			-- или количество юзеров он-лайн по сравнению с прошлым показом увеличилось больше чем на STATS_U_VAL человек. 
+			-- Сообщение об установке нового рекорда суммарной шары показывается, 
+			-- если со времени прошлого показа прошло больше STATS_S_TIME секунд, 
+			-- или объем суммарной шары по сравнению с прошлым показом возрос более чем на STATS_S_VAL байт.
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('STATS_U_TIME', '600')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('STATS_U_VAL', '1')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('STATS_S_TIME', '600')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('STATS_S_VAL', '107374182400')"
+			res, err = VH:SQLQuery(query)
+			-- Время (в секундах), в течение которого размер шары пользователя, ушедшего с хаба, участвует в рейтинге ( 604800=1 неделя )
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ShareRecordTIME', '604800')"
+			res, err = VH:SQLQuery(query)
+			-- Рейтинг пользователей по объему шары
+			-- 1: Вести рейтинг
+			-- 0: Отключить рейтинг
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ShareTopOn', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Показ новостей
+			-- 1: Показывать новости 
+			-- 0: Отключить показ новостей
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('ShowNews', '1')"
+			res, err = VH:SQLQuery(query)
+			-- Запрет входа на хаб нескольким никам с одного ip-адреса
+			-- 1: Включить запрет (Исключения добавляются в multi_nick_ip.dat)
+			-- 0: Разрешить пользователям заходить с одного и того же IP-адреса под разными никами
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('SingleIp', '0')"
+			res, err = VH:SQLQuery(query)
+			-- Поддержка пользователей из интернета
+			-- 1: Включать поддержку пользователей из интернета (не забудьте перезапустить хаб!!!)
+			-- 0: Выключить поддержку пользователей из интернета
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('InetDown', '0')"
+			res, err = VH:SQLQuery(query)
+			-- Отображение бота на хабе
+			-- 1: Бот будет зарегистрирован на хабе
+			-- 0: Бот не будет зарегистрирован на хабе
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('RegBot', '1')"
+			res, err = VH:SQLQuery(query)
+			--Количество предупреждений перед баном тем, кто расшарил меньше определённого объёма
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('LowShareWarns', '5')"
+			res, err = VH:SQLQuery(query)
+			--Количество предупреждений перед баном тем, кто расшарил системные файлы
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('SysFilesWarns', '0')"
+			res, err = VH:SQLQuery(query)
+			--Разница во времени между двумя сообщениями об обнаружении
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('IPSpy_TIME', '600')"
+			res, err = VH:SQLQuery(query)
+			--Режим отладки
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('DebugMode', '0')"
+			res, err = VH:SQLQuery(query)
+			--OldTTHtoTTH_Archive("5", "month");
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OldTTH_Period', 'month')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OldTTH_Num', '5')"
+			res, err = VH:SQLQuery(query)
+			--GetOldUser(6, "month")
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OldUser_Period', 'month')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OldUser_Num', '6')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('Bancount_Limit_Full', '30')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('Bancount_Limit_Reg', '10')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('RegShare_Limit', '10')"
+			res, err = VH:SQLQuery(query)
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('LowShare_Limit', '1073741824')"
+			res, err = VH:SQLQuery(query)
+    end
+			--load settings
+            query = "SELECT * FROM MainBot_settings WHERE name='BOTNAME'"
+            local res, rows = VH:SQLQuery(query)
+            local res, name, valore = VH:SQLFetch(0)
+            --VH:SendDataToAll(""..valore.."|",3,10)
+            BOTNAME = valore
+			--VH:SendDataToAll("BOTNAME : "..BOTNAME.."|",10,10)
+            --VH:SendDataToAll("xx-"..valore,10,10)
+			query = "SELECT * FROM MainBot_settings WHERE name='BOTPattern'"
+            res, rows = VH:SQLQuery(query)
+            res, name, valore = VH:SQLFetch(0)
+            BOTPattern = valore
+			--VH:SendDataToAll("BOTPattern : "..BOTPattern.."|",10,10)
+			query = "SELECT * FROM MainBot_settings WHERE name='OWNER'"
+            res, rows = VH:SQLQuery(query)
+            res, name, valore = VH:SQLFetch(0)
+            --VH:SendDataToAll(""..valore.."|",3,10)
+            OWNER = valore
+			--VH:SendDataToAll("OWNER : "..OWNER.."|",10,10)
+            query = "SELECT * FROM MainBot_settings WHERE name='OWNERContact'"
+            res, rows = VH:SQLQuery(query)
+            res, name, valore = VH:SQLFetch(0)
+            --VH:SendDataToAll(""..valore.."|",3,10)
+            OWNERContact = valore
+			--VH:SendDataToAll("OWNERContact : "..OWNERContact.."|",10,10)
+			query = "SELECT * FROM MainBot_settings WHERE name='AdminMail'"
+            res, rows = VH:SQLQuery(query)
+            res, name, valore = VH:SQLFetch(0)
+            --VH:SendDataToAll(""..valore.."|",3,10)
+            CFG.AdminMail = valore
+			-------------------------------------------------------------------------
+			query = "SELECT * FROM MainBot_settings WHERE name='AskShareToPm'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.AskShareToPm = tonumber(valore)
+			--VH:SendDataToAll("AskShareToPm : "..CFG.AskShareToPm.."|",10,10)
+			query = "SELECT * FROM MainBot_settings WHERE name='BANTIME'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.BANTIME = tonumber(valore)
+			--VH:SendDataToAll("BANTIME : "..CFG.BANTIME.."|",10,10)
+			query = "SELECT * FROM MainBot_settings WHERE name='BotMessagesToPm'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.BotMessagesToPm = tonumber(valore)
+			--VH:SendDataToAll("BotMessagesToPm : "..CFG.BotMessagesToPm.."|",10,10)
+			-------------------------------------------------------------------------
+			query = "SELECT * FROM MainBot_settings WHERE name='ChatCheck'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ChatCheck = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ChatQMode'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ChatQMode = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ChatQRatio'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ChatQRatio = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ChatQTime'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ChatQTime = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ChatQValue'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ChatQValue = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='DisableLogs'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.DisableLogs = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='FloodCheck'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.FloodCheck = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='FloodWarn'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.FloodWarn = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='FloodValue'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.FloodValue = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='FLOODTIME'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.FLOODTIME = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='HalloToPm'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.HalloToPm = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='MailOn'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.MailOn = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='MaxMailSize'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.MaxMailSize = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='MainChatOff'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.MainChatOff = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='MaxParanoidHistory'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.MaxParanoidHistory = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NickDescrCheck'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NickDescrCheck = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoAdvCheck'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoAdvCheck = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoAdvWarn'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoAdvWarn = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoAdvTime'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoAdvTime = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoAdvBan'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoAdvBan = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoLeechOn'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoLeechOn = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoLeechRatio'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoLeechRatio = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoLeechTime'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoLeechTime = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoYellMode'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoYellMode = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoYellSize'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoYellSize = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoYellVal'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoYellVal = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoYellTime'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoYellTime = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='NoYellCount'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.NoYellCount = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ParanoidChatCheck'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ParanoidChatCheck = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ParanoidDescrCheck'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ParanoidDescrCheck = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='RandomAskShareNick'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.RandomAskShareNick = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ReportBansToMaster'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ReportBansToMaster = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ReportBansToOp'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ReportBansToOp = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ReportParanoidToMaster'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ReportParanoidToMaster = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ReportParanoidToOp'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ReportParanoidToOp = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='STATS_U_TIME'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.STATS_U_TIME = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='STATS_U_VAL'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.STATS_U_VAL = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='STATS_S_TIME'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.STATS_S_TIME = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='STATS_S_VAL'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.STATS_S_VAL = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ShareRecordTIME'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ShareRecordTIME = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ShareTopOn'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ShareTopOn = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='ShowNews'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.ShowNews = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='SingleIp'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.SingleIp = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='InetDown'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.InetDown = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='RegBot'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.RegBot = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='LowShareWarns'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.LowShareWarns = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='SysFilesWarns'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.SysFilesWarns = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='IPSpy_TIME'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.IPSpy_TIME = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='DebugMode'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.DebugMode = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='OldTTH_Period'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.OldTTH_Period = valore
+			query = "SELECT * FROM MainBot_settings WHERE name='OldTTH_Num'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.OldTTH_Num = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='OldUser_Period'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.OldUser_Period = valore
+			query = "SELECT * FROM MainBot_settings WHERE name='OldUser_Num'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.OldUser_Num = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='Bancount_Limit_Full'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.Bancount_Limit_Full = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='Bancount_Limit_Reg'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.Bancount_Limit_Reg = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='RegShare_Limit'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.RegShare_Limit = tonumber(valore)
+			query = "SELECT * FROM MainBot_settings WHERE name='LowShare_Limit'"
+			res, rows = VH:SQLQuery(query)
+			res, name, valore = VH:SQLFetch(0)
+			CFG.LowShare_Limit = tonumber(valore)
+			--VH:SendDataToAll("RegBot : "..CFG.RegBot.."|",10,10)		
+			AddSysLog("Функция SQL_Init выполнена.")
+end
+function SQL_ModSettings(pValue, nValue)
+	if (type(pValue) == "number") then
+	local query = "UPDATE MainBot_settings SET valore="..pValue.." WHERE name='"..SQL_Escape(nValue).."'"
+	local res, err = VH:SQLQuery(query)
+	end
+	if (type(pValue) == "string") then
+	local query = "UPDATE MainBot_settings SET valore='"..SQL_Escape(pValue).."' WHERE name='"..SQL_Escape(nValue).."'"
+	local res, err = VH:SQLQuery(query)
+	end
+	AddSysLog("SQL_ModSettings. Изменены параметры: valore='"..pValue.."' name='"..nValue.."'")
+end
+function SQL_UserList()
+	local lastnicksnum = 10
+	--local query = "CREATE TABLE IF NOT EXISTS MainBot_userlist(ip varchar( 15 ) NOT NULL default '',nick varchar( 64 ) NOT NULL default '',bancount int( 10 ) unsigned NOT NULL default '0',user_status int( 10 ) unsigned NOT NULL default '0',forwhat int( 10 ) unsigned NOT NULL default '0',whenexpires datetime,user_when datetime,user_by varchar( 64 ) NOT NULL default '',context varchar( 100 ) NOT NULL default '',lastonline datetime,noleech double NOT NULL default '0',maxnoleech int( 10 ) unsigned NOT NULL default '0',locknick varchar( 64 ) NOT NULL default '',sharesize double NOT NULL default '0',fl datetime,InetDown varchar( 5 ) NOT NULL default '', user_rank double NOT NULL default '0', sessiontime double NOT NULL default '0', totaltime double NOT NULL default '0',PRIMARY KEY ( ip ) ,KEY nick(nick( 64 )),KEY sharesize(sharesize),KEY bancount(bancount),KEY user_status(user_status),KEY noleech(noleech),KEY user_rank(user_rank))TYPE = MYISAM ;"
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_userlist(ip varchar( 15 ) NOT NULL default '',nick varchar( 64 ) NOT NULL default '',bancount int( 10 ) unsigned NOT NULL default '0',user_status int( 10 ) unsigned NOT NULL default '0',forwhat int( 10 ) unsigned NOT NULL default '0',whenexpires datetime,user_when datetime,user_by varchar( 64 ) NOT NULL default '',context varchar( 100 ) NOT NULL default '',lastonline datetime,noleech double NOT NULL default '0',maxnoleech int( 10 ) unsigned NOT NULL default '0',locknick varchar( 64 ) NOT NULL default '',sharesize double NOT NULL default '0',fl datetime,InetDown varchar( 5 ) NOT NULL default '1', user_rank double NOT NULL default '0', sessiontime double NOT NULL default '0', totaltime double NOT NULL default '0',PRIMARY KEY ( ip ) ,KEY nick(nick( 64 )),KEY sharesize(sharesize),KEY bancount(bancount),KEY user_status(user_status),KEY noleech(noleech),KEY user_rank(user_rank))TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	query = "CREATE TABLE IF NOT EXISTS MainBot_userlist_lastnicks("
+	query = query.."ip varchar( 15 ) NOT NULL default '', lastnickcount int( 10 ) unsigned NOT NULL default '0',"
+	for i = 1, lastnicksnum do
+		query = query.."lastnick"..i.." varchar( 64 ) NOT NULL default '',"
+	end
+	query = query.."PRIMARY KEY ( ip ))TYPE = MYISAM ;"
+	res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	query = "CREATE TABLE IF NOT EXISTS MainBot_userlist_lastcuss("
+	query = query.."ip varchar( 15 ) NOT NULL default '', lastcusscount int( 10 ) unsigned NOT NULL default '0',"
+	for i = 1, lastnicksnum do
+		query = query.."lastcuss"..i.." mediumtext NOT NULL,"
+	end
+	query = query.."PRIMARY KEY ( ip ))TYPE = MYISAM ;"
+	res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("Функция SQL_UserList выполнена.")
+end
+function SQL_AddToUserList(sUser)
+	--local query = "INSERT INTO MainBot_userlist (ip,nick,bancount,user_status,forwhat,whenexpires,user_when,user_by,context,lastonline,noleech,maxnoleech,locknick,sharesize,fl,InetDown,user_rank,sessiontime,totaltime) VALUES ('"..sUser.sIP.."','"..SQL_Escape(sUser.sName).."',0,0,0,'','','','',now(),0,0,'','"..sUser.iShareSize.."',now(),'',0,0,0)"
+	local query = "INSERT INTO MainBot_userlist (ip,nick,bancount,user_status,forwhat,whenexpires,user_when,user_by,context,lastonline,noleech,maxnoleech,locknick,sharesize,fl,InetDown,user_rank,sessiontime,totaltime) VALUES ('"..sUser.sIP.."','"..SQL_Escape(sUser.sName).."',0,0,0,'','','','',now(),0,0,'','"..sUser.iShareSize.."',now(),'1',0,0,0)"
+	res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	local query = "INSERT INTO MainBot_userlist_lastnicks (ip, lastnickcount) VALUES ('"..sUser.sIP.."',0)"
+	res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	local query = "INSERT INTO MainBot_userlist_lastcuss (ip, lastcusscount) VALUES ('"..sUser.sIP.."',0)"
+	res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_AddToUserList. Новый пользователь: ip ["..sUser.sIP.."] nick ["..sUser.sName.."]")
+end
+function SQL_DeleteFromUserList(sIP)
+	local query = "DELETE FROM MainBot_userlist WHERE ip = '"..sIP.."'"
+	local res, rows = VH:SQLQuery(query)
+	query = "DELETE FROM MainBot_userlist_lastnicks WHERE ip = '"..sIP.."'"
+	res, rows = VH:SQLQuery(query)
+	query = "DELETE FROM MainBot_userlist_lastcuss WHERE ip = '"..sIP.."'"
+	res, rows = VH:SQLQuery(query)
+	AddSysLog("SQL_DeleteFromUserList. Удалён пользователь: ip ["..sIP.."]")
+end
+function SQL_ModToUserList(sParm, pValue, sName, nValue)
+	if (type(pValue) == "number") then
+	local query = "UPDATE MainBot_userlist SET "..sParm.."="..pValue.." WHERE "..sName.."='"..SQL_Escape(nValue).."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	end
+	if (type(pValue) == "string") then
+	local query = "UPDATE MainBot_userlist SET "..sParm.."='"..SQL_Escape(pValue).."' WHERE "..sName.."='"..SQL_Escape(nValue).."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	end
+end
+function SQL_ModLastnicksList(pValue, nValue)
+	pValue=SQL_Escape(pValue);
+	local query = "SELECT lastnickcount FROM MainBot_userlist_lastnicks WHERE ip='"..nValue.."' and (lastnick1='"..pValue.."' or lastnick2='"..pValue.."' or lastnick3='"..pValue.."' or lastnick4='"..pValue.."' or lastnick5='"..pValue.."' or lastnick6='"..pValue.."' or lastnick7='"..pValue.."' or lastnick8='"..pValue.."' or lastnick9='"..pValue.."' or lastnick10='"..pValue.."')"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows==0 then
+		local res, value = VH:SQLFetch(0)
+		if (value == "could not fetch row") or (value == "could not seek data") then
+			query = "SELECT lastnickcount FROM MainBot_userlist_lastnicks WHERE ip='"..nValue.."'"
+			res, rows = VH:SQLQuery(query)
+			if res and rows~=0 then
+				res, value = VH:SQLFetch(0)
+				local lastnickcount = tonumber(value)
+				if lastnickcount > 9 then 
+					query = "UPDATE MainBot_userlist_lastnicks SET lastnick1='"..pValue.."' WHERE ip='"..nValue.."'"
+					res, rows = VH:SQLQuery(query)
+					query = "UPDATE MainBot_userlist_lastnicks SET lastnickcount=1 WHERE ip='"..nValue.."'"
+					res, rows = VH:SQLQuery(query)
+					AddSysLog("SQL_ModLastnicksList. Изменения: SET lastnick1='"..pValue.."' WHERE ip='"..nValue.."'")
+				elseif (lastnickcount >= 0) and (lastnickcount <= 9) then
+					lastnickcount = lastnickcount+1
+					query = "UPDATE MainBot_userlist_lastnicks SET lastnick"..lastnickcount.."='"..pValue.."' WHERE ip='"..nValue.."'"
+					res, rows = VH:SQLQuery(query)
+					query = "UPDATE MainBot_userlist_lastnicks SET lastnickcount="..lastnickcount.." WHERE ip='"..nValue.."'"
+					res, rows = VH:SQLQuery(query)
+					AddSysLog("SQL_ModLastnicksList. Изменения: SET lastnick"..lastnickcount.."='"..pValue.."' WHERE ip='"..nValue.."'")
+				end
+			end
+		end
+	end
+end
+function SQL_ModLastcussList(pValue, nValue)
+	pValue=SQL_Escape(pValue);
+	local query = "SELECT lastcusscount FROM MainBot_userlist_lastcuss WHERE ip='"..nValue.."' and (lastcuss1='"..pValue.."' or lastcuss2='"..pValue.."' or lastcuss3='"..pValue.."' or lastcuss4='"..pValue.."' or lastcuss5='"..pValue.."' or lastcuss6='"..pValue.."' or lastcuss7='"..pValue.."' or lastcuss8='"..pValue.."' or lastcuss9='"..pValue.."' or lastcuss10='"..pValue.."')"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows==0 then
+		local res, value = VH:SQLFetch(0)
+		if (value == "could not fetch row") or (value == "could not seek data") then
+			query = "SELECT lastcusscount FROM MainBot_userlist_lastcuss WHERE ip='"..nValue.."'"
+			res, rows = VH:SQLQuery(query)
+			if res and rows~=0 then
+				res, value = VH:SQLFetch(0)
+				local lastcusscount = tonumber(value)
+				if lastcusscount > 9 then 
+					query = "UPDATE MainBot_userlist_lastcuss SET lastcuss1='"..pValue.."' WHERE ip='"..nValue.."'"
+					res, rows = VH:SQLQuery(query)
+					query = "UPDATE MainBot_userlist_lastcuss SET lastcusscount=1 WHERE ip='"..nValue.."'"
+					res, rows = VH:SQLQuery(query)
+					AddSysLog("SQL_ModLastcussList. Изменения: SET lastcuss1='"..pValue.."' WHERE ip='"..nValue.."'")
+				elseif (lastcusscount >= 0) and (lastcusscount <= 9) then
+					lastcusscount = lastcusscount+1
+					query = "UPDATE MainBot_userlist_lastcuss SET lastcuss"..lastcusscount.."='"..pValue.."' WHERE ip='"..nValue.."'"
+					res, rows = VH:SQLQuery(query)
+					query = "UPDATE MainBot_userlist_lastcuss SET lastcusscount="..lastcusscount.." WHERE ip='"..nValue.."'"
+					res, rows = VH:SQLQuery(query)
+					AddSysLog("SQL_ModLastcussList. Изменения: SET lastcuss"..lastcusscount.."='"..pValue.."' WHERE ip='"..nValue.."'")
+				end
+			end
+		end
+	end
+end
+function SQL_FindInUserList(ByParm, Value, curUser)
+	if (type(Value) == "number") then
+	local query = "SELECT * FROM MainBot_userlist WHERE "..ByParm.."="..Value..""
+	local res, rows = VH:SQLQuery(query)
+	end
+	if (type(Value) == "string") then
+	local query = "SELECT * FROM MainBot_userlist WHERE "..ByParm.."='"..SQL_Escape(Value).."'"
+	local res, rows = VH:SQLQuery(query)
+	end
+	local board = ""
+	local x = 0
+	if res and rows~=0 then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip,nick,bancount,user_status,forwhat,whenexpires,user_when,user_by,context,lastonline,noleech,maxnoleech,locknick,sharesize,fl,InetDown,user_rank,sessiontime,totaltime = VH:SQLFetch(x)
+				curUser[x+1] = {}
+				curUser[x+1].ip = ip
+				curUser[x+1].nick = nick
+				curUser[x+1].bancount = tonumber(bancount)
+				curUser[x+1].status = tonumber(user_status)
+				curUser[x+1].forwhat = tonumber(forwhat)
+				curUser[x+1].whenexpires = whenexpires
+				curUser[x+1].when = user_when
+				curUser[x+1].by = user_by
+				curUser[x+1].context = context
+				curUser[x+1].lastonline = lastonline
+				curUser[x+1].noleech = tonumber(noleech)
+				curUser[x+1].maxnoleech = tonumber(maxnoleech)
+				curUser[x+1].locknick = locknick
+				curUser[x+1].sharesize = tonumber(sharesize)
+				curUser[x+1].fl = fl
+				curUser[x+1].InetDown = InetDown
+				curUser[x+1].rank = tonumber(user_rank)
+				curUser[x+1].sessiontime = tonumber(sessiontime)
+				curUser[x+1].totaltime = tonumber(totaltime)
+			end
+		else
+			local res,ip,nick,bancount,user_status,forwhat,whenexpires,user_when,user_by,context,lastonline,noleech,maxnoleech,locknick,sharesize,fl,InetDown,user_rank,sessiontime,totaltime = VH:SQLFetch(0)
+			if (ip == "could not fetch row") or (ip == "could not seek data") then 
+				curUser = nil
+			else
+				curUser.ip = ip
+				curUser.nick = nick
+				curUser.bancount = tonumber(bancount)
+				curUser.status = tonumber(user_status)
+				curUser.forwhat = tonumber(forwhat)
+				curUser.whenexpires = whenexpires
+				curUser.when = user_when
+				curUser.by = user_by
+				curUser.context = context
+				curUser.lastonline = lastonline
+				curUser.noleech = tonumber(noleech)
+				curUser.maxnoleech = tonumber(maxnoleech)
+				curUser.locknick = locknick
+				curUser.sharesize = tonumber(sharesize)
+				curUser.fl = fl
+				curUser.InetDown = InetDown
+				curUser.rank = tonumber(user_rank)
+				curUser.sessiontime = tonumber(sessiontime)
+				curUser.totaltime = tonumber(totaltime)
+			end
+		end
+	else 
+		curUser = nil
+	end
+	return curUser
+end
+function SQL_FindInLastnicksList(IP)
+	if IP then
+		local query = "SELECT lastnick1, lastnick2, lastnick3, lastnick4, lastnick5, lastnick6, lastnick7, lastnick8, lastnick9, lastnick10 FROM MainBot_userlist_lastnicks WHERE ip='"..IP.."'"
+		local res, rows = VH:SQLQuery(query)
+		if res and rows~=0 then
+			local res,lastnicks1,lastnicks2,lastnicks3,lastnicks4,lastnicks5,lastnicks6,lastnicks7,lastnicks8,lastnicks9,lastnicks10 = VH:SQLFetch(0)
+			if (lastnicks1~="could not fetch row") and (lastnicks1~="could not seek data") then
+				local curUser = {}
+				curUser.lastnicks1 = (tostring(lastnicks1) or "")
+				curUser.lastnicks2 = (tostring(lastnicks2) or "")
+				curUser.lastnicks3 = (tostring(lastnicks3) or "")
+				curUser.lastnicks4 = (tostring(lastnicks4) or "")
+				curUser.lastnicks5 = (tostring(lastnicks5) or "")
+				curUser.lastnicks6 = (tostring(lastnicks6) or "")
+				curUser.lastnicks7 = (tostring(lastnicks7) or "")
+				curUser.lastnicks8 = (tostring(lastnicks8) or "")
+				curUser.lastnicks9 = (tostring(lastnicks9) or "")
+				curUser.lastnicks10 = (tostring(lastnicks10) or "")
+				return curUser
+			else
+				return nil
+			end
+		else
+			return nil
+		end
+	else
+		return nil
+	end
+end
+function SQL_FindInLastcussList(IP)
+	if IP then
+		local query = "SELECT lastcuss1, lastcuss2, lastcuss3, lastcuss4, lastcuss5, lastcuss6, lastcuss7, lastcuss8, lastcuss9, lastcuss10 FROM MainBot_userlist_lastcuss WHERE ip='"..IP.."'"
+		local res, rows = VH:SQLQuery(query)
+		if res and rows~=0 then
+			local res,lastcuss1,lastcuss2,lastcuss3,lastcuss4,lastcuss5,lastcuss6,lastcuss7,lastcuss8,lastcuss9,lastcuss10 = VH:SQLFetch(0)
+			if (lastcuss1~="could not fetch row") and (lastcuss1~="could not seek data") then
+				local curUser = {}
+				curUser.lastcuss1 = (lastcuss1 or "")
+				curUser.lastcuss2 = (lastcuss2 or "")
+				curUser.lastcuss3 = (lastcuss3 or "")
+				curUser.lastcuss4 = (lastcuss4 or "")
+				curUser.lastcuss5 = (lastcuss5 or "")
+				curUser.lastcuss6 = (lastcuss6 or "")
+				curUser.lastcuss7 = (lastcuss7 or "")
+				curUser.lastcuss8 = (lastcuss8 or "")
+				curUser.lastcuss9 = (lastcuss9 or "")
+				curUser.lastcuss10 = (lastcuss10 or "")
+				return curUser
+			else
+				return nil
+			end
+		else
+			return nil
+		end
+	else
+		return nil
+	end
+end
+function SQL_FindInUserListByIP(sUser)
+	local curUser = {}
+	local ByParm = "ip"
+	if sUser then
+		local IP = sUser.sIP
+		curUser = SQL_FindInUserList(ByParm, IP, curUser)
+	else
+		curUser = nil
+	end
+	return curUser
+	----------------------------------
+end
+function SQL_FindInUserListByNick(sUser)
+	local curUser = {}
+	local ByParm = "nick"
+	if sUser then
+		local Nick = sUser.sName
+		curUser = SQL_FindInUserList(ByParm, Nick, curUser)
+	else
+		curUser = nil
+	end
+	return curUser
+end
+function SQL_FindInRegListByIP(sIP)
+	local curUser = {}
+	local ByParm = "nick"
+	if sUser then
+		local Nick = sUser.sName
+		curUser = SQL_FindInUserList(ByParm, Nick, curUser)
+	else
+		curUser = nil
+	end
+	return curUser
+end
+function SQL_GetOldUser(iNumTime, sTypeTime)
+	--SELECT * FROM smf_members INTO OUTFILE 'K:\\test.sql';
+	--LOAD DATA INFILE 'K:\\test.sql' INTO TABLE smf_members;
+	if type(iNumTime) == "number" then
+		local query = "SELECT * FROM MainBot_userlist WHERE lastonline < now() - INTERVAL "..iNumTime.." "..SQL_Escape(sTypeTime)..""
+		local res, rows = VH:SQLQuery(query)
+		--VH:SendDataToUser("$To: Palmer From: SQL_GetOldUser $<SQL_GetOldUser> SQL_GetOldUser. rows["..(rows or "").."]|","Palmer")
+		local curUser={};
+		if res and rows~=0 then
+			if rows > 1 then
+				--if rows > 10 then rows=10; end;
+				for x=0, rows-1 do
+					local res,ip,nick,bancount,user_status,forwhat,whenexpires,user_when,user_by,context,lastonline,noleech,maxnoleech,locknick,sharesize,fl,InetDown,user_rank,sessiontime,totaltime = VH:SQLFetch(x)
+					if (ip ~= "could not fetch row") and (ip ~= "could not seek data") then
+						curUser[x+1] = {};
+						curUser[x+1].ip = ip
+						curUser[x+1].nick = nick
+						curUser[x+1].bancount = tonumber(bancount)
+						curUser[x+1].status = tonumber(user_status)
+						curUser[x+1].forwhat = tonumber(forwhat)
+						curUser[x+1].whenexpires = whenexpires
+						curUser[x+1].when = user_when
+						curUser[x+1].by = user_by
+						curUser[x+1].context = context
+						curUser[x+1].lastonline = lastonline
+						curUser[x+1].noleech = tonumber(noleech)
+						curUser[x+1].maxnoleech = tonumber(maxnoleech)
+						curUser[x+1].locknick = locknick
+						curUser[x+1].sharesize = tonumber(sharesize)
+						curUser[x+1].fl = fl
+						curUser[x+1].InetDown = InetDown
+						curUser[x+1].rank = tonumber(user_rank)
+						curUser[x+1].sessiontime = tonumber(sessiontime)
+						curUser[x+1].totaltime = tonumber(totaltime)
+						--[[
+						curUser[x+1].lastcuss = {};
+						local templastcuss = SQL_FindInLastcussList(ip)
+						if templastcuss~=nil then
+							curUser[x+1].lastcuss = templastcuss;
+							templastcuss = nil;
+						end
+						curUser[x+1].lastnicks = {};
+						local templastnicks = SQL_FindInLastnicksList(ip)
+						if templastnicks~=nil then
+							curUser[x+1].lastnicks = templastnicks;
+							templastnicks = nil;
+						end
+						]]--
+						--VH:SendDataToUser("$To: Palmer From: SQL_GetOldUser $<SQL_GetOldUser> SQL_GetOldUser. ["..(x or "err").."] ip["..(curUser[x+1].ip or "").."] nick["..(curUser[x+1].nick or "").."] lastonline["..(curUser[x+1].lastonline or "").."]|","Palmer")
+					end
+				end
+			else
+				local res,ip,nick,bancount,user_status,forwhat,whenexpires,user_when,user_by,context,lastonline,noleech,maxnoleech,locknick,sharesize,fl,InetDown,user_rank,sessiontime,totaltime = VH:SQLFetch(0)
+				if (ip == "could not fetch row") or (ip == "could not seek data") then 
+					curUser = nil
+				else
+					curUser[1] = {};
+					curUser[1].ip = ip
+					curUser[1].nick = nick
+					curUser[1].bancount = tonumber(bancount)
+					curUser[1].status = tonumber(user_status)
+					curUser[1].forwhat = tonumber(forwhat)
+					curUser[1].whenexpires = whenexpires
+					curUser[1].when = user_when
+					curUser[1].by = user_by
+					curUser[1].context = context
+					curUser[1].lastonline = lastonline
+					curUser[1].noleech = tonumber(noleech)
+					curUser[1].maxnoleech = tonumber(maxnoleech)
+					curUser[1].locknick = locknick
+					curUser[1].sharesize = tonumber(sharesize)
+					curUser[1].fl = fl
+					curUser[1].InetDown = InetDown
+					curUser[1].rank = tonumber(user_rank)
+					curUser[1].sessiontime = tonumber(sessiontime)
+					curUser[1].totaltime = tonumber(totaltime)
+					--[[
+					curUser[1].lastcuss = {};
+					local templastcuss = SQL_FindInLastcussList(ip)
+					if templastcuss~=nil then
+						curUser[1].lastcuss = templastcuss;
+						templastcuss = nil;
+					end
+					curUser[1].lastnicks = {};
+					local templastnicks = SQL_FindInLastnicksList(ip)
+					if templastnicks~=nil then
+						curUser[1].lastnicks = templastnicks;
+						templastnicks = nil;
+					end
+					]]--
+					--VH:SendDataToUser("$To: Palmer From: SQL_GetOldUser $<SQL_GetOldUser> SQL_GetOldUser. ip["..(curUser[1].ip or "").."] nick["..(curUser[1].nick or "").."] lastonline["..(curUser[1].lastonline or "").."]|","Palmer")
+				end
+			end
+		else 
+			curUser=nil;
+		end
+		if curUser~=nil then
+			for i,val in pairs(curUser) do
+				curUser[i].lastcuss = {};
+				local templastcuss = SQL_FindInLastcussList(curUser[i].ip)
+				if templastcuss~=nil then
+					curUser[i].lastcuss = templastcuss;
+					templastcuss = nil;
+					--VH:SendDataToUser("$To: Palmer From: SQL_GetOldUser $<SQL_GetOldUser> SQL_GetOldUser. lastcuss ["..(i or "err").."] ip["..(curUser[i].ip or "").."] nick["..(curUser[i].nick or "").."] lastonline["..(curUser[i].lastonline or "").."]|","Palmer")
+				end
+				curUser[i].lastnicks = {};
+				local templastnicks = SQL_FindInLastnicksList(curUser[i].ip)
+				if templastnicks~=nil then
+					curUser[i].lastnicks = templastnicks;
+					templastnicks = nil;
+					--VH:SendDataToUser("$To: Palmer From: SQL_GetOldUser $<SQL_GetOldUser> SQL_GetOldUser. lastnicks ["..(i or "err").."] ip["..(curUser[i].ip or "").."] nick["..(curUser[i].nick or "").."] lastonline["..(curUser[i].lastonline or "").."]|","Palmer")
+				end
+			end
+		end
+		return curUser
+	end
+end
+function SQL_TimersCfg()
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_timeconfig (name varchar( 50 ) NOT NULL default '', valore double NOT NULL default '0')TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	query = "SELECT * FROM MainBot_timeconfig WHERE name ='FREEMEMTIME'"
+    res, err = VH:SQLQuery(query)
+    local res, isDb = VH:SQLFetch(0)
+    if isDb == "could not fetch row" then
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('freememtime', '60')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('mottime', '1')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('sharetime', '5')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('logtime', '2')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('saveustime', '5')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('archtime', '180')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('newstime', '180')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('cleardb', '1440')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('searchillegaltth', '5')"--seconds
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('lowshare', '5')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('backup', '1')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('setusertag', '1')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('reloadbuffers', '10')"
+	    res, err = VH:SQLQuery(query)
+		---Double timer
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('double_searchsysfiles_1', '180')"--seconds
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('double_searchsysfiles_2', '15')"--seconds
+	    res, err = VH:SQLQuery(query)
+	end
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='freememtime'"
+	local res, rows = VH:SQLQuery(query)
+	local res, valore = VH:SQLFetch(0)
+	FREEMEMTIME = tonumber(valore)
+	FREEMEMTIME = FREEMEMTIME*60
+	TCFG["FREEMEMTIME"] = FREEMEMTIME
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='mottime'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	MOTTIME = tonumber(valore)
+	MOTTIME = MOTTIME*60
+	TCFG["MOTTIME"] = MOTTIME
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='sharetime'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	SHARETIME = tonumber(valore)
+	SHARETIME = SHARETIME*60
+	TCFG["SHARETIME"] = SHARETIME
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='logtime'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	LOGTIME = tonumber(valore)
+	LOGTIME = LOGTIME*60
+	TCFG["LOGTIME"] = LOGTIME
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='saveustime'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	SAVEUSTIME = tonumber(valore)
+	SAVEUSTIME = SAVEUSTIME*60
+	TCFG["SAVEUSTIME"] = SAVEUSTIME
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='archtime'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	ARCHUSTIME = tonumber(valore)
+	ARCHUSTIME = ARCHUSTIME*60
+	TCFG["ARCHUSTIME"] = ARCHUSTIME
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='newstime'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	NEWSTIME = tonumber(valore)
+	NEWSTIME = NEWSTIME*60
+	TCFG["NEWSTIME"] = NEWSTIME
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='cleardb'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	CLEARDB = tonumber(valore)
+	CLEARDB = CLEARDB*60
+	TCFG["CLEARDB"] = CLEARDB
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='searchillegaltth'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	SEARCHILLEGALTTH = tonumber(valore)
+	--SEARCHILLEGALTTH = SEARCHILLEGALTTH*60
+	TCFG["SEARCHILLEGALTTH"] = SEARCHILLEGALTTH
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='lowshare'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	LOWSHARETIMER = tonumber(valore)
+	LOWSHARETIMER = LOWSHARETIMER*60
+	TCFG["LOWSHARETIMER"] = LOWSHARETIMER
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='backup'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	BACKUPTIMER = tonumber(valore)
+	BACKUPTIMER = BACKUPTIMER*60
+	TCFG["BACKUPTIMER"] = BACKUPTIMER
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='setusertag'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	TAGGING = tonumber(valore)
+	TAGGING = TAGGING*60
+	TCFG["TAGGING"] = TAGGING
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='reloadbuffers'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	RELOADBUFFERTIMER = tonumber(valore)
+	RELOADBUFFERTIMER = RELOADBUFFERTIMER*60
+	TCFG["RELOADBUFFERTIMER"] = RELOADBUFFERTIMER
+	--Double timer
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='double_searchsysfiles_1'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	SEARCHSYSTEMFILES_1 = tonumber(valore)
+	TCFG["SEARCHSYSTEMFILES_1"] = SEARCHSYSTEMFILES_1
+	query = "SELECT valore FROM MainBot_timeconfig WHERE name='double_searchsysfiles_2'"
+	res, rows = VH:SQLQuery(query)
+	res, valore = VH:SQLFetch(0)
+	SEARCHSYSTEMFILES_2 = tonumber(valore)
+	TCFG["SEARCHSYSTEMFILES_2"] = SEARCHSYSTEMFILES_2
+	AddSysLog("Функция SQL_TimersCfg выполнена.")
+end
+function SQL_SetTimersCfg(TName, Value)
+	if (type(Value) == "number") then
+		local query = "UPDATE MainBot_timeconfig SET valore="..Value.." WHERE name='"..TName.."'"
+		local res, err = VH:SQLQuery(query)
+		if not res then
+	        Users.SendToMain("Error in query: "..query,5, 10)
+	        Users.SendToMain("Error: "..err,5, 10)
+	    end
+	end
+	if (type(Value) == "string") then
+		local query = "UPDATE MainBot_timeconfig SET valore='"..SQL_Escape(Value).."' WHERE name='"..TName.."'"
+		local res, err = VH:SQLQuery(query)
+		if not res then
+	        Users.SendToMain("Error in query: "..query,5, 10)
+	        Users.SendToMain("Error: "..err,5, 10)
+	    end
+	end
+end
+function SQL_AddTimersCfg(TName, Value)
+	local query = "INSERT INTO MainBot_timeconfig (name , valore) VALUES ('"..SQL_Escape(TName).."', '"..Value.."')"
+	--local query = "UPDATE MainBot_TCFG SET valore="..Value.." WHERE name='"..TName.."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+end
+function SQL_SendQuery(sQuery)
+	local res, err = VH:SQLQuery(sQuery)
+	if not res then
+		return err
+    end
+end
+function SQL_IPSecurity()
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_ipsec (nick varchar( 64 ) NOT NULL default '', id MEDIUMINT NOT NULL AUTO_INCREMENT,ip varchar( 15 ) NOT NULL default '',PRIMARY KEY ( nick,id ))TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("Функция SQL_IPSecurity выполнена.")
+end
+function SQL_IPSecurityAdd(sNick, sIP)
+	local query = "INSERT INTO MainBot_ipsec (nick,ip)	VALUES ('"..SQL_Escape(sNick).."', '"..sIP.."')"
+	local res, err = VH:SQLQuery(query)
+	AddSysLog("SQL_IPSecurityAdd. Добавлен: nick ["..sNick.."] ip ["..sIP.."]")
+end
+function SQL_IPSecurityFindNick(sNick)
+	local query = "SELECT ip FROM MainBot_ipsec WHERE nick='"..SQL_Escape(sNick).."'"
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+	local sIP = {}
+	if res and rows~=0 then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res, value = VH:SQLFetch(x)
+				sIP[x+1] = {}
+				sIP[x+1].ip = value
+			end
+		else
+			local res, value = VH:SQLFetch(0)
+			sIP[1] = {}
+			sIP[1] = value
+			if value == "could not fetch row" then sIP = nil end
+		end
+	end
+	return sIP
+end
+function SQL_IPSecurityFindID(sNick, sIP)
+	--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFindID $<SQL_IPSecurityFindID> sNick ["..(sNick or "ERR").."] sIP ["..(sIP or "ERR").."]|","Palmer")
+	if sNick ~= nil then
+		if sIP ~= nil then
+			local query = "SELECT id FROM MainBot_ipsec WHERE (ip='"..sIP.."' AND nick='"..SQL_Escape(sNick).."')"
+			--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFindID $<SQL_IPSecurityFindID> query ["..(query or "ERR").."]|","Palmer")
+			local res, rows = VH:SQLQuery(query)
+			if not res then
+		        Users.SendToMain("Error in query: "..query,5, 10)
+		        Users.SendToMain("Error: "..rows,5, 10)
+				AddSysLog("SQL_IPSecurityFindID_[ERR]. Ошибка: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]")
+		    end
+			local res, value = VH:SQLFetch(0)
+			--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFindID $<SQL_IPSecurityFindID> value ["..(value or "ERR").."]|","Palmer")
+			if (value == "could not fetch row") or (value == "could not seek data")then
+				iID = nil;
+			else
+				iID = tonumber(value);
+			end
+			return iID;
+		else
+			AddSysLog("SQL_IPSecurityFindID_[ERR]. Ошибка: nick ["..(sNick or "ERR").."] ip ["..(sIP or "ERR").."]")
+		end
+	else
+		AddSysLog("SQL_IPSecurityFindID_[ERR]. Ошибка: nick ["..(sNick or "ERR").."] ip ["..(sIP or "ERR").."]")
+	end
+end
+function SQL_IPSecurityListing()
+	local query = "SELECT * FROM MainBot_ipsec"
+	local res, rows = VH:SQLQuery(query)
+	local tempIPSec = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,nick,id,ip = VH:SQLFetch(x)
+				tempIPSec[x+1] = {}
+				tempIPSec[x+1].nick = nick
+				tempIPSec[x+1].id = id
+				tempIPSec[x+1].ip = ip
+				--tempIPSec[x+1].text = text
+			end
+		else
+			local res,nick,id,ip = VH:SQLFetch(0)
+			tempIPSec[1] = {}
+			tempIPSec[1].nick = nick
+			tempIPSec[1].id = id
+			tempIPSec[1].ip = ip
+			if nick == "could not fetch row" then tempIPSec = nil end
+		end
+	end
+	return tempIPSec
+end
+function SQL_IPSecurityModNick(sNick, sIP)--!!!
+	local query = "UPDATE MainBot_ipsec SET nick='"..SQL_Escape(sNick).."' WHERE ip='"..sIP.."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_IPSecurityModNick. Изменения: nick ["..sNick.."] ip ["..sIP.."]")
+end
+function SQL_IPSecurityModIP(sNick, sIP)--!!!
+	local query = "UPDATE MainBot_ipsec SET ip='"..sIP.."' WHERE nick='"..SQL_Escape(sNick).."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_IPSecurityModIP. Изменения: nick ["..sNick.."] ip ["..sIP.."]")
+end
+function SQL_IPSecurityDeleteIP(sIP)
+	local query = "DELETE FROM MainBot_ipsec WHERE ip='"..sIP.."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_IPSecurityDeleteIP. Удалён: ip ["..sIP.."]")
+end
+function SQL_IPSecurityDeleteNickIP(sNick, sIP)
+	if sNick ~= nil then
+		if sIP ~= nil then
+			local iID = SQL_IPSecurityFindID(sNick, sIP);
+			--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityDeleteNickIP $<SQL_IPSecurityDeleteNickIP> iID ["..(iID or "").."] nick ["..(sNick or "").."] sIP ["..(sIP or "").."]|","Palmer")
+			if iID ~= nil then
+				local query = "DELETE FROM MainBot_ipsec WHERE (ip='"..sIP.."' AND nick='"..SQL_Escape(sNick).."')"
+				--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityDeleteNickIP $<SQL_IPSecurityDeleteNickIP> nick ["..(sNick or "").."] sIP ["..(sIP or "").."] query ["..(query or "ERR").."]|","Palmer")
+				local res, err = VH:SQLQuery(query)
+				if not res then
+			        Users.SendToMain("Error in query: "..query,5, 10)
+			        Users.SendToMain("Error: "..err,5, 10)
+					AddSysLog("SQL_IPSecurityDeleteNickIP_[ERR]. Ошибка удаления: query ["..(query or "ERR").."] err ["..(err or "ERR").."]")
+			    end
+				SQL_IPSecurityFix(sNick,iID);
+				AddSysLog("SQL_IPSecurityDeleteNickIP. Удалено: nick ["..sNick.."] ip ["..sIP.."] id ["..(iID or "iID").."]")
+			else
+				AddSysLog("SQL_IPSecurityDeleteNickIP_[ERR]. Ошибка удаления: nick ["..(sNick or "ERR").."] ip ["..(sIP or "ERR").."] id ["..(iID or "ERR").."]")
+			end
+		else
+			AddSysLog("SQL_IPSecurityDeleteNickIP_[ERR]. Ошибка удаления: nick ["..(sNick or "ERR").."] ip ["..(sIP or "ERR").."]")
+		end
+	else
+		AddSysLog("SQL_IPSecurityDeleteNickIP_[ERR]. Ошибка удаления: nick ["..(sNick or "ERR").."] ip ["..(sIP or "ERR").."]")
+	end
+end
+function SQL_IPSecurityDeleteNick(sNick)
+	local query = "DELETE FROM MainBot_ipsec WHERE nick='"..SQL_Escape(sNick).."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_IPSecurityDeleteNick. Удалён: nick ["..sNick.."]")
+end
+function SQL_IPSecurityFix(sNick,iID)
+	if (type(iID)~="number") then
+		iID=tonumber(iID);
+	end
+	local query = "UPDATE MainBot_ipsec SET id=id-1 WHERE (nick='"..SQL_Escape(sNick).."' AND id > "..iID..")"
+	--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFix $<SQL_IPSecurityFix> nick ["..(SQL_Escape(sNick) or "").."] id ["..(iID or "").."]|","Palmer")
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+		Users.SendToMain("Error in query: "..query,5, 10)
+		Users.SendToMain("Error: "..rows,5, 10)
+		AddSysLog("SQL_TTHFix. Ошибка[1]: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]")
+		--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFix $<SQL_IPSecurityFix> Ошибка[1]: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]|","Palmer")
+	end
+	query = "ALTER TABLE MainBot_ipsec AUTO_INCREMENT 1"
+	res, rows = VH:SQLQuery(query)
+	if not res then
+		Users.SendToMain("Error in query: "..query,5, 10)
+		Users.SendToMain("Error: "..rows,5, 10)
+		AddSysLog("SQL_TTHFix. Ошибка[2]: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]")
+		--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFix $<SQL_IPSecurityFix> Ошибка[2]: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]|","Palmer")
+	end
+end
+function SQL_Mail()
+	local query = "CREATE TABLE IF NOT EXISTS  MainBot_MAIL_NICK (nick varchar(64) NOT NULL default '', id MEDIUMINT NOT NULL AUTO_INCREMENT, maildate datetime,from_nick varchar(64) NOT NULL default '',from_ip varchar(15) NOT NULL default '',msg_text mediumtext NOT NULL,PRIMARY KEY (nick, id),KEY from_nick (from_nick(64)),KEY from_ip (from_ip(15)))TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	local query = "CREATE TABLE IF NOT EXISTS  MainBot_MAIL_IP (ip varchar(64) NOT NULL default '', id MEDIUMINT NOT NULL AUTO_INCREMENT, maildate datetime,from_nick varchar(64) NOT NULL default '',from_ip varchar(15) NOT NULL default '',msg_text mediumtext NOT NULL,PRIMARY KEY (ip, id),KEY from_nick (from_nick(64)),KEY from_ip (from_ip(15)))TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("Функция SQL_Mail выполнена.")
+end
+function SQL_GetMailListing()
+	local query = "SELECT ip FROM MainBot_MAIL_IP"
+	local res, rows = VH:SQLQuery(query)
+	local IpMailTable = {};
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip = VH:SQLFetch(x)
+				if not IpMailTable[ip] then
+					IpMailTable[ip]=1;
+				end
+			end
+		else
+			local res,ip = VH:SQLFetch(0)
+			if not IpMailTable[ip] then
+				IpMailTable[ip]=1;
+			end
+			if (ip == "could not fetch row") or (ip == "could not seek data") then IpMailTable = nil end
+		end
+	end
+	query = "SELECT nick FROM MainBot_MAIL_NICK"
+	res, rows = VH:SQLQuery(query)
+	local NickMailTable = {};
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,nick = VH:SQLFetch(x)
+				if not NickMailTable[nick] then
+					NickMailTable[nick]=1;
+				end
+			end
+		else
+			local res,nick = VH:SQLFetch(0)
+			if not NickMailTable[nick] then
+				NickMailTable[nick]=1;
+			end
+			if (nick == "could not fetch row") or (nick == "could not seek data") then NickMailTable = nil end
+		end
+	end
+	AddSysLog("Функция SQL_GetMailListing выполнена.")
+	return IpMailTable,NickMailTable
+end
+function SQL_AddNickMail(sUser, nick, msg)
+	local MailLimit=20;
+	local counter=SQL_CountMailsFromIP(sUser.sIP, "NICK");
+	if counter~=nil then
+		if counter<MailLimit then
+			local query = "INSERT INTO MainBot_MAIL_NICK (nick,maildate,from_nick,from_ip,msg_text)	VALUES ('"..nick.."',now(),'"..SQL_Escape(sUser.sName).."','"..sUser.sIP.."','"..SQL_Escape(msg).."')"
+			local res, err = VH:SQLQuery(query)
+			if not res then
+		        Users.SendToMain("Error in query: "..query,5, 10)
+		        Users.SendToMain("Error: "..err,5, 10)
+		    end
+			AddSysLog("SQL_AddNickMail. Добавлено: nick ["..nick.."] from_nick ["..sUser.sName.."] from_ip ["..sUser.sIP.."] msg ["..msg.."]")
+			return 1
+		end
+		return nil
+	end
+end
+function SQL_AddIpMail(sUser, ip, msg)
+	local MailLimit=20;
+	local counter=SQL_CountMailsFromIP(sUser.sIP, "IP");
+	if counter~=nil then
+		if counter<MailLimit then
+			local query = "INSERT INTO MainBot_MAIL_IP (ip,maildate,from_nick,from_ip,msg_text) VALUES ('"..ip.."',now(),'"..SQL_Escape(sUser.sName).."','"..sUser.sIP.."','"..SQL_Escape(msg).."')"
+			local res, err = VH:SQLQuery(query)
+			if not res then
+		        Users.SendToMain("Error in query: "..query,5, 10)
+		        Users.SendToMain("Error: "..err,5, 10)
+		    end
+			AddSysLog("SQL_AddIpMail. Добавлено: ip ["..ip.."] from_nick ["..sUser.sName.."] from_ip ["..sUser.sIP.."] msg ["..msg.."]")
+			return 1
+		end
+		return nil
+	end
+end
+function SQL_CountMailsFromIP(ip, mtype)
+	if mtype=="NICK" then
+		local query = "SELECT COUNT(from_ip) FROM MainBot_MAIL_NICK WHERE from_ip='"..ip.."'"
+		local res, rows = VH:SQLQuery(query)
+	    if res and rows~=0  then
+		    local res,count = VH:SQLFetch(0)
+		    count = tonumber(count)
+		    AddSysLog("SQL_CountMailsFromIP:"..mtype..". ip ["..(ip or "").."] count ["..(count or "").."]")
+		    return count
+	    end
+	    return nil
+	elseif mtype=="IP"then
+		local query = "SELECT COUNT(from_ip) FROM MainBot_MAIL_IP WHERE from_ip='"..ip.."'"
+		local res, rows = VH:SQLQuery(query)
+	    if res and rows~=0  then
+		    local res,count = VH:SQLFetch(0)
+		    count = tonumber(count)
+		    AddSysLog("SQL_CountMailsFromIP:"..mtype..". ip ["..(ip or "").."] count ["..(count or "").."]")
+		    return count
+	    end
+	    return nil
+	end
+end
+function SQL_FindNickMail(sUser)
+	local query = "SELECT * FROM MainBot_MAIL_NICK WHERE nick='"..SQL_Escape(sUser.sName).."'"
+	local res, rows = VH:SQLQuery(query)
+	local x = 0
+	local tMailsNick = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,nick,id,maildate,from_nick,from_ip,msg_text = VH:SQLFetch(x)
+				tMailsNick[x+1]={}
+				tMailsNick[x+1].nick = nick
+				tMailsNick[x+1].id = id
+				tMailsNick[x+1].maildate = maildate
+				tMailsNick[x+1].from_nick = from_nick
+				tMailsNick[x+1].from_ip = from_ip
+				tMailsNick[x+1].msg_text = msg_text
+			end
+		else
+			local res,nick,id,maildate,from_nick,from_ip,msg_text = VH:SQLFetch(0)
+			tMailsNick[1]={}
+			tMailsNick[1].nick = nick
+			tMailsNick[1].id = id
+			tMailsNick[1].maildate = maildate
+			tMailsNick[1].from_nick = from_nick
+			tMailsNick[1].from_ip = from_ip
+			tMailsNick[1].msg_text = msg_text
+		end
+	else
+		tMailsNick = nil
+	end
+	return tMailsNick
+end
+function SQL_DeleteNickMail(sUser)
+	local query = "DELETE FROM MainBot_MAIL_NICK WHERE nick = '"..SQL_Escape(sUser.sName).."'"
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+end
+function SQL_FindIpMail(sUser)
+	local query = "SELECT * FROM MainBot_MAIL_IP WHERE ip='"..sUser.sIP.."'"
+	local res, rows = VH:SQLQuery(query)
+	local x = 0
+	local tMailsIp = {}
+	if res and rows~=0 then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip,id,maildate,from_nick,from_ip,msg_text = VH:SQLFetch(x)
+				--VH:SendDataToAll("ip: "..ip.."|",0,10)
+				tMailsIp[x+1]={}
+				tMailsIp[x+1].ip = ip
+				tMailsIp[x+1].id = id
+				tMailsIp[x+1].maildate = maildate
+				tMailsIp[x+1].from_nick = from_nick
+				tMailsIp[x+1].from_ip = from_ip
+				tMailsIp[x+1].msg_text = msg_text
+			end
+		else
+			local res,ip,id,maildate,from_nick,from_ip,msg_text = VH:SQLFetch(0)
+			tMailsIp[1]={}
+			tMailsIp[1].ip = ip
+			tMailsIp[1].id = id
+			tMailsIp[1].maildate = maildate
+			tMailsIp[1].from_nick = from_nick
+			tMailsIp[1].from_ip = from_ip
+			tMailsIp[1].msg_text = msg_text
+		end
+	else
+		tMailsIp = nil
+	end
+	return tMailsIp
+end
+function SQL_DeleteIpMail(sUser)
+	local query = "DELETE FROM MainBot_MAIL_IP WHERE ip = '"..sUser.sIP.."'"
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+end
+function SQL_News()
+	--Дописать разделение на различные новостные группы
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_NEWS (name varchar(50), valore mediumtext NOT NULL, PRIMARY KEY (name))TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	query = "SELECT * FROM MainBot_NEWS WHERE name ='News'"
+    res, err = VH:SQLQuery(query)
+    local res, isDb = VH:SQLFetch(0)
+    if isDb == "could not fetch row" then
+		query = "INSERT INTO MainBot_NEWS VALUES ('News', '')"
+		res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_NEWS VALUES ('OpChatNews', '')"
+		res, err = VH:SQLQuery(query)
+	end
+	query = "SELECT * FROM MainBot_NEWS WHERE name='News'"
+	local res, rows = VH:SQLQuery(query)
+	local res, name, valore = VH:SQLFetch(0)
+	NEWSTEXT = valore
+	query = "SELECT * FROM MainBot_NEWS WHERE name='OpChatNews'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	OPCHATNEWSTEXT = valore
+	AddSysLog("Функция SQL_News выполнена.")
+end
+function SQL_ModNews(sNews, sType)
+	--Дописать разделение на различные новостные группы
+	if sType == "MainNews" then
+		local query = "UPDATE MainBot_NEWS SET valore='"..SQL_Escape(sNews).."' WHERE name='News'"
+		local res, err = VH:SQLQuery(query)
+		if not res then
+	        Users.SendToMain("Error in query: "..query,5, 10)
+	        Users.SendToMain("Error: "..err,5, 10)
+	    end
+		AddSysLog("SQL_ModNews. Изменено: News ["..sNews.."]")
+	elseif sType == "OpChatNews" then
+		local query = "UPDATE MainBot_NEWS SET valore='"..SQL_Escape(sNews).."' WHERE name='OpChatNews'"
+		local res, err = VH:SQLQuery(query)
+		if not res then
+	        Users.SendToMain("Error in query: "..query,5, 10)
+	        Users.SendToMain("Error: "..err,5, 10)
+	    end
+		AddSysLog("SQL_ModNews. Изменено: OpChatNews ["..sNews.."]")
+	end
+end
+--[[
+function SQL_ModOpChatNews(sNews)
+	local query = "UPDATE MainBot_NEWS SET valore='"..SQL_Escape(sNews).."' WHERE name='OpChatNews'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_ModOpChatNews. Изменено: OpChatNews ["..sNews.."]")
+end
+]]--
+function SQL_Stats()
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_STATS (name varchar(50), valore varchar(100))TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	query = "SELECT * FROM MainBot_STATS WHERE name ='MaxShare'"
+    res, err = VH:SQLQuery(query)
+    local res, isDb = VH:SQLFetch(0)
+    if isDb == "could not fetch row" then
+		query = "INSERT INTO MainBot_STATS VALUES ('MaxShare', '0')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_STATS VALUES ('MaxShareDate', now())"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_STATS VALUES ('MaxUsers', '0')"
+	    res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_STATS VALUES ('MaxUsersDate', now())"
+	    res, err = VH:SQLQuery(query)
+	end
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxShare'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxShare = tonumber(valore)
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxShareDate'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxShareDate = valore
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxUsers'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxUsers = tonumber(valore)
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxUsersDate'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxUsersDate = valore
+	AddSysLog("Функция SQL_Stats выполнена.")
+end
+function SQL_ModStats(pValue, nValue)
+	if (type(pValue) == "number") then
+		local query = "UPDATE MainBot_STATS SET valore="..pValue.." WHERE name='"..SQL_Escape(nValue).."'"
+		local res, err = VH:SQLQuery(query)
+		if not res then
+			Users.SendToMain("Error in query: "..query,5, 10)
+			Users.SendToMain("Error: "..err,5, 10)
+		end
+	end
+	if (type(pValue) == "string") then
+		local query = "UPDATE MainBot_STATS SET valore='"..SQL_Escape(pValue).."' WHERE name='"..SQL_Escape(nValue).."'"
+		local res, err = VH:SQLQuery(query)
+		if not res then
+			Users.SendToMain("Error in query: "..query,5, 10)
+			Users.SendToMain("Error: "..err,5, 10)
+		end
+	end
+end
+function SQL_TTH()
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_TTH (id mediumint NOT NULL auto_increment, tth varchar(50), findtime datetime NOT NULL,PRIMARY KEY (id))TYPE = MYISAM ;"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+	Users.SendToMain("Error in query: "..query,5, 10)
+	Users.SendToMain("Error: "..err,5, 10)
+	end
+	AddSysLog("Функция SQL_TTH выполнена.")
+end
+function SQL_TTH_Archive()
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_TTH_Archive (id mediumint NOT NULL auto_increment, tth varchar(50), findtime datetime NOT NULL,PRIMARY KEY (id))TYPE = MYISAM ;"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+	Users.SendToMain("Error in query: "..query,5, 10)
+	Users.SendToMain("Error: "..err,5, 10)
+	end
+	AddSysLog("Функция SQL_TTH_Archive выполнена.")
+end
+function SQL_TTHAdd(sTTH)
+	local id = SQL_TTHFind(sTTH)
+	local id_archive = SQL_TTHFind_Archive(sTTH)
+	if id == nil then
+		if id_archive ~= nil then
+			SQL_TTHDelete_Archive(sTTH)
+		end
+		local query = "INSERT INTO MainBot_TTH (tth, findtime) VALUES ('"..SQL_Escape(sTTH).."', now())"
+		res, err = VH:SQLQuery(query)
+		if not res then
+	        Users.SendToMain("Error in query: "..query,5, 10)
+	        Users.SendToMain("Error: "..err,5, 10)
+			AddSysLog("SQL_TTHAdd_[ERR]. Ошибка: TTH ["..sTTH.."]")
+	    end
+		AddSysLog("SQL_TTHAdd. Добавлено: TTH ["..sTTH.."]")
+		return "tth_added";
+	else
+		return id;
+	end
+end
+function SQL_TTHAdd_Archive(sTTH)
+	local id = SQL_TTHFind_Archive(sTTH)
+	if id == nil then
+		local query = "INSERT INTO MainBot_TTH_Archive (tth, findtime) VALUES ('"..SQL_Escape(sTTH).."', now())"
+		res, err = VH:SQLQuery(query)
+		if not res then
+	        Users.SendToMain("Error in query: "..query,5, 10)
+	        Users.SendToMain("Error: "..err,5, 10)
+			AddSysLog("SQL_TTHAdd_Archive_[ERR]. Ошибка: TTH ["..sTTH.."]")
+	    end
+		AddSysLog("SQL_TTHAdd_Archive. Добавлено: TTH ["..sTTH.."]")
+		return "tth_added";
+	else
+		return id;
+	end
+end
+function SQL_TTHFind(sTTH)
+	local query = "SELECT id FROM MainBot_TTH WHERE tth='"..SQL_Escape(sTTH).."'"
+    local res, err = VH:SQLQuery(query)
+	local res,id = VH:SQLFetch(0)
+	if res then
+		return id
+	else
+		return nil
+	end
+end
+function SQL_TTHFind_Archive(sTTH)
+	local query = "SELECT id FROM MainBot_TTH_Archive WHERE tth='"..SQL_Escape(sTTH).."'"
+    local res, err = VH:SQLQuery(query)
+	local res,id = VH:SQLFetch(0)
+	if res then
+		return id
+	else
+		return nil
+	end
+end
+function SQL_TTHListing()
+	local query = "SELECT * FROM MainBot_TTH"
+    local res, rows = VH:SQLQuery(query)
+	local tempTTH = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,id,tth,findtime = VH:SQLFetch(x)
+				tempTTH[x+1] = {};
+				tempTTH[x+1].id = id;
+				tempTTH[x+1].tth = tth;
+				tempTTH[x+1].findtime = findtime;
+			end
+		else
+			local res,id,tth,findtime = VH:SQLFetch(0)
+			if (id~="could not fetch row") and (id~="could not seek data") then
+				tempTTH[1] = {}
+				tempTTH[1].id = id
+				tempTTH[1].tth = tth
+				tempTTH[1].findtime = findtime;
+			else
+				tempTTH = nil
+			end
+		end
+	end
+	return tempTTH
+end
+function SQL_TTHListing_Archive()
+	local query = "SELECT * FROM MainBot_TTH_Archive"
+    local res, rows = VH:SQLQuery(query)
+	local tempTTH = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,id,tth,findtime = VH:SQLFetch(x)
+				tempTTH[x+1] = {};
+				tempTTH[x+1].id = id;
+				tempTTH[x+1].tth = tth;
+				tempTTH[x+1].findtime = findtime;
+			end
+		else
+			local res,id,tth,findtime = VH:SQLFetch(0)
+			if (id~="could not fetch row") and (id~="could not seek data") then
+				tempTTH[1] = {}
+				tempTTH[1].id = id
+				tempTTH[1].tth = tth
+				tempTTH[1].findtime = findtime;
+			else
+				tempTTH = nil
+			end
+		end
+	end
+	return tempTTH
+end
+function SQL_TTHDelete(sTTH)
+	local query = "SELECT id FROM MainBot_TTH WHERE tth = '"..SQL_Escape(sTTH).."'"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows~=0  then
+		if rows > 1 then
+			local returnid="";
+			local tTempID={};
+			local tempmaxrows=rows;
+			for x=0, rows-1 do
+				local res,id = VH:SQLFetch(x)
+				tTempID[x+1]=id;
+			end
+			query = "DELETE FROM MainBot_TTH WHERE tth = '"..SQL_Escape(sTTH).."'"
+			res, rows = VH:SQLQuery(query)
+			if not res then
+				Users.SendToMain("Error in query: "..query,5, 10)
+				Users.SendToMain("Error: "..err,5, 10)
+				AddSysLog("SQL_TTHDelete. Ошибка удаления: TTH ["..sTTH.."] ERR ["..rows.."]")
+			else
+				for x=1, tempmaxrows do
+					SQL_TTHFix(tTempID[x])
+					returnid=returnid..tTempID[x].." "
+				end
+				AddSysLog("SQL_TTHDelete. Удалено: TTH ["..sTTH.."]")
+				return returnid;
+			end
+		else
+			local res,id = VH:SQLFetch(0)
+			if (id~="could not fetch row") and (id~="could not seek data") then
+				query = "DELETE FROM MainBot_TTH WHERE tth = '"..SQL_Escape(sTTH).."'"
+				res, rows = VH:SQLQuery(query)
+				if not res then
+			        Users.SendToMain("Error in query: "..query,5, 10)
+			        Users.SendToMain("Error: "..err,5, 10)
+					AddSysLog("SQL_TTHDelete. Ошибка удаления: TTH ["..sTTH.."] ERR ["..rows.."]")
+					return nil;
+				else
+					SQL_TTHFix(id)
+					AddSysLog("SQL_TTHDelete. Удалено: TTH ["..sTTH.."]")
+					return id;
+			    end
+			else
+				return nil;
+			end
+		end
+	else
+		return nil;
+	end
+	return nil;
+end
+function SQL_TTHDelete_Archive(sTTH)
+	local query = "SELECT id FROM MainBot_TTH_Archive WHERE tth = '"..SQL_Escape(sTTH).."'"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows~=0  then
+		if rows > 1 then
+			local returnid="";
+			local tTempID={};
+			local tempmaxrows=rows;
+			for x=0, rows-1 do
+				local res,id = VH:SQLFetch(x)
+				tTempID[x+1]=id;
+			end
+			query = "DELETE FROM MainBot_TTH_Archive WHERE tth = '"..SQL_Escape(sTTH).."'"
+			res, rows = VH:SQLQuery(query)
+			if not res then
+				Users.SendToMain("Error in query: "..query,5, 10)
+				Users.SendToMain("Error: "..err,5, 10)
+				AddSysLog("SQL_TTHDelete_Archive. Ошибка удаления: TTH ["..sTTH.."] ERR ["..rows.."]")
+			else
+				for x=1, tempmaxrows do
+					SQL_TTHFix_Archive(tTempID[x])
+					returnid=returnid..tTempID[x].." "
+				end
+				AddSysLog("SQL_TTHDelete_Archive. Удалено: TTH ["..sTTH.."]")
+				return returnid;
+			end
+		else
+			local res,id = VH:SQLFetch(0)
+			if (id~="could not fetch row") and (id~="could not seek data") then
+				query = "DELETE FROM MainBot_TTH_Archive WHERE tth = '"..SQL_Escape(sTTH).."'"
+				res, rows = VH:SQLQuery(query)
+				if not res then
+			        Users.SendToMain("Error in query: "..query,5, 10)
+			        Users.SendToMain("Error: "..err,5, 10)
+					AddSysLog("SQL_TTHDelete_Archive. Ошибка удаления: TTH ["..sTTH.."] ERR ["..rows.."]")
+					return nil;
+				else
+					SQL_TTHFix_Archive(id)
+					AddSysLog("SQL_TTHDelete_Archive. Удалено: TTH ["..sTTH.."]")
+					return id;
+			    end
+			else
+				return nil;
+			end
+		end
+	else
+		return nil;
+	end
+	return nil;
+end
+function SQL_TTHFix(iID)
+	if (type(iID)~="number") then
+		iID=tonumber(iID);
+	end
+	local query = "UPDATE MainBot_TTH SET id=id-1 where id > "..iID..""
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+		Users.SendToMain("Error in query: "..query,5, 10)
+		Users.SendToMain("Error: "..rows,5, 10)
+		AddSysLog("SQL_TTHFix. Ошибка[1]: "..rows.."")
+	end
+	query = "ALTER TABLE MainBot_TTH AUTO_INCREMENT 1"
+	res, rows = VH:SQLQuery(query)
+	if not res then
+		Users.SendToMain("Error in query: "..query,5, 10)
+		Users.SendToMain("Error: "..rows,5, 10)
+		AddSysLog("SQL_TTHFix. Ошибка[2]: "..rows.."")
+	end
+end
+function SQL_TTHFix_Archive(iID)
+	if (type(iID)~="number") then
+		iID=tonumber(iID);
+	end
+	local query = "UPDATE MainBot_TTH_Archive SET id=id-1 where id > "..iID..""
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+		Users.SendToMain("Error in query: "..query,5, 10)
+		Users.SendToMain("Error: "..rows,5, 10)
+		AddSysLog("SQL_TTHFix_Archive. Ошибка[1]: "..rows.."")
+	end
+	query = "ALTER TABLE MainBot_TTH_Archive AUTO_INCREMENT 1"
+	res, rows = VH:SQLQuery(query)
+	if not res then
+		Users.SendToMain("Error in query: "..query,5, 10)
+		Users.SendToMain("Error: "..rows,5, 10)
+		AddSysLog("SQL_TTHFix_Archive. Ошибка[2]: "..rows.."")
+	end
+end
+function SQL_TTHBuffer(startid, endid)
+	local query = "SELECT * FROM MainBot_TTH WHERE id>'"..startid.."' and id<'"..endid.."'"
+	local res, rows = VH:SQLQuery(query)
+	tMainBufer.tSearchTTHBufer.mintthid = startid+1;
+	tMainBufer.tSearchTTHBufer.maxtthid = endid-1;
+	tMainBufer.tSearchTTHBufer.bufferlength = (endid-startid-1);
+	tMainBufer.tSearchTTHBufer.counter=1;
+	tMainBufer.tSearchTTHBufer.tTTH = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,id,tth,findtime = VH:SQLFetch(x)
+				tMainBufer.tSearchTTHBufer.tTTH[x+1]={}
+				tMainBufer.tSearchTTHBufer.tTTH[x+1].tth = tth
+				tMainBufer.tSearchTTHBufer.tTTH[x+1][tth]={}
+				tMainBufer.tSearchTTHBufer.tTTH[x+1][tth].id = id
+				tMainBufer.tSearchTTHBufer.tTTH[x+1][tth].findtime = findtime
+			end
+		else
+			local res,id,tth,findtime = VH:SQLFetch(0)
+			tMainBufer.tSearchTTHBufer.tTTH[1] = {}
+			tMainBufer.tSearchTTHBufer.tTTH[1].tth = tth
+			tMainBufer.tSearchTTHBufer.tTTH[1][tth]={}
+			tMainBufer.tSearchTTHBufer.tTTH[1][tth].id = id
+			tMainBufer.tSearchTTHBufer.tTTH[1][tth].findtime = findtime
+			if (tth == "could not fetch row") or (tth == "could not seek data") then
+				tMainBufer.tSearchTTHBufer.mintthid = nil;
+				tMainBufer.tSearchTTHBufer.maxtthid = nil;
+				tMainBufer.tSearchTTHBufer.bufferlength=nil;
+				tMainBufer.tSearchTTHBufer.counter=nil;
+				tMainBufer.tSearchTTHBufer.tTTH = {};
+			end
+		end
+	end
+end
+function SQL_TTHBuffer_Archive(startid, endid)-- NO FINISHED!!! TO DO: Archive
+	local query = "SELECT * FROM MainBot_TTH_Archive WHERE id>'"..startid.."' and id<'"..endid.."'"
+	local res, rows = VH:SQLQuery(query)
+	tMainBufer.tSearchTTHBufer.tArchivePref.mintthid = startid+1;
+	tMainBufer.tSearchTTHBufer.tArchivePref.maxtthid = endid-1;
+	tMainBufer.tSearchTTHBufer.tArchivePref.bufferlength = (endid-startid-1);
+	tMainBufer.tSearchTTHBufer.tArchivePref.counter=1;
+	tMainBufer.tSearchTTHBufer.tArchiveTTH = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,id,tth,findtime = VH:SQLFetch(x)
+				tMainBufer.tSearchTTHBufer.tArchiveTTH[x+1]={}
+				tMainBufer.tSearchTTHBufer.tArchiveTTH[x+1].tth = tth
+				tMainBufer.tSearchTTHBufer.tArchiveTTH[x+1][tth]={}
+				tMainBufer.tSearchTTHBufer.tArchiveTTH[x+1][tth].id = id
+				tMainBufer.tSearchTTHBufer.tArchiveTTH[x+1][tth].findtime = findtime
+			end
+		else
+			local res,id,tth,findtime = VH:SQLFetch(0)
+			tMainBufer.tSearchTTHBufer.tArchiveTTH[1] = {}
+			tMainBufer.tSearchTTHBufer.tArchiveTTH[1].tth = tth
+			tMainBufer.tSearchTTHBufer.tArchiveTTH[1][tth]={}
+			tMainBufer.tSearchTTHBufer.tArchiveTTH[1][tth].id = id
+			tMainBufer.tSearchTTHBufer.tArchiveTTH[1][tth].findtime = findtime
+			if (tth == "could not fetch row") or (tth == "could not seek data") then
+				tMainBufer.tSearchTTHBufer.tArchivePref.mintthid = nil;
+				tMainBufer.tSearchTTHBufer.tArchivePref.maxtthid = nil;
+				tMainBufer.tSearchTTHBufer.tArchivePref.bufferlength=nil;
+				tMainBufer.tSearchTTHBufer.tArchivePref.counter=nil;
+				tMainBufer.tSearchTTHBufer.tArchiveTTH = {};
+			end
+		end
+	end
+end
+function SQL_TTHSetTime(sTTH, sTime)
+	if sTTH then
+		if sTime then
+			if sTime=="now" then
+				local query = "UPDATE MainBot_TTH SET findtime=now() where tth='"..SQL_Escape(sTTH).."'"
+				local res, rows = VH:SQLQuery(query)
+				if not res then
+					Users.SendToMain("Error in query: "..query,5, 10)
+					Users.SendToMain("Error: "..rows,5, 10)
+					AddSysLog("SQL_TTHSetTime_[ERR]. Ошибка[1]: "..rows.."")
+				end
+			else
+				local query = "UPDATE MainBot_TTH SET findtime='"..SQL_Escape(sTime).."' where tth='"..SQL_Escape(sTTH).."'"
+				local res, rows = VH:SQLQuery(query)
+				if not res then
+					Users.SendToMain("Error in query: "..query,5, 10)
+					Users.SendToMain("Error: "..rows,5, 10)
+					AddSysLog("SQL_TTHSetTime_[ERR]. Ошибка[2]: "..rows.."")
+				end
+			end
+		else
+			AddSysLog("SQL_TTHSetTime_[ERR]. Ошибка: sTime==nil")
+		end
+	else
+		AddSysLog("SQL_TTHSetTime_[ERR]. Ошибка: sTTH==nil")
+	end
+end
+function SQL_OldTTHtoTTH_Archive(sTimeNum, sTimeType)
+	local query = "SELECT tth FROM MainBot_TTH WHERE findtime < now() - interval "..sTimeNum.." "..sTimeType..""
+    local res, rows = VH:SQLQuery(query)
+	local stringtth="";
+	local tempTTH = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,tth = VH:SQLFetch(x)
+				tempTTH[x+1] = {};
+				tempTTH[x+1].tth = tth;
+			end
+		else
+			local res,tth = VH:SQLFetch(0)
+			if id ~= "could not fetch row" then
+				tempTTH[1] = {}
+				tempTTH[1].tth = tth
+			else
+				tempTTH = nil
+			end
+		end
+	end
+	if tempTTH~=nil then
+		for indx,val in pairs(tempTTH) do
+			SQL_TTHAdd_Archive(val.tth)
+			SQL_TTHDelete(val.tth)
+			stringtth=stringtth.."# "..val.tth.." # ";
+		end	
+	end
+	AddSysLog("SQL_OldTTHtoTTH_Archive. Выполнена. rows["..(rows or "nil").."] tth["..(stringtth or "nil").."]")
+end
+function SQL_TTHArchivetoTTHActive(sTTH, sTime)
+	local id = SQL_TTHFind(sTTH)
+	if id == nil then
+		local query = "INSERT INTO MainBot_TTH (tth, findtime) VALUES ('"..SQL_Escape(sTTH).."', '"..SQL_Escape(sTime).."')"
+		local res, err = VH:SQLQuery(query)
+		if not res then
+	        Users.SendToMain("Error in query: "..query,5, 10)
+	        Users.SendToMain("Error: "..err,5, 10)
+			AddSysLog("SQL_TTHArchivetoTTHActive_[ERR]. Ошибка: TTH["..sTTH.."] time["..sTime.."]")
+			--VH:SendDataToUser("$To: Palmer From: SQL_TTHArchivetoTTHActive $<SQL_TTHArchivetoTTHActive> SQL_TTHArchivetoTTHActive_[ERR]. Ошибка: TTH["..sTTH.."] time["..sTime.."]|","Palmer")
+			return nil;
+	    end
+		local id_archive = SQL_TTHFind_Archive(sTTH)
+		if id_archive==nil then
+			AddSysLog("SQL_TTHArchivetoTTHActive_[ERR]. Ошибка: TTH["..sTTH.."] time["..sTime.."]")
+			--VH:SendDataToUser("$To: Palmer From: SQL_TTHArchivetoTTHActive $<SQL_TTHArchivetoTTHActive> SQL_TTHArchivetoTTHActive_[ERR]. Ошибка: TTH["..sTTH.."] time["..sTime.."]|","Palmer")
+			return nil;
+		else
+			SQL_TTHFix_Archive(id_archive)
+			SQL_TTHDelete_Archive(sTTH)
+			AddSysLog("SQL_TTHArchivetoTTHActive. Выполнена. id_archive["..id_archive.."] TTH["..sTTH.."] time["..sTime.."]")
+			--VH:SendDataToUser("$To: Palmer From: SQL_TTHArchivetoTTHActive $<SQL_TTHArchivetoTTHActive> SQL_TTHArchivetoTTHActive. Выполнена. id_archive["..id_archive.."] TTH["..sTTH.."] time["..sTime.."]|","Palmer")
+	    end
+	else
+		AddSysLog("SQL_TTHArchivetoTTHActive_[ERR]. Ошибка. TTH["..sTTH.."] time["..sTime.."] уже имеется под ID["..id.."]")
+		--VH:SendDataToUser("$To: Palmer From: SQL_TTHArchivetoTTHActive $<SQL_TTHArchivetoTTHActive> SQL_TTHArchivetoTTHActive_[ERR]. Ошибка. TTH["..sTTH.."] time["..sTime.."] уже имеется под ID["..id.."]|","Palmer")
+	end
+end
+function SQL_IPSpy()
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_ipspy (ip varchar( 15 ) NOT NULL default '',text mediumtext NOT NULL,PRIMARY KEY (ip))TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("Функция SQL_IPSpy выполнена.")
+end
+function SQL_IPSpyAdd(sIP, sText)
+	local query = "INSERT INTO MainBot_ipspy (ip,text)	VALUES ('"..sIP.."', '"..SQL_Escape(sText).."')"
+	local res, err = VH:SQLQuery(query)
+	AddSysLog("SQL_IPSpyAdd. Добавлено: ip ["..sIP.."] text ["..sText.."]")
+end
+function SQL_IPSpyFindIP(sIP)
+	local query = "SELECT text FROM MainBot_ipspy WHERE ip='"..sIP.."'"
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+	if res and rows~=0 then
+		local res, value = VH:SQLFetch(0)
+		if (value == "could not fetch row") or (value == "could not seek data") then 
+			return nil 
+		end
+		return tostring(value)
+	end
+	return nil
+end
+function SQL_IPSpyListing()
+	local query = "SELECT * FROM MainBot_ipspy"
+    local res, rows = VH:SQLQuery(query)
+	local tempIPStr = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip,text = VH:SQLFetch(x)
+				tempIPStr[x+1] = {}
+				tempIPStr[x+1].ip = ip
+				tempIPStr[x+1].text = text
+			end
+		else
+			local res,ip,text = VH:SQLFetch(0)
+			tempIPStr[1] = {}
+			tempIPStr[1].ip = ip
+			tempIPStr[1].text = text
+			if ip == "could not fetch row" then tempIPStr = nil end
+		end
+	end
+	return tempIPStr
+end
+function SQL_IPSpyModIP(sIP, sText)
+	local query = "UPDATE MainBot_ipspy SET text='"..SQL_Escape(sText).."' WHERE ip='"..sIP.."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_IPSpyModIP. Изменено: ip ["..sIP.."] text ["..sText.."]")
+end
+function SQL_IPSpyDeleteIP(sIP)
+	local query = "DELETE FROM MainBot_ipspy WHERE ip='"..sIP.."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_IPSpyDeleteIP. Удалено: ip ["..sIP.."]")
+end
+function SQL_AddToHubBanList(ip,nick,bantype,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size)
+	local query="";
+	if (date_limit==nil) or (date_limit=="") then
+		--Permanently
+		query = "INSERT INTO banlist (ip,nick,ban_type,range_fr,range_to,date_start,nick_op,reason,share_size) VALUES ('"..ip.."','"..SQL_Escape(nick).."',"..SQL_Escape(bantype)..","..range_fr..","..range_to..","..date_start..",'"..SQL_Escape(nick_op).."','"..SQL_Escape(reason.." [Почта -> "..CFG.AdminMail.."]").."','"..share_size.."')"
+	else
+		--Time limit
+		query = "INSERT INTO banlist (ip,nick,ban_type,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size) VALUES ('"..ip.."','"..SQL_Escape(nick).."',"..SQL_Escape(bantype)..","..range_fr..","..range_to..","..date_start..","..date_limit..",'"..SQL_Escape(nick_op).."','"..SQL_Escape(reason.." [Почта -> "..CFG.AdminMail.."]").."','"..share_size.."')"
+	end
+	local res, err = VH:SQLQuery(query)
+	if not res then
+		--VH:SendDataToUser("$To: Palmer From: banip $<banip> query["..query.."] err["..err.."]|","Palmer")
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_AddToHubBanList. Добавлено: ip ["..ip.."] nick ["..nick.."] bantype ["..bantype.."] nick_op ["..nick_op.."] reason ["..reason.."]")
+end
+function SQL_DelFromHubBanList(ip,nick,nick_op)
+	local query = "DELETE FROM banlist WHERE ip='"..ip.."' AND nick='"..SQL_Escape(nick).."'"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_DelFromHubBanList. Удалено: ip ["..ip.."] nick ["..nick.."] nick_op ["..nick_op.."]")
+end
+function SQL_DelFromHubReglist(nick)
+	local query = "DELETE FROM reglist WHERE nick='"..SQL_Escape(nick).."' AND class > 0 AND class < 3"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_DelFromHubReglist. Удалено: nick ["..nick.."]")
+end
+function SQL_DelFromHubReglistByIP(ip)
+	local query = "DELETE FROM reglist WHERE (login_ip='"..SQL_Escape(ip).."' OR alternate_ip='"..SQL_Escape(ip).."') AND class > 0 AND class < 3"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_DelFromHubReglistByIP. Удалено: ip ["..ip.."]")
+end
+function SQL_Escape(unescaped)
+	if unescaped~=nil then
+		unescaped = string.gsub (unescaped, string.char (92), string.char (92)..string.char (92)) -- backslash
+		unescaped = string.gsub (unescaped, string.char (39), string.char (39)..string.char (39)) -- single quote
+		return unescaped
+	else
+		return nil
+	end
+	--[[
+	local escaped = ""
+	escaped = string.gsub(unescaped,"\\","\\\\")
+	escaped = string.gsub(escaped,"'","\\'")
+	return escaped
+	]]--
+end
+function SQL_ExpChars(txt)
+	if txt~=nil then
+		txt = string.gsub (txt, "%$", "&#36;")
+		txt = string.gsub (txt, "%%", "&#37;")
+		txt = string.gsub (txt, "%(", "&#40;")
+		txt = string.gsub (txt, "%)", "&#41;")
+		txt = string.gsub (txt, "%*", "&#42;")
+		txt = string.gsub (txt, "%+", "&#43;")
+		txt = string.gsub (txt, "%-", "&#45;")
+		txt = string.gsub (txt, "%.", "&#46;")
+		txt = string.gsub (txt, "%?", "&#63;")
+		txt = string.gsub (txt, "%[", "&#91;")
+		txt = string.gsub (txt, "%]", "&#93;")
+		txt = string.gsub (txt, "%^", "&#94;")
+		return txt
+	else
+		return nil
+	end
+end
+function SQL_NMDCChars(txt)
+	if txt~=nil then
+		txt = string.gsub (txt, "%$", "&#36;")
+		txt = string.gsub (txt, "|", "&#124;")
+		return txt
+	else
+		return nil
+	end
+end
+function SQL_SystemFiles()
+	local query = "CREATE TABLE IF NOT EXISTS MainBot_sysfiles (id MEDIUMINT NOT NULL AUTO_INCREMENT, tth varchar(50), file_name mediumtext NOT NULL, file_path mediumtext NOT NULL,PRIMARY KEY (id))TYPE = MYISAM;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+	--else
+		--VH:SendPMToAll("SQL_SystemFiles: not err[ "..err.." ]|",BOTNAME,10,10)
+    end
+	AddSysLog("Функция SQL_SystemFiles выполнена.")
+end
+function SQL_SystemFilesAdd(sTTH, sName, sPath)
+	local query = "INSERT INTO MainBot_sysfiles (tth,file_name,file_path)	VALUES ('"..SQL_Escape(sTTH).."','"..SQL_Escape(sName).."','"..SQL_Escape(sPath).."')"
+	local res, err = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	AddSysLog("SQL_SystemFilesAdd. Добавлен: tth ["..sTTH.."] file_name ["..sName.."] file_path ["..sPath.."]")
+end
+function SQL_SystemFilesDelete(sTTH)
+	local query = "DELETE FROM MainBot_sysfiles WHERE tth = '"..SQL_Escape(sTTH).."'"
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..err,5, 10)
+    end
+	SQL_SystemFilesFix()
+	AddSysLog("SQL_SystemFilesDelete. Удалено: TTH ["..sTTH.."]")
+end
+function SQL_SystemFilesFix()
+	local tempSF = {}
+	local query = "SELECT tth,file_name,file_path FROM MainBot_sysfiles"
+	local res, rows = VH:SQLQuery(query)
+	if not res then
+        Users.SendToMain("Error in query: "..query,5, 10)
+        Users.SendToMain("Error: "..rows,5, 10)
+    end
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,tth,file_name,file_path = VH:SQLFetch(x)
+				tempSF[x+1] = {}
+				tempSF[x+1].tth = tth
+				tempSF[x+1].file_name = file_name
+				tempSF[x+1].file_path = file_path
+				--VH:SendPMToAll("value["..x.."]: "..value.."|",BOTNAME,10,10)
+			end
+		else
+			local res,value = VH:SQLFetch(0)
+			local res,tth,file_name,file_path = VH:SQLFetch(0)
+			tempSF[1] = {}
+			tempSF[1].tth = tth
+			tempSF[1].file_name = file_name
+			tempSF[1].file_path = file_path
+			if (tth == "could not fetch row") or (tth == "could not seek data") then tempSF = nil end
+		end		
+		if tempSF ~= nil then
+			local query = "TRUNCATE TABLE MainBot_sysfiles"
+			local res, err = VH:SQLQuery(query)
+		    for indx, val in pairs(tempSF) do
+				--VH:SendPMToAll("val["..indx.."]: "..tempTTH[indx].tth.."|",BOTNAME,10,10)
+				query = "INSERT INTO MainBot_sysfiles (tth,file_name,file_path)	VALUES ('"..tempSF[indx].tth.."','"..tempSF[indx].file_name.."','"..SQL_Escape(tempSF[indx].file_path).."')"
+				res, err = VH:SQLQuery(query)
+				if not res then
+			        Users.SendToMain("Error in query: "..query,5, 10)
+			        Users.SendToMain("Error: "..err,5, 10)
+			    end
+			end
+			AddSysLog("Функция SQL_SystemFilesFix выполнена.")
+			tempSF = nil
+		end
+	end
+end
+function SQL_SystemFilesListing()
+	local query = "SELECT * FROM MainBot_sysfiles"
+    local res, rows = VH:SQLQuery(query)
+	local tempSF = {}
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,id,tth,file_name,file_path = VH:SQLFetch(x)
+				tempSF[x+1] = {}
+				tempSF[x+1].id = id
+				tempSF[x+1].tth = tth
+				tempSF[x+1].file_name = file_name
+				tempSF[x+1].file_path = file_path
+			end
+		else
+			local res,id,tth,file_name,file_path = VH:SQLFetch(0)
+			tempSF[1] = {}
+			tempSF[1].id = id
+			tempSF[1].tth = tth
+			tempSF[1].file_name = file_name
+			tempSF[1].file_path = file_path
+			if (tth == "could not fetch row") or (tth == "could not seek data") then tempSF = nil end
+		end
+	end
+	return tempSF
+end
+function SQL_SystemFilesFind(sTTH)
+	local query = "SELECT id,file_name,file_path FROM MainBot_sysfiles WHERE tth='"..SQL_Escape(sTTH).."'"
+    local res, err = VH:SQLQuery(query)
+	local res,id,file_name,file_path = VH:SQLFetch(0)
+	if res then
+		return id,file_name,file_path
+	else
+		return nil,nil,nil
+	end
+end
+function SQL_GetNoLeechTable()
+	local query = "SELECT ip,noleech FROM MainBot_userlist WHERE noleech > 0"
+	local res, rows = VH:SQLQuery(query)
+	local NoLeechtable = {};
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip,noleech = VH:SQLFetch(x)
+				NoLeechtable[ip] = tonumber(noleech);
+				--VH:SendDataToUser("$To: Palmer From: SQL_GetNoLeechTable $<SQL_GetNoLeechTable> ip ["..(ip or "").."] noleech ["..(noleech or "").."]|","Palmer")
+			end
+		else
+			local res,ip,noleech = VH:SQLFetch(0)
+			NoLeechtable[ip] = tonumber(noleech);
+			if (ip == "could not fetch row") or (ip == "could not seek data") then NoLeechtable = nil end
+		end
+	end
+	AddSysLog("Функция SQL_GetNoLeechTable выполнена.")
+	return NoLeechtable
+end
+function SQL_GetChatRoomsTable()
+	local tempChatRooms = {}
+	tempChatRooms[OPCHATNAME]=1;
+	---------
+	local query = "SELECT nick FROM pi_chatroom"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,nick = VH:SQLFetch(x)
+				tempChatRooms[nick]=1;
+				--VH:SendDataToUser("$To: Palmer From: SQL_GetChatRoomsTable $<SQL_GetChatRoomsTable> nick["..(nick or "").."]|","Palmer")
+			end
+		else
+			local res,nick = VH:SQLFetch(0)
+			if (nick~="could not fetch row") and (nick~="could not seek data") then
+				tempChatRooms[nick]=1;
+				--VH:SendDataToUser("$To: Palmer From: SQL_GetChatRoomsTable $<SQL_GetChatRoomsTable> nick["..(nick or "").."]|","Palmer")
+			end
+		end
+	end
+	AddSysLog("Функция SQL_GetChatRoomsTable выполнена.")
+	return tempChatRooms;
+end
+--
+function SQL_GetViolationsTable()
+	local MuteChat = {};
+	local MutePM = {};
+	local Ban = {};
+	local query = "SELECT ip,bancount,user_status,forwhat,whenexpires,user_when,user_by,context FROM MainBot_userlist WHERE user_status>0"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip,bancount,user_status,forwhat,whenexpires,user_when,user_by,context = VH:SQLFetch(x)
+				user_status=tonumber(user_status);
+				if user_status==4 or user_status==6 then
+					MuteChat[ip]={}
+					MuteChat[ip].ip=ip
+					MuteChat[ip].bancount=tonumber(bancount)
+					MuteChat[ip].status=user_status
+					MuteChat[ip].forwhat=tonumber(forwhat)
+					MuteChat[ip].whenexpires=whenexpires
+					MuteChat[ip].when=user_when
+					MuteChat[ip].by=user_by
+					MuteChat[ip].context=context
+				elseif user_status==1 or user_status==2 then
+					MutePM[ip]={}
+					MutePM[ip].ip=ip
+					MutePM[ip].bancount=tonumber(bancount)
+					MutePM[ip].status=user_status
+					MutePM[ip].forwhat=tonumber(forwhat)
+					MutePM[ip].whenexpires=whenexpires
+					MutePM[ip].when=user_when
+					MutePM[ip].by=user_by
+					MutePM[ip].context=context
+				elseif user_status==3 or user_status==5 then
+					Ban[ip]={}
+					Ban[ip].ip=ip
+					Ban[ip].bancount=tonumber(bancount)
+					Ban[ip].status=user_status
+					Ban[ip].forwhat=tonumber(forwhat)
+					Ban[ip].whenexpires=whenexpires
+					Ban[ip].when=user_when
+					Ban[ip].by=user_by
+					Ban[ip].context=context
+				end
+			end
+		elseif res and rows==1 then
+			local res,ip,bancount,user_status,forwhat,whenexpires,user_when,user_by,context = VH:SQLFetch(0)
+			if (ip~="could not fetch row") and (ip~="could not seek data") then
+				user_status=tonumber(user_status);
+				if user_status==4 or user_status==6 then
+					MuteChat[ip]={}
+					MuteChat[ip].ip=ip
+					--MuteChat[ip].nick=nick
+					MuteChat[ip].bancount=tonumber(bancount)
+					MuteChat[ip].status=user_status
+					MuteChat[ip].forwhat=tonumber(forwhat)
+					MuteChat[ip].whenexpires=whenexpires
+					MuteChat[ip].when=user_when
+					MuteChat[ip].by=user_by
+					MuteChat[ip].context=context
+				elseif user_status==1 or user_status==2 then
+					MutePM[ip]={}
+					MutePM[ip].ip=ip
+					--MutePM[ip].nick=nick
+					MutePM[ip].bancount=tonumber(bancount)
+					MutePM[ip].status=user_status
+					MutePM[ip].forwhat=tonumber(forwhat)
+					MutePM[ip].whenexpires=whenexpires
+					MutePM[ip].when=user_when
+					MutePM[ip].by=user_by
+					MutePM[ip].context=context
+				elseif user_status==3 or user_status==5 then
+					Ban[ip]={}
+					Ban[ip].ip=ip
+					--Ban[ip].nick=nick
+					Ban[ip].bancount=tonumber(bancount)
+					Ban[ip].status=user_status
+					Ban[ip].forwhat=tonumber(forwhat)
+					Ban[ip].whenexpires=whenexpires
+					Ban[ip].when=user_when
+					Ban[ip].by=user_by
+					Ban[ip].context=context
+				end
+			end
+		else
+			MuteChat={}; MutePM={}; Ban={};
+		end
+	end
+	AddSysLog("Функция SQL_GetViolationsTable выполнена.")
+	return MuteChat, MutePM, Ban;
+end
+function SQL_GetInetDownTable()
+	local InetDown = {};
+	--local query = "SELECT ip FROM MainBot_userlist WHERE InetDown='1'"
+	local query = "SELECT ip FROM MainBot_userlist WHERE InetDown='0'"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip = VH:SQLFetch(x)
+				InetDown[ip]={};
+				InetDown[ip].ip=ip;
+				--InetDown[ip].inetdown=1;
+				InetDown[ip].inetdown=0;
+			end
+		elseif res and rows==1 then
+			local res,ip = VH:SQLFetch(0)
+			if (ip~="could not fetch row") and (ip~="could not seek data") then
+				InetDown[ip]={};
+				InetDown[ip].ip=ip;
+				--InetDown[ip].inetdown=1;
+				InetDown[ip].inetdown=0;
+			end
+		else
+			InetDown={};
+		end
+	end
+	AddSysLog("Функция SQL_GetInetDownTable выполнена.")
+	return InetDown;
+end
+function SQL_AgreementInit()
+end
+function SQL_AgreementAdd(ip, nick, mail, val)
+end
+function SQL_AgreementDel(ip, nick, mail)
+end
+---------

@@ -1,0 +1,145 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Функции генерации UserCommands
+--------------------------------------------------------------------------------------------------------------------------------------------
+function prepareUserCommands()--+
+	for prof=1,7 do
+		--VH:SendDataToAll("prof: "..prof.."|",10,10)
+		UserCommands[prof]={}
+		for n,t in pairs(sCommand) do
+			if sCommand[n][2][prof] == 1 then
+				if sCommand[n][1]=="mbset" then
+					command = UC.SETALLOPTIONS
+					command = replaceTXTs(command)
+					keys={}
+					for key,val in pairs(CFG) do
+						table.insert(keys,key)
+					end
+					table.sort(keys)
+					for indx,key in pairs(keys) do
+						c_command = command
+						c_command = string.gsub(c_command, "%[cmd%]", "mbset");	
+						c_command = string.gsub(c_command, "%[val%]", key);	
+						if c_command~="" then 
+							table.insert(UserCommands[prof],"$UserCommand " ..c_command);
+							--VH:SendDataToAll("c_command: "..c_command.."|",10,10)	
+						end	
+					end	
+				end
+				local command=sCommand[n][4];
+				if command~="" and command~= nil then
+					command = replaceTXTs(command)
+					command = string.gsub(command, "%[cmd%]", sCommand[n][1]);
+					--VH:SendDataToAll("command: "..command.."|",10,10)		
+					table.insert(UserCommands[prof],"$UserCommand " ..command);
+				end	
+			end
+		end
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function sendUserCommands(sUser)--+
+	if sUser and sUser.sName and sUser.iProfile then
+		--VH:SendDataToUser("$UserCommand 0 3 $||", sUser.sName)
+		local tempCommands = UserCommands[tCheck[sUser.iProfile][1]]
+		for n,UserCommand in pairs(tempCommands) do
+			--sUser:SendData(UserCommand)
+			VH:SendDataToUser(UserCommand, sUser.sName)
+		end
+		local tempUCOther = UCOther[tCheck[sUser.iProfile][1]]
+		for n,UserCommand in pairs(tempUCOther) do
+			--sUser:SendData("$UserCommand " ..UserCommand)
+			VH:SendDataToUser("$UserCommand " ..UserCommand, sUser.sName)
+		end
+		for i, v in pairs(tOtherCommands) do
+			if v.tLevels[sUser.iProfile] then
+				v.tMenu(sUser)
+			end
+		end
+		if sUser.iProfile > 0 then
+			for i,v in pairs (tVHCommandsTab[1]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+			for i,v in pairs (tVHCommandsUsr[1]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+		end
+		if sUser.iProfile > 1 then
+			for i,v in pairs (tVHCommandsTab[2]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+			for i,v in pairs (tVHCommandsUsr[2]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+		end
+		if sUser.iProfile > 2 then
+			for i,v in pairs (tVHCommandsTab[3]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+			for i,v in pairs (tVHCommandsUsr[3]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+		end
+		if sUser.iProfile > 3 then
+			for i,v in pairs (tVHCommandsTab[4]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+			for i,v in pairs (tVHCommandsUsr[4]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+		end
+		if sUser.iProfile > 4 then
+			for i,v in pairs (tVHCommandsTab[5]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+			for i,v in pairs (tVHCommandsUsr[5]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+		end
+		if sUser.iProfile > 5 then
+			for i,v in pairs (tVHCommandsTab[10]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+			for i,v in pairs (tVHCommandsUsr[10]) do
+				VH:SendDataToUser("$UserCommand " ..v, sUser.sName)
+			end
+		end
+	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function replaceTXTs(text)--+
+	local command=text
+	st_txt,end_txt,txt=string.find(command, "{(%S+)}")
+	while (txt)	do
+		if UCLang[txt]~= nil then
+			command=string.gsub(command, "{"..txt .."}", UCLang[txt]);
+			--local end_text = string.len(command)
+			--command = string.sub(command, 1, end_text-1)
+			--VH:SendDataToAll("command: "..command.."|",10,10)	
+		else
+			command=string.gsub(command, "{"..txt .."}", txt);
+			--local end_text = string.len(command)
+			--command = string.sub(command, 1, end_text-1)
+			--VH:SendDataToAll("command: "..command.."|",10,10)		
+		end
+		st_txt,end_txt,txt=string.find(command, "{(%S+)}")
+	end
+	return command
+end

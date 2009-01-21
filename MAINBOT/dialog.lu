@@ -1,0 +1,362 @@
+	--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- ‘ункции общени€ бота с юзерами
+--------------------------------------------------------------------------------------------------------------------------------------------
+function BotSayToUser(sUser,text)--+
+	if CFG.BotMessagesToPm ==1 then
+		--VH:SendDataToUser("$To: Palmer From: BotSayToUser $<BotSayToUser> sUser.sName["..(sUser.sName or "").."] text["..(text or "").."]|","Palmer")
+		if (sUser.sName) and (text) then
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..text.."|", sUser.sName)
+		end
+	else
+		if (sUser.sName) and (text) then
+			VH:SendDataToUser("<"..BOTNAME.."> "..text.."|",sUser.sName)
+		end
+	end
+	return 1
+end
+-------------------------------------------------------------------
+function BotSayToAll(msg)--+
+	--AddMainChatLog("<"..BOTNAME.. "> " .. msg)
+	if msg then
+		VH:SendDataToAll("<"..BOTNAME.. "> " .. msg.."|", 0, 10);
+	end
+end
+--B = BotSayToAll;
+-------------------------------------------------------------------
+function showHalloMessage(sUser)--+ Not in Use
+	local tRulesText = HALLOTEXT;
+	local countUsers=0;
+	local query = "SELECT COUNT(ip) FROM MainBot_userlist"
+	local res, rows = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	countUsers = tonumber(value)
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxShare'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxShare = tonumber(valore)
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxShareDate'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxShareDate = valore
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxUsers'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxUsers = tonumber(valore)
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxUsersDate'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxUsersDate = valore
+	local bestnick,bestsize,rating,total = getBestShares(sUser)
+	tRulesText = string.gsub(tRulesText, "%[USER%]", sUser.sName)
+	tRulesText = string.gsub(tRulesText, "%[IP%]", sUser.sIP)
+	tRulesText = string.gsub(tRulesText, "%[HUB%]", sHubName)
+	tRulesText = string.gsub(tRulesText, "%[SHARE%]", getNormalShare(sUser.iShareSize))
+	tRulesText = string.gsub(tRulesText, "%[BOTNAME%]", BOTNAME)
+	tRulesText = string.gsub(tRulesText, "%[MAXUSERSVAL%]", STATS.MaxUsers)
+	tRulesText = string.gsub(tRulesText, "%[MAXUSERSDATE%]", STATS.MaxUsersDate)
+	tRulesText = string.gsub(tRulesText, "%[MAXSHAREVAL%]", getNormalShare(STATS.MaxShare))
+	tRulesText = string.gsub(tRulesText, "%[MAXSHAREDATE%]", STATS.MaxShareDate)
+	tRulesText = string.gsub(tRulesText, "%[MAXUSERSTOTAL%]", countUsers)
+	query = "SELECT noleech,maxnoleech,InetDown FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	res, rows = VH:SQLQuery(query)
+	local curUser={}
+	if res and rows~=0  then
+		local res,noleech,maxnoleech,InetDown = VH:SQLFetch(0)
+		curUser.noleech=noleech;
+		curUser.maxnoleech=maxnoleech;
+		curUser.InetDown=InetDown;
+	else
+		curUser.noleech=0;
+		curUser.maxnoleech=0;
+		curUser.InetDown="";
+	end
+	--local curUser = SQL_FindInUserListByIP(sUser)
+	local minshare=getNormalShare(curUser.noleech);
+	if curUser.maxnoleech==1 then 
+		minshare=minshare.." (".. messages[179]..")";
+	end
+	tRulesText = string.gsub(tRulesText, "%[MINSHAREVAL%]", minshare)
+	tRulesText = string.gsub(tRulesText, "%[HUBOWNER%]", OWNER)
+	tRulesText = string.gsub(tRulesText, "%[OWNERCONTACT%]", OWNERContact)
+	tRulesText = string.gsub(tRulesText, "%[RATINGBESTNICK%]", bestnick)
+	tRulesText = string.gsub(tRulesText, "%[RATINGBESTSHARE%]", getNormalShare(bestsize) )
+	tRulesText = string.gsub(tRulesText, "%[RATING%]", rating)
+	tRulesText = string.gsub(tRulesText, "%[RATINGTOTAL%]", total)
+	tRulesText = string.gsub(tRulesText, "%[ROLE%]", tCheck[sUser.iProfile][2])
+	if (CFG.InetDown==0) or (curUser.InetDown=="") then
+		inetdowntxt = ""
+	elseif (CFG.InetDown==1) then
+		if curUser.InetDown=="0" then
+			inetdowntxt = messages[212]
+		elseif curUser.InetDown=="1" then 
+			inetdowntxt = messages[211]
+		end
+	end
+	tRulesText = string.gsub(tRulesText, "%[INETDOWN%]", inetdowntxt)
+
+	if CFG.HalloToPm ==1 then 
+		VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..tRulesText.."|", sUser.sName)
+	else
+		VH:SendDataToUser("<"..BOTNAME.."> "..tRulesText.."|",sUser.sName)
+	end
+	-------------------------------------------------------------------
+	--новости
+	if CFG.ShowNews==1 then
+		local msg="\r\n"..messages[28].."\r\n"..messages[136].."\r\n\r\n\t"..string.gsub(NEWSTEXT, "\n", "\n\t").."\r\n"..messages[28]
+
+		if CFG.HalloToPm ==1 then 
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+		else
+			VH:SendDataToUser("<"..BOTNAME.."> "..msg.."|",sUser.sName)
+		end
+	end
+	-------------------------------------------------------------------
+	--приветы админам 
+	if tCheck[sUser.iProfile][1] > 5 then --Master
+		if CFG.HalloToPm ==1 then 
+			if CFG.ReportBansToMaster==1 then
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..getbans(-1).."|", sUser.sName)
+			end
+		else
+			if CFG.ReportBansToMaster==1 then
+				VH:SendDataToUser("<"..BOTNAME.."> "..getbans(-1).."|",sUser.sName)
+			end
+		end
+		if OPCHATNEWSTEXT~="" then
+			VH:SendDataToUser("$To: "..sUser.sName.." From: "..OPCHATNAME.." $<"..BOTNAME.."> ќп„ат новости:\r\n\t"..OPCHATNEWSTEXT.."|", OPCHATNAME)
+		end
+	elseif tCheck[sUser.iProfile][1] > 2 and tCheck[sUser.iProfile][1] < 5 then --Operator
+		if CFG.HalloToPm ==1 then 
+			if CFG.ReportBansToOp==1 then
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..getbans(-1).."|", sUser.sName)
+			end
+		else
+			if CFG.ReportBansToOp==1 then
+				VH:SendDataToUser("<"..BOTNAME.."> "..getbans(-1).."|",sUser.sName)
+			end
+		end
+		if OPCHATNEWSTEXT~="" then
+			VH:SendDataToUser("$To: "..sUser.sName.." From: "..OPCHATNAME.." $<"..BOTNAME.."> ќп„ат новости:\r\n\t"..OPCHATNEWSTEXT.."|", OPCHATNAME)
+		end
+	end
+	-------------------------------------------------------------------
+	--сообщени€
+	if CFG.MailOn==1 then
+		local tMailsIp = {}
+		local tMailsNick = {}
+		tMailsIp = SQL_FindIpMail(sUser)
+		if tMailsIp then
+			for indx, mail in pairs(tMailsIp) do
+				if mail then
+					local msg = "\r\n"..messages[28].."\r\n".. messages[146].. mail.from_nick.." (" .. mail.from_ip.. ")"
+					msg = msg.."\r\n".. messages[147].. mail.maildate
+					msg = msg.."\r\n".. messages[148].. "\r\n" .. mail.msg_text
+					msg = msg.. "\r\n"..messages[28]
+					VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..mail.from_nick.. " $<" ..mail.from_nick.. "> "..msg.."|", sUser.sName)
+				end
+			end
+		end
+		tMailsNick = SQL_FindNickMail(sUser)
+		if tMailsNick then
+			for indx, mail in pairs(tMailsNick) do
+				if mail then
+					local msg="\r\n"..messages[28].."\r\n"..messages[145]
+					msg = msg.. "\r\n"..messages[28].."\r\n".. messages[146].. mail.from_nick.." (" .. mail.from_ip.. ")"
+					msg = msg.."\r\n".. messages[147].. mail.maildate
+					msg = msg.."\r\n".. messages[148].. "\r\n" .. mail.msg_text
+					msg = msg.. "\r\n"..messages[28]
+					VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..mail.from_nick.. " $<" ..mail.from_nick.. "> "..msg.."|", sUser.sName)
+				end
+			end
+		end
+		SQL_DeleteIpMail(sUser)
+		SQL_DeleteNickMail(sUser)
+	end
+	-------------------------------------------------------------------
+	-- только разрешенный чат по диапазону
+	if inDiap(sUser.sIP,IPCHECKS.CHAT_ONLY) then 
+		local tRulesText= CHAT_ONLY_TEXT;
+		tRulesText = string.gsub(tRulesText, "%[IP%]", sUser.sIP)
+		tRulesText = string.gsub(tRulesText, "%[HUBOWNER%]", OWNER)
+		tRulesText = string.gsub(tRulesText, "%[OWNERCONTACT%]", OWNERContact)
+		BotSayToUser(sUser, tRulesText)
+	end
+end
+-------------------------------------------------------------------
+function showHalloMessageShort(sUser)--+
+	if sUser then
+		local tRulesText = HALLOTEXTSHORT;
+		tRulesText = string.gsub(tRulesText, "%[USER%]", sUser.sName)
+		tRulesText = string.gsub(tRulesText, "%[IP%]", sUser.sIP)
+		tRulesText = string.gsub(tRulesText, "%[HUB%]", sHubName)
+		tRulesText = string.gsub(tRulesText, "%[SHARE%]", getNormalShare(sUser.iShareSize))
+		tRulesText = string.gsub(tRulesText, "%[BOTNAME%]", BOTNAME)
+		tRulesText = string.gsub(tRulesText, "%[HUBOWNER%]", OWNER)
+		tRulesText = string.gsub(tRulesText, "%[OWNERCONTACT%]", OWNERContact)
+		tRulesText = string.gsub(tRulesText, "%[ROLE%]", tCheck[sUser.iProfile][2])
+		if CFG.HalloToPm ==1 then 
+			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..tRulesText.."|", sUser.sName)
+		else
+			VH:SendDataToUser("<"..BOTNAME.."> "..tRulesText.."|",sUser.sName)
+		end
+		-------------------------------------------------------------------
+		--новости
+		if CFG.ShowNews==1 then
+			local msg="\r\n"..messages[28].."\r\n"..messages[136].."\r\n\r\n\t"..string.gsub(NEWSTEXT, "\n", "\n\t").."\r\n"..messages[28]
+			if CFG.HalloToPm ==1 then 
+				--sUser:SendPM(BOTNAME, msg)
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
+			else
+				--sUser:SendData(msg)
+				VH:SendDataToUser("<"..BOTNAME.."> "..msg.."|",sUser.sName)
+			end
+		end
+		-------------------------------------------------------------------
+		--статистика хаба операторам
+		if sUser.iProfile > 2 then
+			showHubInfo(sUser)
+			if OPCHATNEWSTEXT~="" then
+				VH:SendDataToUser("$To: "..sUser.sName.." From: "..OPCHATNAME.." $<"..BOTNAME.."> ќп„ат новости:\r\n\t"..OPCHATNEWSTEXT.."|", sUser.sName)
+			end
+		end
+		-------------------------------------------------------------------
+		--сообщени€
+		if CFG.MailOn==1 then
+			local tMailsIp = {}
+			local tMailsNick = {}
+			if (tMainBufer.MailBufer.IP[sUser.sIP]==1) then
+				tMailsIp = SQL_FindIpMail(sUser)
+				if tMailsIp then
+					for indx, mail in pairs(tMailsIp) do
+						if mail then
+							local msg = "\r\n"..messages[28].."\r\n".. messages[146].. mail.from_nick.." (" .. mail.from_ip.. ")"
+							msg = msg.."\r\n".. messages[147].. mail.maildate
+							msg = msg.."\r\n".. messages[148].. "\r\n" .. mail.msg_text
+							msg = msg.. "\r\n"..messages[28]
+							VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..mail.from_nick.. " $<" ..mail.from_nick.. "> "..msg.."|", sUser.sName)
+						end
+					end
+				end
+				SQL_DeleteIpMail(sUser)
+				tMainBufer.MailBufer.IP[sUser.sIP]=nil;
+			end
+			--if (tMainBufer.MailBufer.Nick[ToLowerCase(sUser.sName)]==1) then
+			if (tMainBufer.MailBufer.Nick[sUser.sName]==1) then
+				tMailsNick = SQL_FindNickMail(sUser)
+				if tMailsNick then
+					for indx, mail in pairs(tMailsNick) do
+						if mail then
+							local msg="\r\n"..messages[28].."\r\n"..messages[145]
+							msg = msg.. "\r\n"..messages[28].."\r\n".. messages[146].. mail.from_nick.." (" .. mail.from_ip.. ")"
+							msg = msg.."\r\n".. messages[147].. mail.maildate
+							msg = msg.."\r\n".. messages[148].. "\r\n" .. mail.msg_text
+							msg = msg.. "\r\n"..messages[28]
+							VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..mail.from_nick.. " $<" ..mail.from_nick.. "> "..msg.."|", sUser.sName)
+						end
+					end
+				end
+				SQL_DeleteNickMail(sUser)
+				--tMainBufer.MailBufer.Nick[ToLowerCase(sUser.sName)]=nil;
+				tMainBufer.MailBufer.Nick[sUser.sName]=nil;
+			end
+		end
+		-------------------------------------------------------------------
+		-- только разрешенный чат по диапазону
+		if inDiap(sUser.sIP,IPCHECKS.CHAT_ONLY) then 
+			local tRulesText= CHAT_ONLY_TEXT;
+			tRulesText = string.gsub(tRulesText, "%[IP%]", sUser.sIP)
+			tRulesText = string.gsub(tRulesText, "%[HUBOWNER%]", OWNER)
+			tRulesText = string.gsub(tRulesText, "%[OWNERCONTACT%]", OWNERContact)
+			BotSayToUser(sUser, tRulesText)
+		end
+	end
+end
+-------------------------------------------------------------------
+function showHubInfo(sUser)--+
+	local tRulesText = HUBINFOTEXT;
+	local countUsers=0;
+	local query = "SELECT COUNT(ip) FROM MainBot_userlist"
+	local res, rows = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	countUsers = tonumber(value)
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxShare'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxShare = tonumber(valore)
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxShareDate'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxShareDate = valore
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxUsers'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxUsers = tonumber(valore)
+	query = "SELECT * FROM MainBot_STATS WHERE name='MaxUsersDate'"
+	res, rows = VH:SQLQuery(query)
+	res, name, valore = VH:SQLFetch(0)
+	STATS.MaxUsersDate = valore
+	local bestnick,bestsize,rating,total = getBestShares(sUser)
+	tRulesText = string.gsub(tRulesText, "%[USER%]", sUser.sName)
+	tRulesText = string.gsub(tRulesText, "%[IP%]", sUser.sIP)
+	tRulesText = string.gsub(tRulesText, "%[HUB%]", sHubName)
+	tRulesText = string.gsub(tRulesText, "%[SHARE%]", getNormalShare(sUser.iShareSize))
+	tRulesText = string.gsub(tRulesText, "%[MAXUSERSVAL%]", STATS.MaxUsers)
+	tRulesText = string.gsub(tRulesText, "%[MAXUSERSDATE%]", STATS.MaxUsersDate)
+	tRulesText = string.gsub(tRulesText, "%[MAXSHAREVAL%]", getNormalShare(STATS.MaxShare))
+	tRulesText = string.gsub(tRulesText, "%[MAXSHAREDATE%]", STATS.MaxShareDate)
+	tRulesText = string.gsub(tRulesText, "%[MAXUSERSTOTAL%]", countUsers)
+	query = "SELECT noleech,maxnoleech,InetDown FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	res, rows = VH:SQLQuery(query)
+	local curUser={}
+	if res and rows~=0  then
+		local res,noleech,maxnoleech,InetDown = VH:SQLFetch(0)
+		curUser.noleech=noleech;
+		curUser.maxnoleech=maxnoleech;
+		curUser.InetDown=InetDown;
+	else
+		curUser.noleech=0;
+		curUser.maxnoleech=0;
+		curUser.InetDown="";
+	end
+	--local curUser = SQL_FindInUserListByIP(sUser)
+	local minshare=getNormalShare(curUser.noleech);
+	if curUser.maxnoleech==1 then 
+		minshare=minshare.." (".. messages[179]..")";
+	end
+	tRulesText = string.gsub(tRulesText, "%[MINSHAREVAL%]", minshare)
+	tRulesText = string.gsub(tRulesText, "%[RATINGBESTNICK%]", bestnick)
+	tRulesText = string.gsub(tRulesText, "%[RATINGBESTSHARE%]", getNormalShare(bestsize) )
+	tRulesText = string.gsub(tRulesText, "%[RATING%]", rating)
+	tRulesText = string.gsub(tRulesText, "%[RATINGTOTAL%]", total)
+	tRulesText = string.gsub(tRulesText, "%[ROLE%]", tCheck[sUser.iProfile][2])
+	if (CFG.InetDown==0) or (curUser.InetDown=="") then
+		inetdowntxt = ""
+	elseif (CFG.InetDown==1) then
+		if curUser.InetDown=="0" then
+			inetdowntxt = messages[212]
+		elseif curUser.InetDown=="1" then 
+			inetdowntxt = messages[211]
+		end
+	end
+	tRulesText = string.gsub(tRulesText, "%[INETDOWN%]", inetdowntxt)
+	VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..tRulesText.."|", sUser.sName)
+end
+-------------------------------------------------------------------

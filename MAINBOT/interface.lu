@@ -1,0 +1,2194 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Обработка команд
+--------------------------------------------------------------------------------------------------------------------------------------------
+function ParseCommand(sUser,arg,sData)--+
+	--local arglength = string.len(arg)
+	--arg=string.sub(arg,1,string.len(arg)-1)
+	--local _,_,prefix,cmd,arg=string.find(arg, "%b<>%s+(%S)(%S+)%s*(.*)")
+	local _,_,prefix,cmd,arg=string.find(arg, "(%S)(%S+)%s*(.*)")
+	--VH:SendDataToAll("prefix: "..prefix.."|",10,10)
+	--VH:SendDataToAll("cmd: "..cmd.."|",10,10)
+	--VH:SendDataToAll("arg: "..arg.."|",10,10)
+	--if prefix==nil or prefix~="*" then return 0 end -- не найден префикс
+	------------------------------------------------------------------------
+	if prefix==nil or prefix~="+" then return 0 end -- не найден префикс
+	------------------------------------------------------------------------
+	-- фильтр +me и /me
+	if prefix=="+" or prefix=="/" then
+		if cmd == "me" then
+			--VH:SendDataToUser("$To: Palmer From: "..BOTNAME.." $<"..BOTNAME.."> +me /me filter: Nick["..sUser.sName.."] IP ["..sUser.sIP.."]|","Palmer")
+			-----------------------------------------------------------
+			--[[
+			--проверка: бан
+				local query = "SELECT user_status FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+				local res, rows = VH:SQLQuery(query)
+				local res, curUserStatus = VH:SQLFetch(0)
+				curUserStatus = tonumber(curUserStatus)
+				if curUserStatus==4 or curUserStatus==6 or curUserStatus==1 or curUserStatus== 2 then
+					BotSayToUser(sUser,getBanInfo (sUser.sIP))
+					return 1
+				end
+			]]--
+			-----------------------------------------------------------
+			return VH_OnParsedMsgChat(sUser.sName, sData)
+		end
+	end
+	------------------------------------------------------------------------
+	local ComCheck = 0
+	cmd = string.lower(cmd)
+	for i=1,TableMaxSize(sCommand) do
+		if sCommand[i][1]==cmd then
+			ComCheck = i
+			break
+		end
+	end
+	------------------------------------------------------------------------
+	if tOtherCommands[string.lower(cmd)] then
+		cmd = string.lower(cmd)
+		if tOtherCommands[cmd].tLevels[sUser.iProfile] then
+			if cmd~="mainbotredbutton" then
+				AddSysLog("ParseCommand. nick ["..(sUser.sName or "").."] ip["..(sUser.sIP or "").."] cmd ["..cmd.."] arg ["..arg.."] sData ["..sData.."]")
+			end
+			return tOtherCommands[cmd].tFunc(sUser,arg,prefix..cmd,sData)
+		else
+			--return user:SendMessage(Settings.sBot, "*** Ошибка! У Вас нет прав, чтобы использовать эту команду!"), 1
+			BotSayToUser(sUser,messages[57])
+			AddSysLog("ParseCommand. Отклонено выполнение. nick ["..(sUser.sName or "").."] ip["..(sUser.sIP or "").."] cmd ["..cmd.."] arg ["..arg.."] sData ["..sData.."]")
+			return 1
+		end
+	end
+	------------------------------------------------------------------------
+	if ComCheck == 0 then 
+		if PASSCOMMANDS[cmd] then
+			return 2;
+		end	
+	end
+	if ComCheck == 0 then 
+		return 0
+	end -- не найдена команда
+	local level=tCheck[sUser.iProfile][1]
+	if sCommand[ComCheck][2][level] then
+		if sCommand[ComCheck][2][level]==1 then
+			--AddSysLog("<".. sUser.sName.. "> ["..sUser.sIP .."] ".. prefix..cmd.." "..arg);	
+			AddSysLog("ParseCommand. nick ["..(sUser.sName or "").."] ip["..(sUser.sIP or "").."] cmd ["..cmd.."] arg ["..arg.."] sData ["..sData.."]")			
+			return sCommand[ComCheck][5](sUser,arg,prefix..cmd,sData)
+		else
+			BotSayToUser(sUser,messages[57])
+			AddSysLog("ParseCommand. Отклонено выполнение. nick ["..(sUser.sName or "").."] ip["..(sUser.sIP or "").."] cmd ["..cmd.."] arg ["..arg.."] sData ["..sData.."]")
+			return 1
+		end
+	else
+		return 1
+	end
+end
+function ParseOperatorCommand(sNick, sIP, sData, sPrefix, sCmd, sArg)
+	--[12:46:37] VH_OnOperatorCommand. nick [Palmer] ip[192.168.52.205] cmd [banip_3M] arg [192.168.19.195 Нарушение правил] sData [!banip_3M 192.168.19.195 Нарушение правил]
+	--[[
+	cDCConsole::mIPRangeRex("^(\\d+\\.\\d+\\.\\d+\\.\\d+)((\\/(\\d+))|(\\.\\.|-)(\\d+\\.\\d+\\.\\d+\\.\\d+))?$",0);
+	mCmdBan(int(eCM_BAN),".(del|rm|un|info|list|ls)?ban([^_\\s]+)?(_(\\d+\\S))?( this (nick|ip))? ?", "(\\S+)( (.*)$)?", &mFunBan),
+	mCmdGag(int(eCM_GAG),".(un)?(gag|nochat|nopm|noctm|nosearch|kvip|maykick|noshare|mayreg|mayopchat) ", "(\\S+)( (\\d+\\w))?", &mFunGag),
+	mCmdTrigger(int(eCM_TRIGGER),".(ft|trigger)(\\S+) ", "(\\S+) (.*)", &mFunTrigger),
+	mCmdSetVar(int(eCM_SET),".(set|=) ", "(\\[(\\S+)\\] )?(\\S+) (.*)", &mFunSetVar),
+	mCmdRegUsr(int(eCM_REG),".r(eg)?(n(ew)?(user)?|del(ete)?|pass(wd)?|(en|dis)able|(set)?class|(protect|hidekick)(class)?|set|=|info) ", "(\\S+)( (((\\S+) )?(.*)))?", &mFunRegUsr),
+	mCmdRaw(int(eCM_RAW),".proto(\\S+)_(\\S+) ","(.*)", &mFunRaw),
+	mCmdCmd(int(eCM_CMD),".cmd(\\S+)","(.*)", &mFunCmd),
+	mCmdWho(int(eCM_WHO),".w(ho)?(\\S+) ","(.*)", &mFunWho),
+	mCmdKick(int(eCM_KICK),".(kick|drop|flood) ","(\\S+)( (.*)$)?", &mFunKick, eUR_KICK ),
+	mCmdInfo(int(eCM_INFO),".(\\S+)info ?", "(\\S+)?", &mFunInfo),
+	mCmdPlug(int(eCM_PLUG),".plug(in|out|list|reg|reload) ","(\\S+)( (.*)$)?", &mFunPlug),
+	mCmdReport(int(eCM_REPORT),"\\+report ","(\\S+)( (.*)$)?", &mFunReport),
+	mCmdBc(int(eCM_BROADCAST),".(bc|broadcast|oc|ops|regs|guests|vips|cheefs|admins|masters)( |\\r\\n)","(.*)$", &mFunBc), // |ccbc|ccbroadcast
+	mCmdRedirConnType(int(eCM_CONNTYPE),".(\\S+)conntype ?","(.*)$",&mFunRedirConnType),
+	mCmdRedirTrigger(int(eCM_TRIGGERS),".(\\S+)trigger ?","(.*)$",&mFunRedirTrigger),
+	mCmdGetConfig(int(eCM_GETCONFIG),".(gc|getconfig) ?","(\\[(\\S+)\\])?", &mFunGetConfig),
+	static const char *bannames[]={"nick", "ip", "nickip", "", "range", "host1", "host2" , "host3", "hostr1",  "share", "email" , "prefix"};
+	static const char *prefixnames[]={"add", "new", "rm", "del", "un", "info", "check", "list", "ls" };
+	]]--
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function GetArg(sData)
+	local s,e,arg1 = string.find(sData, "^(%S+)")
+	return arg1
+end
+-----------------------------------------------------------
+function GetNick(sData)
+	local s,e,arg1 = string.find(sData, "(%S+)")
+	return arg1
+end
+-----------------------------------------------------------
+function GetNickNum(sData)
+	local s,e,arg1,arg2 = string.find(sData, "(%S+)%s*(%d*)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function GetIpaddr(sData)
+	local s,e,arg1= string.find(sData, "(%d*%.%d*%.%d*%.%d*)")
+	return arg1
+end
+-----------------------------------------------------------
+function GetValueMeasure(sData)
+	local s,e,arg1,arg2= string.find(sData, "%s*(%d*%.*%d*)%s*(%S*)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function GetArgIpReason(sData)
+	local s,e,arg1,arg2,arg3 = string.find(sData, "%s*(%d*%.%d*%.%d*%.%d*)%s*(%d*)%s*(.*)")
+	return arg1,arg2,arg3
+end
+-----------------------------------------------------------
+function GetArgNickReason(sData)
+	local s,e,arg1,arg2,arg3 = string.find(sData, "%s*(%S*)%s*(%d*)%s*(.*)")
+	return arg1,arg2,arg3
+end
+-----------------------------------------------------------
+function Get2Args(sData)
+	local s,e,arg1,arg2 = string.find(sData, "^(%S+)%s*(.*)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function Get3Args(sData)
+	local s,e,arg1,arg2,arg3 = string.find(sData, "^(%S+)%s+(%S+)%s+(%S+)")
+	return arg1,arg2,arg3
+end
+-----------------------------------------------------------
+function GetArgNick2Num(sData)
+	local s,e,arg1,arg2,arg3 = string.find(sData, "(%S*)%s*(%d*)%s*(%d*)")
+	return arg1,arg2,arg3
+end
+-----------------------------------------------------------
+function GetArgStringDate(sData)
+	local s,e,arg1,arg2 = string.find(sData, "(%S+)%s+(%S+)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function GetArgStringRoomDate(sData)
+	local s,e,arg1,arg2,arg3 = string.find(sData, "(%S+)%s+(%S+)%s+(%S+)")
+	return arg1,arg2,arg3
+end
+-----------------------------------------------------------
+function GetArgIpNick(sData)
+	local s,e,arg1,arg2= string.find(sData, "%s*(%d*%.%d*%.%d*%.%d*)%s*(.*)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function GetArgIpNickString(sData)
+	local s,e,arg1,arg2,arg3= string.find(sData, "%s*(%d*%.%d*%.%d*%.%d*)%s+(%S+)%s+(.*)")
+	return arg1,arg2,arg3
+end
+-----------------------------------------------------------
+function GetArgIpNum(sData)
+	local s,e,arg1,arg2= string.find(sData, "%s*(%d*%.%d*%.%d*%.%d*)%s*(%d+)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function GetVarVal(sData)
+	local s,e,arg1,arg2 = string.find(sData, "%s*(%S+)%s+(.*)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function GetIpMsg(sData)
+	local s,e,arg1,arg2 = string.find(sData, "%s*(%d*%.%d*%.%d*%.%d*)%s*(.*)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function GetNickMsg(sData)
+	local s,e,arg1,arg2 = string.find(sData, "%s*(%S+)%s*(.*)")
+	return arg1,arg2
+end
+-----------------------------------------------------------
+function GetTTHNamePath(sData)
+	local s,e,arg1,arg2,arg3 = string.find(sData, "^(%S+)%s+(%S+)%s+(.*)$")
+	return arg1,arg2,arg3
+end
+-----------------------------------------------------------
+function GetParam2NumPatternDate(sData)
+	local s,e,arg1,arg2,arg3,arg4,arg5 = string.find(sData, "(%S+)%s+(%d+)%s+(%d+)%s+(%S+)%s+(%S+)")
+	return arg1,arg2,arg3,arg4,arg5
+end
+-----------------------------------------------------------
+function alertByIP(ip,msg,do_disconnect)
+	local users = ONLINEUSERS
+	for i, vUser in pairs(users) do
+		if vUser.sIP==ip then
+			BotSayToUser(vUser,msg)
+			if do_disconnect==true then
+				--SQL_ModToUserList("lastonline", os.date("%Y-%m-%d %H:%M:%S"), "ip", ip)
+				DisconnectUser(vUser)
+				ONLINEUSERS[vUser.sName] = nil
+				--VH:CloseConnection(sUser.sName);
+			end	
+		end
+	end
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- USER INTERFACE FUNCTIONS
+--------------------------------------------------------------------------------------------------------------------------------------------
+function options(sUser,arg)--+
+	local msg = "\r\n"..messages[28].."\r\n\t"..messages[122].."\r\n"..messages[28].."\r\n"
+	keys={}
+	for key,val in pairs(CFG) do
+		table.insert(keys,key)
+	end
+	table.sort(keys)
+	for indx,key in pairs(keys) do
+		if type(CFG[key])~="function" then 
+			msg =msg .."\t"..key.." = "..CFG[key].."\r\n"
+		end	
+	end
+	msg =msg ..messages[28]
+	BotSayToUser(sUser,msg)
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function setoptions(sUser,arg)--+
+	local key, val = GetVarVal(arg)
+	if val== nil then val=0 end
+	if tonumber(val) then  val=tonumber(val) end
+	if CFG[key]~=nil then
+		--[[
+		if key == "MainChatOff" and val == 1 then
+			VH:SetConfig("config","mainchat_class","3")
+		end
+		]]--
+		CFG[key]=val;
+		SQL_ModSettings(val, key)
+		BotSayToUser(sUser,messages[124].." "..key.." = "..val) 
+		--AddSysLog("<"..BOTNAME.. "> ".. messages[124].." "..key.." = "..val.." ("..sUser.sName..")");
+		--saveArray(CFG,F_CFG)
+	else
+		BotSayToUser(sUser,key..": "..messages[123]) 
+	end
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function timerscfg(sUser,arg)--+
+	local msg = "\r\n"..messages[28].."\r\n\t"..messages[213].."\r\n"..messages[28].."\r\n"
+	keys={}
+	for key,val in pairs(TCFG) do
+		table.insert(keys,key)
+	end
+	table.sort(keys)
+	for indx,key in pairs(keys) do
+		if type(TCFG[key])~="function" then 
+			msg =msg .."\t"..key.." = "..TCFG[key].."\r\n"
+		end	
+	end
+	msg =msg ..messages[28]
+	BotSayToUser(sUser,msg)
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function settimerscfg(sUser,arg)--+
+	local timer, val = GetVarVal(arg)
+	if val== nil then val=60 end
+	if tonumber(val) then  val=tonumber(val) end
+	if timer~=nil then 
+		timer=val;
+		SQL_SetTimersCfg(timer, val)
+		BotSayToUser(sUser,messages[214].." "..timer.." = "..val) 
+	else
+		BotSayToUser(sUser,key..": "..messages[123]) 
+	end
+end
+-----------------------------------------------------------
+function DoHelp(sUser,arg,cmd)--+
+	local msg = "\r\n"..messages[28].."\r\n\t".. messages[58].."\r\n"..messages[28].."\r\n"
+	local count =0;
+	for n,t in pairs(sCommand) do
+		if sCommand[n][2][tCheck[sUser.iProfile][1]] == 1 then
+			msg=msg.." +"..sCommand[n][1]..sCommand[n][3].."\r\n" 
+			count = count +1
+		end
+	end
+	for i, v in pairs(tOtherCommands) do
+		if v.tLevels[sUser.iProfile] then
+			if (v.sName~=nil) and (v.sDesc~=nil) then
+				msg=msg.." +"..(v.sName or "ERR").."\t\t-\t\t"..(v.sDesc or "ERR").."\r\n" 
+				count = count +1
+			end
+		end
+	end
+	msg=msg.."\r\n\r\n\t" .. messages[59] ..count
+	msg=msg.."\r\n\r\n".. messages[28]
+	BotSayToUser(sUser,msg)
+	return 1
+end
+-----------------------------------------------------------
+function showrules(sUser)--+
+	local tRulesText = SHORTRULESTEXT
+	tRulesText = string.gsub(tRulesText, "%[BOTNAME%]", BOTNAME)
+	tRulesText = string.gsub(tRulesText, "%[HUBOWNER%]", OWNER)
+	tRulesText = string.gsub(tRulesText, "%[OWNERCONTACT%]", OWNERContact)
+	BotSayToUser(sUser,tRulesText)
+	return 1
+end
+-----------------------------------------------------------
+function showfaq(sUser)--+
+	BotSayToUser(sUser,FAQTEXT)
+	return 1
+end
+-----------------------------------------------------------
+function getFullLogs(sUser,arg,l_type)--+
+	local fdate = GetArg(arg);
+	if fdate == nil then 
+		BotSayToUser(sUser,messages[24])
+		return 1
+	end
+	local _,_,sYear,sMonth,sDay = string.find(fdate, "(%d+).(%d+).(%d+)")
+	--VH:SendDataToUser("$To: Palmer From: getFullLogs $<getFullLogs> sYear["..(sYear or "").."] sMonth["..(sMonth or "").."] sDay["..(sDay or "").."]|","Palmer")
+	fdate = (sYear or "").."/"..(sMonth or "").."/"..(sDay or "")
+	local msg ="\r\n"..messages[28].."\r\n"
+	if l_type=="M" then
+		msg = msg..messages[129]
+	elseif l_type=="S" then
+		msg = msg..messages[130]
+	elseif l_type=="P" then
+		msg = msg..messages[131]
+	end
+	msg = msg..fdate.."\r\n"..messages[28].."\r\n"
+	--BotSayToUser(sUser,msg )
+	local str_i="";
+	local tempmsg = "";
+	for i = 0,23,1 do
+		if i<10 then str_i="0"..i else str_i=i end
+		--msg="\r\n"..messages[28].."\r\n"
+		if l_type=="M" then
+			tempmsg = loadtext(F_MainLogPath..fdate.."/"..str_i .."_mainchat.log")
+			if (tempmsg~="") then
+				msg = msg..tempmsg.."\r\n"
+			end
+			tempmsg = "";
+		elseif l_type=="S" then
+			tempmsg = loadtext(F_SysLogPath..fdate.."/"..str_i .."_sys.log")
+			if (tempmsg~="") then
+				msg = msg..tempmsg.."\r\n"
+			end
+			tempmsg = "";
+		elseif l_type=="P" then
+			tempmsg = loadtext(F_ParanoidLogPath..fdate.."/"..str_i .."_paranoid.log")
+			if (tempmsg~="") then
+				msg = msg..tempmsg.."\r\n"
+			end
+			tempmsg = "";
+		end
+		--BotSayToUser(sUser,msg )
+	end
+	msg = msg..messages[28].."\r\n"..messages[21].."\r\n"..messages[28]
+	BotSayToUser(sUser,msg )
+	--BotSayToUser(sUser,"\r\n"..messages[28].."\r\n"..messages[21].."\r\n"..messages[28])
+	ClearMem()	
+	return 1
+end
+-----------------------------------------------------------
+function getHourLogs(sUser,arg,l_type)--+
+	local fdate = GetArg(arg);
+	if fdate == nil then 
+		BotSayToUser(sUser,messages[25])
+		return 1 
+	end
+	local _,_,sYear,sMonth,sDay,sHour = string.find(fdate, "(%d+).(%d+).(%d+).(%d+)")
+	--VH:SendDataToUser("$To: Palmer From: getHourLogs $<getHourLogs> sYear["..(sYear or "").."] sMonth["..(sMonth or "").."] sDay["..(sDay or "").."] sHour["..(sHour or "").."]|","Palmer")
+	fdate = (sYear or "").."/"..(sMonth or "").."/"..(sDay or "").."/"..(sHour or "")
+	local msg ="\r\n"..messages[28].."\r\n"
+	if l_type=="M" then
+		msg = msg..messages[132]
+	elseif l_type=="S" then
+		msg = msg..messages[133]
+	elseif l_type=="P" then
+		msg = msg..messages[134]
+	end
+	msg = msg .. fdate.."\r\n"..messages[28].."\r\n"
+	--BotSayToUser(sUser,msg )
+	msg="\r\n"..messages[28].."\r\n"
+	if l_type=="M" then
+		msg = msg..loadtext(F_MainLogPath..fdate.."_mainchat.log").."\r\n"
+	elseif l_type=="S" then
+		msg = msg..loadtext(F_SysLogPath..fdate.."_sys.log").."\r\n"
+	elseif l_type=="P" then
+		msg = msg..loadtext(F_ParanoidLogPath..fdate.."_paranoid.log").."\r\n"
+	end
+	msg = msg..messages[28].."\r\n"..messages[21].."\r\n"..messages[28]
+	BotSayToUser(sUser,msg )
+	--BotSayToUser(sUser,"\r\n"..messages[28].."\r\n"..messages[21].."\r\n"..messages[28])
+	ClearMem()	
+	return 1	
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- K   I   L   L
+--------------------------------------------------------------------------------------------------------------------------------------------
+function killip(sUser,arg)--+
+	local ipaddr, rule ,reason= GetArgIpReason(arg)
+	if ipaddr == nil then 
+		BotSayToUser(sUser,messages[45]) 
+		return 1
+	end
+	if rule == nil then rule=" " end
+	if reason == nil then reason=" " end
+	-------------------------------------
+	local vUser={};
+	for i, wUser in pairs(ONLINEUSERS) do
+		if (wUser.sIP==ipaddr) then
+			local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, wUser.sName)
+			if sIneq and iIneq then
+				if sIneq ~= ">" and iIneq ~= 1 then
+					BotSayToUser(sUser,messages[224])
+					AddSysLog("killip: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+					--VH:SendDataToUser("$To: Palmer From: killip $<killip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					return 1;
+				else
+					--VH:SendDataToUser("$To: Palmer From: killip $<killip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					vUser=wUser; wUser=nil;
+				end
+			else
+				BotSayToUser(sUser,messages[225])
+				AddSysLog("killip: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+				--VH:SendDataToUser("$To: Palmer From: killip $<killip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+				return 1;
+			end
+		end
+	end
+	-------------------------------------
+	ChangeStatus(ipaddr,5,rule,sUser.sName,reason)
+	AddSysLog("killip: "..getSysLogBanMsg(nil,ipaddr)) 
+	-------------------------------------
+	local bantype = 1;
+	local range_fr = 0;
+	local range_to = 0;
+	local date_start = "unix_timestamp(now())";
+	local date_limit = "";
+	local share_size = 0;
+	SQL_AddToHubBanList(ipaddr,"_ipban_",bantype,range_fr,range_to,date_start,date_limit,sUser.sName,""..(reason or " ").." [Правило #"..(rule or " ").."]",share_size)
+	-------------------------------------
+	if (vUser.bRegistered==true) then
+		bantype = 2;
+		SQL_AddToHubBanList("_nickban_",vUser.sName,bantype,range_fr,range_to,date_start,date_limit,sUser.sName,""..(reason or " ").." [Правило #"..(rule or " ").."]",share_size)
+	end
+	-------------------------------------
+	--[[
+	local res, value = VH:GetUserClass(snick)
+	local class = tonumber(value)
+	if class > 0 then
+		bantype = 2;
+		ip="_nickban_";
+		SQL_AddToHubBanList(ip,snick,bantype,range_fr,range_to,date_start,date_limit,sUser.sNick,reason,share_size)
+	end
+	]]--
+	-------------------------------------
+	--SQL_DelFromHubReglistByIP(ipaddr)
+	------------------------------------
+	alertByIP(ipaddr,getBanInfo(ipaddr),true)
+	BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr));
+	BotSayToAll(genBanMessage(ipaddr))
+	ClearMem()
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function killnick(sUser,arg)--+
+	local nick, rule ,reason= GetArgNickReason(arg)
+	if nick == nil then 
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+	if rule == nil then rule=" " end
+	if reason == nil then reason=" " end
+    --local vUser = GetItemByName(nick)
+	if not ONLINEUSERS[nick] then
+		BotSayToUser(sUser, messages[29]) 
+		return 1 
+	end
+	-------------------------------------
+	local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, nick)
+	if sIneq and iIneq then
+		if sIneq ~= ">" and iIneq ~= 1 then
+			BotSayToUser(sUser,messages[224])
+			AddSysLog("killnick: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+			--VH:SendDataToUser("$To: Palmer From: killnick $<killnick> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+			return 1;
+		end
+	else
+		BotSayToUser(sUser,messages[225])
+		AddSysLog("killnick: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+		--VH:SendDataToUser("$To: Palmer From: killnick $<killnick> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+		return 1;
+	end
+	-------------------------------------
+	local ipaddr=ONLINEUSERS[nick].sIP
+	ChangeStatus(ipaddr,5,rule,sUser.sName,reason)
+	AddSysLog("killnick: "..getSysLogBanMsg(nil,ipaddr)) 	
+	-------------------------------------
+	local bantype = 1;
+	local range_fr = 0;
+	local range_to = 0;
+	local date_start = "unix_timestamp(now())";
+	local date_limit = "";
+	local share_size = 0;
+	SQL_AddToHubBanList(ipaddr,"_ipban_",bantype,range_fr,range_to,date_start,date_limit,sUser.sName,""..(reason or " ").." [Правило #"..(rule or " ").."]",share_size)
+	-------------------------------------
+	if (ONLINEUSERS[nick].bRegistered==true) then
+		bantype = 2;
+		SQL_AddToHubBanList("_nickban_",nick,bantype,range_fr,range_to,date_start,date_limit,sUser.sName,""..(reason or " ").." [Правило #"..(rule or " ").."]",share_size)
+	end
+	-------------------------------------
+	--SQL_DelFromHubReglist(nick)
+	------------------------------------
+	alertByIP(ipaddr,getBanInfo(ipaddr),true)
+	BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr));
+	BotSayToAll(genBanMessage(ipaddr))
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--    B   A    N
+--------------------------------------------------------------------------------------------------------------------------------------------
+function bannick(sUser,arg)--+
+	local nick, rule ,reason= GetArgNickReason(arg)
+	if nick == nil  then 
+		BotSayToUser(sUser, messages[29]) 
+		return 0
+	end
+	if rule == nil then rule=" " end
+	if reason == nil then reason=" " end
+    --local vUser = GetItemByName(nick)
+	if not ONLINEUSERS[nick] then
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+	-------------------------------------
+	local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, nick)
+	if sIneq and iIneq then
+		if sIneq ~= ">" and iIneq ~= 1 then
+			BotSayToUser(sUser,messages[224])
+			AddSysLog("bannick: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+			--VH:SendDataToUser("$To: Palmer From: bannick $<bannick> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+			return 1;
+		end
+	else
+		BotSayToUser(sUser,messages[225])
+		AddSysLog("bannick: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+		--VH:SendDataToUser("$To: Palmer From: bannick $<bannick> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+		return 1;
+	end
+	-------------------------------------
+	local ipaddr=ONLINEUSERS[nick].sIP
+	ChangeStatus(ipaddr,3,rule,sUser.sName,reason)
+	SQL_ModToUserList("nick", ONLINEUSERS[nick].sName, "ip", ONLINEUSERS[nick].sIP)
+	AddSysLog("bannick: "..getSysLogBanMsg(nil,ipaddr));
+	-------------------------------------
+	local query = "SELECT bancount FROM MainBot_userlist WHERE ip='"..ipaddr.."'"
+	local res, rows = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	local bancount = tonumber(value)
+	local bantime = (CFG.BANTIME*bancount);
+	local bantype = 1;
+	local range_fr = 0;
+	local range_to = 0;
+	local date_start = "unix_timestamp(now())";
+	local date_limit = "unix_timestamp(now())+"..bantime.."";
+	local share_size = 0;
+	SQL_AddToHubBanList(ipaddr,"_ipban_",bantype,range_fr,range_to,date_start,date_limit,sUser.sName,""..(reason or " ").." [Правило #"..(rule or " ").."]",share_size)
+	-------------------------------------
+	if (ONLINEUSERS[nick].bRegistered==true) then
+		bantype = 2;
+		SQL_AddToHubBanList("_nickban_",nick,bantype,range_fr,range_to,date_start,date_limit,sUser.sName,""..(reason or " ").." [Правило #"..(rule or " ").."]",share_size)
+	end
+	-------------------------------------
+	alertByIP(ipaddr,getBanInfo(ipaddr),true)
+	BotSayToAll(genBanMessage(ipaddr))
+	BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))
+	return 1
+end
+-----------------------------------------------------------
+function banip(sUser,arg)--+
+	local ipaddr, rule ,reason= GetArgIpReason(arg)
+	if ipaddr == nil  then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1 
+	end
+	if rule == nil then rule=" " end
+	if reason == nil then reason=" " end
+	-------------------------------------
+	local vUser={};
+	for i, wUser in pairs(ONLINEUSERS) do
+		if (wUser.sIP==ipaddr) then
+			local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, wUser.sName)
+			if sIneq and iIneq then
+				if sIneq ~= ">" and iIneq ~= 1 then
+					BotSayToUser(sUser,messages[224])
+					AddSysLog("banip: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+					--VH:SendDataToUser("$To: Palmer From: banip $<banip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					return 1;
+				else
+					--VH:SendDataToUser("$To: Palmer From: banip $<banip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					vUser=wUser; wUser=nil;
+				end
+			else
+				BotSayToUser(sUser,messages[225])
+				AddSysLog("banip: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+				--VH:SendDataToUser("$To: Palmer From: banip $<banip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+				return 1;
+			end
+		end
+	end
+	-------------------------------------
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser == nil then
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	else
+		ChangeStatus(ipaddr,3,rule,sUser.sName,reason)
+		AddSysLog("banip: "..getSysLogBanMsg(nil,ipaddr));
+		-------------------------------------
+		local bantime = (CFG.BANTIME*((curUser.bancount or 1)+1));
+		local bantype = 1;
+		local range_fr = 0;
+		local range_to = 0;
+		local date_start = "unix_timestamp(now())";
+		local date_limit = "unix_timestamp(now())+"..bantime.."";
+		local share_size = 0;
+		--VH:SendDataToUser("$To: Palmer From: banip $<banip> ipaddr["..ipaddr.."] rule["..rule.."] reason["..reason.."]|","Palmer")
+		SQL_AddToHubBanList(ipaddr,"_ipban_",bantype,range_fr,range_to,date_start,date_limit,sUser.sName,""..(reason or " ").." [Правило #"..(rule or " ").."]",share_size)
+		-------------------------------------
+		if (vUser.bRegistered==true) then
+			bantype = 2;
+			SQL_AddToHubBanList("_nickban_",vUser.sName,bantype,range_fr,range_to,date_start,date_limit,sUser.sName,""..(reason or " ").." [Правило #"..(rule or " ").."]",share_size)
+		end
+		-------------------------------------
+		alertByIP(ipaddr,getBanInfo(ipaddr),true)
+		BotSayToAll(genBanMessage(ipaddr))
+		BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))
+		curUser=nil;
+	end
+	return 1
+end
+-----------------------------------------------------------
+function unbanip(sUser,arg)--+
+	ipaddr = GetIpaddr(arg)
+	if ipaddr == nil  then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1
+	end
+	local vUser = {}
+	vUser.sIP = ipaddr
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser ~= nil then
+		if curUser.status == 3 or curUser.status == 5 then 
+			if curUser.status == 3 then
+				decBancount(ipaddr)
+			end
+			--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			SQL_ModLastcussList("Наказание: Бан ("..curUser.when..") "..messages[69].." ["..curUser.context.."] Наказал: "..curUser.by.." Кто снял: "..sUser.sName, ipaddr)
+			ChangeStatus(ipaddr,0,0,sUser.sName,messages[17])
+			-------------------------------------
+			SQL_DelFromHubBanList(ipaddr,"_ipban_",sUser.sName)
+			SQL_DelFromHubBanList("_nickban_",curUser.nick,sUser.sName)
+			-------------------------------------
+			BotSayToUser(sUser,curUser.nick.." ["..ipaddr.."] ".. messages[47])	
+			AddSysLog("unbanip:"..curUser.nick.." ["..ipaddr .."] ".. messages[47].." ("..sUser.sName..")");		
+			BotSayToAll(curUser.nick..": ".. messages[47].." ("..sUser.sName..")")		
+		else
+			BotSayToUser(sUser,"["..ipaddr.."] ".. messages[60] )	
+		end	
+	else
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	end
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--    M   U   T   E  
+--------------------------------------------------------------------------------------------------------------------------------------------
+function mute(sUser,arg)--+
+	local ipaddr, rule ,reason= GetArgIpReason(arg)
+	if ipaddr == nil  then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1
+	end
+	-------------------------------------
+	local vUser={};
+	for i, wUser in pairs(ONLINEUSERS) do
+		if (wUser.sIP==ipaddr) then
+			local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, wUser.sName)
+			if sIneq and iIneq then
+				if sIneq ~= ">" and iIneq ~= 1 then
+					BotSayToUser(sUser,messages[224])
+					AddSysLog("mute: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+					--VH:SendDataToUser("$To: Palmer From: mute $<mute> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					return 1;
+				else
+					--VH:SendDataToUser("$To: Palmer From: mute $<mute> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					vUser=wUser; wUser=nil;
+				end
+			else
+				BotSayToUser(sUser,messages[225])
+				AddSysLog("mute: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+				--VH:SendDataToUser("$To: Palmer From: mute $<mute> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+				return 1;
+			end
+		end
+	end
+	-------------------------------------
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser == nil then
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	else
+		ChangeStatus(ipaddr,4,rule,sUser.sName,reason)
+		alertByIP(ipaddr,getBanInfo(ipaddr),false)
+		BotSayToAll(genBanMessage(ipaddr))
+		BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))	
+		AddSysLog("mute: "..getSysLogBanMsg(nil,ipaddr));		
+	end
+	return 1
+end
+-----------------------------------------------------------
+function mutenick(sUser,arg)--+
+	local nick, rule ,reason= GetArgNickReason(arg)
+	if nick == nil  then 
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+    --local vUser = GetItemByName(nick)
+	if not ONLINEUSERS[nick] then
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+	-------------------------------------
+	local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, nick)
+	if sIneq and iIneq then
+		if sIneq ~= ">" and iIneq ~= 1 then
+			BotSayToUser(sUser,messages[224])
+			AddSysLog("mutenick: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+			--VH:SendDataToUser("$To: Palmer From: mutenick $<mutenick> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+			return 1;
+		end
+	else
+		BotSayToUser(sUser,messages[225])
+		AddSysLog("mutenick: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+		--VH:SendDataToUser("$To: Palmer From: mutenick $<mutenick> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+		return 1;
+	end
+	-------------------------------------
+	local ipaddr = ONLINEUSERS[nick].sIP
+	--VH:SendDataToAll("ipaddr : "..ipaddr.."|",10,10)
+	ChangeStatus(ipaddr,4,rule,sUser.sName,reason)
+	--US[ipaddr].nick=nick
+	SQL_ModToUserList("nick", nick, "ip", ONLINEUSERS[nick].sIP)
+	alertByIP(ipaddr,getBanInfo(ipaddr),false)
+	BotSayToAll(genBanMessage(ipaddr))
+	BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))	
+	AddSysLog("mutenick: "..getSysLogBanMsg(nil,ipaddr));		
+	return 1
+end
+-----------------------------------------------------------
+function mutenickforever(sUser,arg)--+
+	local nick, rule ,reason= GetArgNickReason(arg)
+	if nick == nil  then 
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+    --local vUser = GetItemByName(nick)
+	if not ONLINEUSERS[nick] then
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+	-------------------------------------
+	local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, nick)
+	if sIneq and iIneq then
+		if sIneq ~= ">" and iIneq ~= 1 then
+			BotSayToUser(sUser,messages[224])
+			AddSysLog("mutenickforever: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+			--VH:SendDataToUser("$To: Palmer From: mutenickforever $<mutenickforever> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+			return 1;
+		end
+	else
+		BotSayToUser(sUser,messages[225])
+		AddSysLog("mutenickforever: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+		--VH:SendDataToUser("$To: Palmer From: mutenickforever $<mutenickforever> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+		return 1;
+	end
+	-------------------------------------
+	local ipaddr = ONLINEUSERS[nick].sIP
+	ChangeStatus(ipaddr,6,rule,sUser.sName,reason)
+	--US[ipaddr].nick=nick
+	SQL_ModToUserList("nick", nick, "ip", ONLINEUSERS[nick].sIP)
+	alertByIP(ipaddr,getBanInfo(ipaddr),false)
+	BotSayToAll(genBanMessage(ipaddr))
+	BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))	
+	AddSysLog("mutenickforever: "..getSysLogBanMsg(nil,ipaddr));		
+	return 1
+end
+-----------------------------------------------------------
+function muteforever(sUser,arg)--+
+	local ipaddr, rule ,reason= GetArgIpReason(arg)
+	if ipaddr == nil then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1 
+	end
+	-------------------------------------
+	local vUser={};
+	for i, wUser in pairs(ONLINEUSERS) do
+		if (wUser.sIP==ipaddr) then
+			local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, wUser.sName)
+			if sIneq and iIneq then
+				if sIneq ~= ">" and iIneq ~= 1 then
+					BotSayToUser(sUser,messages[224])
+					AddSysLog("muteforever: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+					--VH:SendDataToUser("$To: Palmer From: muteforever $<muteforever> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					return 1;
+				else
+					--VH:SendDataToUser("$To: Palmer From: muteforever $<muteforever> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					vUser=wUser; wUser=nil;
+				end
+			else
+				BotSayToUser(sUser,messages[225])
+				AddSysLog("muteforever: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+				--VH:SendDataToUser("$To: Palmer From: muteforever $<muteforever> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+				return 1;
+			end
+		end
+	end
+	-------------------------------------
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser == nil then
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	else
+		ChangeStatus(ipaddr,6,rule,sUser.sName,reason)
+		alertByIP(ipaddr,getBanInfo(ipaddr),false)
+		BotSayToAll(genBanMessage(ipaddr))
+		BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))	
+		AddSysLog("muteforever: "..getSysLogBanMsg(nil,ipaddr));		
+	end
+	return 1
+end
+-----------------------------------------------------------
+function unmutenick(sUser,arg)--+
+	local nick = GetNick(arg)
+	if nick == nil  then 
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+    --local vUser = GetItemByName(nick)
+	if not ONLINEUSERS[nick] then
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+	local ipaddr = ONLINEUSERS[nick].sIP
+	--local vUser = {}
+	--vUser.sIP = ipaddr
+	--VH:SendDataToAll("ipaddr : "..ipaddr.."|",10,10)
+	local curUser = SQL_FindInUserListByIP(ONLINEUSERS[nick])
+	if curUser ~= nil then
+		if curUser.status == 4 or curUser.status == 6 then 
+			if curUser.status == 4 then
+				decBancount(ipaddr)
+			end
+			--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			SQL_ModLastcussList("Наказание: Заглушка ("..curUser.when..") "..messages[69].." ["..curUser.context.."] Наказал: "..curUser.by.." Кто снял: "..sUser.sName, ipaddr)
+			ChangeStatus(ipaddr,0,0,sUser.sName,messages[17])
+			BotSayToUser(sUser,curUser.nick.." ["..ipaddr.."] ".. messages[100])	
+			AddSysLog("unmutenick: ".. curUser.nick.. " ["..ipaddr .."] ".. messages[100].." ("..sUser.sName..")");		
+			BotSayToAll(curUser.nick..": ".. messages[100].." ("..sUser.sName..")")		
+		else
+			BotSayToUser(sUser,"["..ipaddr.."] ".. messages[18] )	
+		end	
+	else
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	end
+	return 1
+end
+-----------------------------------------------------------
+function unmute(sUser,arg)--+
+	ipaddr = GetIpaddr(arg)
+	if ipaddr == nil  then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1
+	end
+	local vUser = {}
+	vUser.sIP = ipaddr
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser ~= nil then
+		if curUser.status == 4 or curUser.status == 6 then 
+			if curUser.status == 4 then
+				decBancount(ipaddr)
+			end
+			--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			SQL_ModLastcussList("Наказание: Заглушка ("..curUser.when..") "..messages[69].." ["..curUser.context.."] Наказал: "..curUser.by.." Кто снял: "..sUser.sName, ipaddr)	
+			ChangeStatus(ipaddr,0,0,sUser.sName,messages[17])
+			BotSayToUser(sUser,curUser.nick.." ["..ipaddr.."] ".. messages[100])	
+			AddSysLog("unmute: "..curUser.nick.. " ["..ipaddr .."] ".. messages[100].." ("..sUser.sName..")");		
+			BotSayToAll(curUser.nick..": ".. messages[100].." ("..sUser.sName..")")		
+		else
+			BotSayToUser(sUser,"["..ipaddr.."] ".. messages[18] )	
+		end	
+	else
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	end
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--    M   U   T   E   P   M  
+--------------------------------------------------------------------------------------------------------------------------------------------
+function mutePM(sUser,arg)--+
+	local ipaddr, rule ,reason= GetArgIpReason(arg)
+	if ipaddr == nil  then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1 
+	end
+	-------------------------------------
+	local vUser={};
+	for i, wUser in pairs(ONLINEUSERS) do
+		if (wUser.sIP==ipaddr) then
+			local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, wUser.sName)
+			if sIneq and iIneq then
+				if sIneq ~= ">" and iIneq ~= 1 then
+					BotSayToUser(sUser,messages[224])
+					AddSysLog("mutePM: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+					--VH:SendDataToUser("$To: Palmer From: mutePM $<mutePM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					return 1;
+				else
+					--VH:SendDataToUser("$To: Palmer From: mutePM $<mutePM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					vUser=wUser; wUser=nil;
+				end
+			else
+				BotSayToUser(sUser,messages[225])
+				AddSysLog("mutePM: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+				--VH:SendDataToUser("$To: Palmer From: mutePM $<mutePM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+				return 1;
+			end
+		end
+	end
+	-------------------------------------
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser == nil then
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	else
+		ChangeStatus(ipaddr,1,rule,sUser.sName,reason)
+		alertByIP(ipaddr,getBanInfo(ipaddr),false)
+		BotSayToAll(genBanMessage(ipaddr))
+		BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))	
+		AddSysLog("mutePM: "..getSysLogBanMsg(nil,ipaddr));		
+	end
+	return 1
+end
+-----------------------------------------------------------
+function mutenickPM(sUser,arg)--+
+	local nick, rule ,reason= GetArgNickReason(arg)
+	if nick == nil  then 
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+    --local vUser = GetItemByName(nick)
+	if not ONLINEUSERS[nick] then
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+	-------------------------------------
+	local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, nick)
+	if sIneq and iIneq then
+		if sIneq ~= ">" and iIneq ~= 1 then
+			BotSayToUser(sUser,messages[224])
+			AddSysLog("mutenickPM: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+			--VH:SendDataToUser("$To: Palmer From: mutenickPM $<mutenickPM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+			return 1;
+		end
+	else
+		BotSayToUser(sUser,messages[225])
+		AddSysLog("mutenickPM: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+		--VH:SendDataToUser("$To: Palmer From: mutenickPM $<mutenickPM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+		return 1;
+	end
+	-------------------------------------
+	local ipaddr = ONLINEUSERS[nick].sIP
+	ChangeStatus(ipaddr,1,rule,sUser.sName,reason)
+	--US[ipaddr].nick=nick
+	SQL_ModToUserList("nick", nick, "ip", ONLINEUSERS[nick].sIP)
+	alertByIP(ipaddr,getBanInfo(ipaddr),false)
+	BotSayToAll(genBanMessage(ipaddr))
+	BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))	
+	AddSysLog("mutenickPM: "..getSysLogBanMsg(nil,ipaddr));		
+	return 1
+end
+-----------------------------------------------------------
+function mutenickforeverPM(sUser,arg)--+
+	local nick, rule ,reason= GetArgNickReason(arg)
+	if nick == nil  then 
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+    --local vUser = GetItemByName(nick)
+	if not ONLINEUSERS[nick] then
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+	-------------------------------------
+	local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, nick)
+	if sIneq and iIneq then
+		if sIneq ~= ">" and iIneq ~= 1 then
+			BotSayToUser(sUser,messages[224])
+			AddSysLog("mutenickforeverPM: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+			--VH:SendDataToUser("$To: Palmer From: mutenickforeverPM $<mutenickforeverPM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+			return 1;
+		end
+	else
+		BotSayToUser(sUser,messages[225])
+		AddSysLog("mutenickforeverPM: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]");
+		--VH:SendDataToUser("$To: Palmer From: mutenickforeverPM $<mutenickforeverPM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(nick or "ERR").."]|","Palmer")
+		return 1;
+	end
+	-------------------------------------
+	local ipaddr = ONLINEUSERS[nick].sIP
+	ChangeStatus(ipaddr,2,rule,sUser.sName,reason)
+	--US[ipaddr].nick=nick
+	SQL_ModToUserList("nick", nick, "ip", ONLINEUSERS[nick].sIP)
+	alertByIP(ipaddr,getBanInfo(ipaddr),false)
+	BotSayToAll(genBanMessage(ipaddr))
+	BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))	
+	AddSysLog("mutenickforeverPM: "..getSysLogBanMsg(nil,ipaddr));		
+	return 1
+end
+-----------------------------------------------------------
+function muteforeverPM(sUser,arg)--+
+	local ipaddr, rule ,reason= GetArgIpReason(arg)
+	if ipaddr == nil then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1
+	end
+	-------------------------------------
+	local vUser={};
+	for i, wUser in pairs(ONLINEUSERS) do
+		if (wUser.sIP==ipaddr) then
+			local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, wUser.sName)
+			if sIneq and iIneq then
+				if sIneq ~= ">" and iIneq ~= 1 then
+					BotSayToUser(sUser,messages[224])
+					AddSysLog("muteforeverPM: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+					--VH:SendDataToUser("$To: Palmer From: muteforeverPM $<muteforeverPM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					return 1;
+				else
+					--VH:SendDataToUser("$To: Palmer From: muteforeverPM $<muteforeverPM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					vUser=wUser; wUser=nil;
+				end
+			else
+				BotSayToUser(sUser,messages[225])
+				AddSysLog("muteforeverPM: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+				--VH:SendDataToUser("$To: Palmer From: muteforeverPM $<muteforeverPM> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+				return 1;
+			end
+		end
+	end
+	-------------------------------------
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser == nil then
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	else
+		ChangeStatus(ipaddr,2,rule,sUser.sName,reason)
+		alertByIP(ipaddr,getBanInfo(ipaddr),false)
+		BotSayToAll(genBanMessage(ipaddr))
+		BotSayToUser(sUser,getSysLogBanMsg(nil,ipaddr))	
+		AddSysLog("muteforeverPM: "..getSysLogBanMsg(nil,ipaddr));		
+	end
+	return 1
+end
+-----------------------------------------------------------
+function unmutenickPM(sUser,arg)--+
+	local nick = GetNick(arg)
+	if nick == nil  then 
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+    --local vUser = GetItemByName(nick)
+	if not ONLINEUSERS[nick] then
+		BotSayToUser(sUser, messages[29]) 
+		return 1
+	end
+	local ipaddr = ONLINEUSERS[nick].sIP
+	--local vUser = {}
+	--vUser.sIP = ipaddr
+	local curUser = SQL_FindInUserListByIP(ONLINEUSERS[nick])
+	if curUser ~= nil then
+		if curUser.status == 1 or curUser.status == 2 then 
+			if curUser.status == 1 then
+				decBancount(ipaddr)
+			end
+			--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			SQL_ModLastcussList("Наказание: Заглушка чата и привата ("..curUser.when..") "..messages[69].." ["..curUser.context.."] Наказал: "..curUser.by.." Кто снял: "..sUser.sName, ipaddr)	
+			ChangeStatus(ipaddr,0,0,sUser.sName,messages[17])
+			BotSayToUser(sUser,curUser.nick.." ["..ipaddr.."] ".. messages[99])	
+			AddSysLog("unmutenickPM: "..curUser.nick.." ["..ipaddr .."] ".. messages[99].." ("..sUser.sName..")");		
+			BotSayToAll(curUser.nick..": ".. messages[99].." ("..sUser.sName..")")		
+		else
+			BotSayToUser(sUser,"["..ipaddr.."] ".. messages[18] )	
+		end	
+	else
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	end
+	return 1
+end
+-----------------------------------------------------------
+function unmutePM(sUser,arg)--+
+	ipaddr = GetIpaddr(arg)
+	if ipaddr == nil  then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1
+	end
+	local vUser = {}
+	vUser.sIP = ipaddr
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser ~= nil then
+		if curUser.status == 1 or curUser.status == 2 then 
+			if curUser.status == 1 then
+				decBancount(ipaddr)
+			end
+			--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			SQL_ModLastcussList("Наказание: Заглушка чата и привата ("..curUser.when..") "..messages[69].." ["..curUser.context.."] Наказал: "..curUser.by.." Кто снял: "..sUser.sName, ipaddr)	
+			ChangeStatus(ipaddr,0,0,sUser.sName,messages[17])
+			BotSayToUser(sUser,curUser.nick.." ["..ipaddr.."] ".. messages[99])	
+			AddSysLog("unmutePM: "..curUser.nick.." ["..ipaddr .."] ".. messages[99].." ("..sUser.sName..")");		
+			BotSayToAll(curUser.nick..": ".. messages[99].." ("..sUser.sName..")")		
+		else
+			BotSayToUser(sUser,"["..ipaddr.."] ".. messages[18] )	
+		end	
+	else
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	end
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- B  A  N  C  O  U  N  T  
+--------------------------------------------------------------------------------------------------------------------------------------------
+function setbancount(sUser,arg)--+
+	local ipaddr, count = GetArgIpNum(arg)
+	if ipaddr == nil  then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1
+	end
+	--VH:SendDataToAll("ipaddr : "..ipaddr.."|",10,10)
+	if count== nil then count=0 end
+	--VH:SendDataToAll("count : "..count.."|",10,10)
+	if tonumber(count) then count=tonumber(count) else count=0 end
+	local vUser = {}
+	vUser.sIP = ipaddr
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser == nil then
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48] )	
+	else
+		local oldbancount=curUser.bancount
+		--curUser.bancount=count;
+		SQL_ModToUserList("bancount", count, "ip", curUser.ip)
+		--saveUSExpress()
+		local msg=messages[135];
+		msg=string.gsub(msg,"%[WHO%]",curUser.nick.. " ["..ipaddr .."]");
+		msg=string.gsub(msg,"%[WAS%]",oldbancount);
+		msg=string.gsub(msg,"%[NOW%]",count);
+		BotSayToUser(sUser,msg)
+		AddSysLog("setbancount: "..msg);		
+	end
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--L  O  C  K  N  I  C  K  
+--------------------------------------------------------------------------------------------------------------------------------------------
+function locknick(sUser,arg)--+
+	local ipaddr, nick = GetArgIpNick(arg)
+	if ipaddr == nil  then 
+		BotSayToUser(sUser, messages[45]) 
+		return 1
+	end
+	local vUser = {}
+	vUser.sIP = ipaddr
+	local curUser = SQL_FindInUserListByIP(vUser)
+	if curUser == nil then
+		BotSayToUser(sUser,"["..ipaddr.."] ".. messages[48])	
+	else
+		if nick=="" then
+			--curUser.locknick="";
+			SQL_ModToUserList("locknick", "", "ip", curUser.sIP)
+			--saveUSExpress()
+			local msg=curUser.nick.." ["..ipaddr.."] :".. messages[111].." ("..sUser.sName..")";
+			BotSayToUser(sUser,msg)	
+			AddSysLog("locknick: "..msg);		
+		else
+			--curUser.locknick=nick;
+			SQL_ModToUserList("locknick", nick, "ip", curUser.sIP)
+			--saveUSExpress()
+			local msg=curUser.nick.." ["..ipaddr.."] :".. messages[110]..curUser.locknick.." ("..sUser.sName..")"
+			BotSayToUser(sUser,msg)	
+			AddSysLog("locknick: ".. msg);		
+		end
+	end
+	return 1
+end
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+--U S E R I N F O
+--------------------------------------------------------------------------------------------------------------------------------------------
+function ii(sUser,arg)--+
+	local vIp = GetIpaddr(arg)
+	if vIp == nil then
+		BotSayToUser(sUser,messages[45]) 
+	else
+		--local wUser = {}
+		--wUser.sIP = vIp
+		--local curUser = SQL_FindInUserListByIP(wUser)
+		local curUser = {}
+		local query = "SELECT nick FROM MainBot_userlist WHERE ip = '"..vIp.."'"
+		local res, rows = VH:SQLQuery(query)
+		if res and rows~=0 then
+			if rows > 1 then
+				for x=0, rows-1 do
+					local res, value = VH:SQLFetch(x)
+					curUser[x+1]={}
+					curUser[x+1].nick = value
+				end
+			else
+				local res, value = VH:SQLFetch(0)
+				if (value == "could not fetch row") or (value == "could not seek data") then 
+					curUser = nil
+				else
+					curUser[1]={}
+					curUser[1].nick = value
+				end
+			end
+		else
+			curUser = nil
+		end
+		if curUser == nil then 
+			BotSayToUser(sUser,messages[48]) 
+		else
+			local info ="\r\n"..messages[28].. "\r\n" ..getUserInfo(vIp) .. "\r\n" .. messages[28] .. "\r\n" .. messages[65]
+			--local users = frmHub:GetOnlineUsers()
+			for i, vUser in pairs(ONLINEUSERS) do
+				if vUser.sIP==vIp then
+					info=info.."\r\n\t"..vUser.sName
+				end
+			end
+			BotSayToUser(sUser,info) 
+		end 
+	end
+	curUser = nil
+	ClearMem()
+	return 1
+end
+-----------------------------------------------------------
+function ui(sUser,arg)--+
+	local name = GetArg(arg)
+	local flag=0
+	--local onlineip=""
+	--[[
+	if ONLINEUSERS[name] then -- если он сейчас он-лайн
+		BotSayToUser(sUser,"\r\n"..messages[28].. "\r\n" ..getUserInfo(ONLINEUSERS[name].sIP) .. "\r\n" .. messages[28])
+		--onlineip=ONLINEUSERS[name].sIP	
+		flag=1
+	end
+	]]--
+	if name then -- пробить ник по базе, вдруг еще есть
+		local curUser = {}
+		local query = "SELECT ip FROM MainBot_userlist WHERE nick = '"..SQL_Escape(name).."'"
+		local res, rows = VH:SQLQuery(query)
+		if res and rows~=0 then
+			if rows > 1 then
+				for x=0, rows-1 do
+					local res, value = VH:SQLFetch(x)
+					curUser[x+1]={}
+					curUser[x+1].ip = value
+				end
+			else
+				local res, value = VH:SQLFetch(0)
+				if (value == "could not fetch row") or (value == "could not seek data") then 
+					curUser = nil
+				else
+					curUser[1]={}
+					curUser[1].ip = value
+				end
+			end
+		else
+			curUser = nil
+		end
+		if curUser then
+			for i,v in pairs(curUser) do
+				--if v.ip ~= ONLINEUSERS[name].sIP then
+					BotSayToUser(sUser,"\r\n"..messages[28].. "\r\n" ..getUserInfo(v.ip) .. "\r\n" .. messages[28]) 
+					flag=1
+				--end
+			end
+		end
+		--[[
+		local curUserLN = {}
+		--local query = "SELECT ip FROM MainBot_userlist WHERE nick = '"..name.."'"
+		local query = "SELECT ip FROM MainBot_userlist_lastnicks WHERE (lastnick1='"..name.."' or lastnick2='"..name.."' or lastnick3='"..name.."' or lastnick4='"..name.."' or lastnick5='"..name.."' or lastnick6='"..name.."' or lastnick7='"..name.."' or lastnick8='"..name.."' or lastnick9='"..name.."' or lastnick10='"..name.."')"
+		local res, rows = VH:SQLQuery(query)
+		if res and rows~=0 then
+			if rows > 1 then
+				for x=0, rows-1 do
+					local res, value = VH:SQLFetch(x)
+					curUserLN[x+1]={}
+					curUserLN[x+1].ip = value
+				end
+			else
+				local res, value = VH:SQLFetch(0)
+				if (value == "could not fetch row") or (value == "could not seek data") then 
+					curUserLN = nil
+				else
+					curUserLN[1]={}
+					curUserLN[1].ip = value
+				end
+			end
+		else
+			curUserLN = nil
+		end
+		if curUserLN then
+			for i,v in pairs(curUserLN) do
+				if curUser then
+					for j,w in pairs(curUser) do
+						if v.ip~=w.ip then
+							BotSayToUser(sUser,"\r\n"..messages[28].. "\r\n" ..getUserInfo(v.ip) .. "\r\n" .. messages[28]) 
+							flag=1
+						end
+					end
+				else
+					BotSayToUser(sUser,"\r\n"..messages[28].. "\r\n" ..getUserInfo(v.ip) .. "\r\n" .. messages[28]) 
+					flag=1
+				end
+			end
+		end
+		]]--
+	end
+	if flag==0 then
+		BotSayToUser(sUser,messages[71])
+		curUser = nil
+	end
+	curUser = nil
+	ClearMem()
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--D R O P S 
+--------------------------------------------------------------------------------------------------------------------------------------------
+function dropname(sUser,arg)--+
+	local name = GetArg(arg)
+	local vUser = GetItemByName(name)
+	if not vUser then 
+		BotSayToUser(sUser,messages[29])  
+		return 0
+	end 
+	-------------------------------------
+	local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, vUser.sName)
+	if sIneq and iIneq then
+		if sIneq ~= ">" and iIneq ~= 1 then
+			BotSayToUser(sUser,messages[224])
+			AddSysLog("dropname: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(vUser.sName or "ERR").."]");
+			--VH:SendDataToUser("$To: Palmer From: dropname $<dropname> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(vUser.sName or "ERR").."]|","Palmer")
+			return 1;
+		end
+	else
+		BotSayToUser(sUser,messages[225])
+		AddSysLog("dropname: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(vUser.sName or "ERR").."]");
+		--VH:SendDataToUser("$To: Palmer From: dropname $<dropname> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(vUser.sName or "ERR").."]|","Palmer")
+		return 1;
+	end
+	-------------------------------------
+	BotSayToUser(sUser,vUser.sName.." ["..vUser.sIP.."] ".. messages[55])	
+	AddSysLog("dropname: ".. vUser.sName.. " ["..vUser.sIP .."] ".. messages[55].." ("..sUser.sName..")");		
+	DisconnectUser(vUser)
+	ONLINEUSERS[vUser.sName] = nil
+	--VH:CloseConnection(vUser.sName)
+	return 1
+end
+-----------------------------------------------------------
+function dropip(sUser,arg)--+
+	local vIp = GetIpaddr(arg)
+	if 	vIp==nil then
+		BotSayToUser(sUser,messages[45])  		
+	end
+	-------------------------------------
+	local vUser={};
+	for i, wUser in pairs(ONLINEUSERS) do
+		if (wUser.sIP==vIp) then
+			local sIneq,iIneq = CheckPermisionsLevel(sUser.sName, wUser.sName)
+			if sIneq and iIneq then
+				if sIneq ~= ">" and iIneq ~= 1 then
+					BotSayToUser(sUser,messages[224])
+					AddSysLog("dropip: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+					--VH:SendDataToUser("$To: Palmer From: dropip $<dropip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					return 1;
+				else
+					--VH:SendDataToUser("$To: Palmer From: dropip $<dropip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+					vUser=wUser; wUser=nil;
+				end
+			else
+				BotSayToUser(sUser,messages[225])
+				AddSysLog("dropip: sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]");
+				--VH:SendDataToUser("$To: Palmer From: dropip $<dropip> sIneq["..(sIneq or "ERR").."] iIneq["..(iIneq or "ERR").."] sUser.sName["..(sUser.sName or "ERR").."] wUser.sName["..(wUser.sName or "ERR").."]|","Palmer")
+				return 1;
+			end
+		end
+	end
+	-------------------------------------
+	if vUser.sIP==vIp then
+		BotSayToUser(sUser,vUser.sName.." ["..vUser.sIP.."] ".. messages[55])	
+		AddSysLog("dropip: ".. vUser.sName.. " ["..vUser.sIP .."] ".. messages[55].." ("..sUser.sName..")");		
+		DisconnectUser(vUser)
+		ONLINEUSERS[vUser.sName] = nil
+	end
+	return 1
+end
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+--W H E N W A S 
+--------------------------------------------------------------------------------------------------------------------------------------------
+function whenwas(sUser,arg)--+
+	local name = GetArg(arg)
+	--local vUser = {}
+	local msg=messages[61];
+	msg=string.gsub(msg,"%[NICK%]",name);
+	if ONLINEUSERS[name] then 
+		if ONLINEUSERS[name].sName == name then
+			msg=string.gsub(msg,"%[WHEN%]",messages[62]);
+			BotSayToUser(sUser,msg) 
+			return 1	
+		end 
+	end
+	--vUser.sName = name
+	--local tempdate = "0"
+	--local curUsers = SQL_FindInUserListByNick(vUser)
+	local curUsers = {}
+	local query = "SELECT MAX(lastonline) FROM MainBot_userlist WHERE nick = '"..SQL_Escape(name).."'"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows~=0 then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res, value = VH:SQLFetch(x)
+				curUsers[x+1]={}
+				curUsers[x+1].lastonline = value
+			end
+		else
+			local res, value = VH:SQLFetch(0)
+			if (value == "could not fetch row") or (value == "could not seek data") then 
+				curUsers = nil
+			else
+				curUsers[1]={}
+				curUsers[1].lastonline = value
+			end
+			
+		end
+	else
+		curUsers = nil
+	end
+	if curUsers then
+		for i,v in pairs(curUsers) do
+			--if v.nick == name then
+				if v.lastonline then
+					msg=string.gsub(msg,"%[WHEN%]",v.lastonline);
+					BotSayToUser(sUser,msg)
+					curUser = nil
+					return 1
+				--else
+					--msg=string.gsub(msg,"%[WHEN%]","");
+				end	
+			--end
+		end
+	end
+	--[[
+	if tempdate == "0" then
+		msg=string.gsub(msg,"%[WHEN%]",messages[63]);
+	else
+		msg=string.gsub(msg,"%[WHEN%]",tempdate);
+	end
+	]]--
+	--BotSayToUser(sUser,msg)
+	BotSayToUser(sUser,messages[221])
+	curUser = nil
+	return 1
+end
+-----------------------------------------------------------
+function whenwasip(sUser,arg)--+
+	local ipaddr = GetIpaddr(arg)
+	if ipaddr == nil then
+		BotSayToUser(sUser,messages[45])  
+		return 1
+	end
+	local msg=messages[114];
+	msg=string.gsub(msg,"%[IP%]",ipaddr);
+	local flag=0;
+	local nicklist=""
+	for i, vUser in pairs(ONLINEUSERS) do
+		if vUser.sIP==ipaddr then
+			nicklist=nicklist..vUser.sName.." "
+			flag=1;
+		end
+	end
+	if flag==1 then
+		msg=string.gsub(msg,"%[WHEN%]",messages[62]);
+		msg=string.gsub(msg,"%[NICKLIST%]",nicklist);
+		BotSayToUser(sUser,msg) 
+		return 1
+	end
+	--local tUser = {}
+	--tUser.sIP = ipaddr
+	--local curUsers = SQL_FindInUserListByIP(tUser)
+	local curUsers = {}
+	local query = "SELECT lastonline, nick FROM MainBot_userlist WHERE ip = '"..ipaddr.."'"
+	local res, rows = VH:SQLQuery(query)
+	if res and rows~=0 then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res, value, value2 = VH:SQLFetch(x)
+				--VH:SendPMToAll("1) value: "..value.."\t\value2: "..value2.."|",BOTNAME,10,10)
+				curUsers[x+1]={}
+				curUsers[x+1].lastonline = value
+				curUsers[x+1].nick = value2
+			end
+		else
+			local res, value, value2 = VH:SQLFetch(0)
+			--VH:SendPMToAll("2) value: "..value.."\t\value2: "..value2.."|",BOTNAME,10,10)
+			if (value == "could not fetch row") or (value == "could not seek data") then 
+				curUsers = nil
+			else
+				curUsers[1]={}
+				curUsers[1].lastonline = value
+				curUsers[1].nick = value2
+			end
+		end
+	else
+		curUsers = nil
+	end
+	--v.lastonline
+	if curUsers then
+		for i,v in pairs(curUsers) do
+			if v.lastonline and v.nick then
+				msg=string.gsub(msg,"%[WHEN%]",v.lastonline);
+				msg=string.gsub(msg,"%[NICKLIST%]",v.nick);
+			else
+				msg=string.gsub(msg,"%[WHEN%]","");
+				msg=string.gsub(msg,"%[NICKLIST%]","");
+			end
+			BotSayToUser(sUser,msg)
+			curUser = nil
+			return 1
+		end
+	end
+	--[[
+	if curUser then
+		for i,v in pairs(curUsers) do
+			msg=string.gsub(msg,"%[WHEN%]",messages[63]);
+			msg=string.gsub(msg,"%[NICKLIST%]",messages[63]);
+			BotSayToUser(sUser,msg) 
+			return 1
+		end
+	end
+	]]--
+	--BotSayToUser(sUser,msg)
+	BotSayToUser(sUser,messages[48])
+	curUser = nil
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--Р Е Г И С Т Р А Ц И Я 
+--------------------------------------------------------------------------------------------------------------------------------------------
+function regme(sUser,arg)--+
+	----------------------------
+	--Отмена регистрации
+	--BotSayToUser(sUser,messages[108])
+	--return 1
+	----------------------------
+	local vUser = {}
+	local query = "SELECT locknick FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	local res, rows = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	vUser.locknick = value
+	if (vUser.locknick~="") then
+		if 	(vUser.locknick~=sUser.sName) then
+			BotSayToUser(sUser,messages[108])
+			return 1
+		end	
+	end
+	local password = GetArg(arg)
+	if password == nil then 
+		BotSayToUser(sUser,messages[78])
+		return 1
+	end
+	local Kbyte=1024
+	local Mbyte=Kbyte*Kbyte
+	local Gbyte=Kbyte*Kbyte*Kbyte
+	local Tbyte=Kbyte*Kbyte*Kbyte*Kbyte
+	if sUser.iShareSize < CFG.RegShare_Limit*Gbyte then 
+		BotSayToUser(sUser,messages[108])
+		return 1
+	end
+	--saveUSExpress()
+	local res, value = VH:GetUserClass(sUser.sName)
+	local livello = tonumber(value)			
+	if livello ~= nil and livello == 0 then
+		local query = "SELECT login_ip FROM reglist WHERE nick = '"..sUser.sName.."'"
+		local res, rows = VH:SQLQuery(query)
+		local LowRetval = 0
+		if res and rows~=0 then
+			local res, value = VH:SQLFetch(0)
+			if (value == "could not fetch row") or (value == "could not seek data") then 
+				LowRetval = 1
+			else
+				LowRetval = 0
+			end
+		else
+			LowRetval = 1
+		end
+		--VH:SendPMToAll("\r\nНик: "..usr.sName.." ["..usr.sIP.."], Шара: "..usr.iShareSize..",LowRetval: "..LowRetval.."|",BOTNAME,10,10)
+		if LowRetval == 1 then
+			query = "INSERT INTO reglist (reg_date,reg_op,nick,class,login_pwd,pwd_change,pwd_crypt) VALUES (unix_timestamp(now()),'"..BOTNAME.."','"..sUser.sName.."',1,encrypt('"..password.."'),0,1)"
+			res, err = VH:SQLQuery(query)
+		else
+			return 1
+		end
+	end
+	--AddRegUser(sUser.sName, password, 3)
+	BotSayToUser(sUser, string.gsub(messages[80],"%[PASSWORD%]",password))
+	return 1
+end
+----------------------------------------------------------
+function passwd(sUser,arg)--+
+	local vUser = {}
+	local query = "SELECT locknick FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+	local res, rows = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	vUser.locknick = value
+	if (vUser.locknick~="") then
+		if 	(vUser.locknick~=sUser.sName) then
+			BotSayToUser(sUser,messages[108])
+			return 1
+		end	
+	end
+	local password = GetArg(arg)
+	if password == nil then 
+		BotSayToUser(sUser,messages[78])
+		return 1
+	end
+	local res, livello = VH:GetUserClass(sUser.sName)				
+	if livello > 0 then
+		query = "UPDATE reglist SET login_pwd=encrypt('"..SQL_Escape(password).."') WHERE nick='"..SQL_Escape(sUser.sName).."'"
+		res, err = VH:SQLQuery(query)
+	end
+	--AddRegUser(sUser.sName, password, sUser.iProfile)
+	local msg=messages[79];
+	msg=string.gsub(msg,"%[PASSWORD%]",password);
+	BotSayToUser(sUser, msg)
+	AddSysLog("passwd: "..sUser.sName.." ["..sUser.sIP .."] msg: ".. msg.."");
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--N O     L E E E E C H I N G
+--------------------------------------------------------------------------------------------------------------------------------------------
+function nlon(sUser,arg)--+
+	local s,e = string.find(arg, "max")
+	if s~=nil then
+		SQL_ModToUserList("maxnoleech", 1, "ip", sUser.sIP)
+		local tmpMinShare = math.floor(sUser.iShareSize / CFG.NoLeechRatio);
+		SQL_ModToUserList("noleech", tmpMinShare, "ip", sUser.sIP)
+		tMainBufer.NoLeechBufer[sUser.sIP]=tonumber(tmpMinShare);
+		local ttext = messages[174] 
+		ttext = string.gsub(ttext , "%[MINSHARE%]", getNormalShare(tmpMinShare ))
+		ttext = string.gsub(ttext , "%[RATIO%]", CFG.NoLeechRatio)
+		BotSayToUser(sUser,ttext)
+		AddSysLog("nlon: "..sUser.sName..": "..ttext);		
+		return 1
+	end
+	local tminshare, measure = GetValueMeasure(arg)
+	local newMinShare=0;
+	if tminshare== nil or tminshare == "" then
+		newMinShare=1;
+	else
+		local minshare = tonumber (tminshare)
+		if minshare==0 then
+			nlof(sUser)
+			return 1
+		end	
+		if measure== nil then
+			BotSayToUser(sUser,messages[91])
+			return 1
+		end
+		measure = string.lower(measure);
+		for b,s in pairs(RusLetters) do
+			measure=string.gsub(measure, b, RusLetters[b])
+		end	
+		if measure=="b" or measure=="б" then
+			newMinShare= minshare;
+		elseif measure=="kb" or measure=="кб" then
+			newMinShare= minshare*Kbyte
+		elseif measure=="мб" or measure=="mb" then
+			newMinShare= minshare*Mbyte
+		elseif measure=="gb" or measure=="гб" then
+			newMinShare= minshare*Gbyte
+		elseif measure=="tb" or measure=="тб" then
+			newMinShare= minshare*Tbyte
+		else
+			BotSayToUser(sUser,messages[91])
+			return 1
+		end
+	end	
+	if sUser.iShareSize < newMinShare*CFG.NoLeechRatio then
+		local tmpMinShare = math.floor(sUser.iShareSize / CFG.NoLeechRatio);
+		local ttext = messages[92] 
+		ttext = string.gsub(ttext , "%[MINSHARE%]", getNormalShare(tmpMinShare ))
+		ttext = string.gsub(ttext , "%[RATIO%]", CFG.NoLeechRatio)
+		BotSayToUser(sUser,ttext)
+	else
+		--US[sUser.sIP].maxnoleech=0;
+		SQL_ModToUserList("maxnoleech", 0, "ip", sUser.sIP)
+		--US[sUser.sIP].noleech= newMinShare
+		SQL_ModToUserList("noleech", newMinShare, "ip", sUser.sIP)
+		tMainBufer.NoLeechBufer[sUser.sIP]=tonumber(newMinShare);
+		--saveUSExpress();
+		local ttext = string.gsub(messages[86] , "%[MINSHARE%]", getNormalShare(newMinShare))
+		BotSayToUser(sUser,ttext)
+		AddSysLog("nlon: "..sUser.sName..": "..ttext);		
+		ttext = string.gsub(messages[88] , "%[MINSHARE%]", getNormalShare(newMinShare))
+		BotSayToUser(sUser,ttext)
+	end
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function nlshow(sUser)--+
+	local msg = "\r\n"..messages[28].."\r\n" .. messages[93].."\r\n" .. messages[28]
+	local minshares={}
+	local query = "SELECT ip,nick,noleech FROM MainBot_userlist WHERE noleech > 0 ORDER BY `noleech` DESC"
+	--local query = "SELECT ip,nick,noleech FROM MainBot_userlist WHERE noleech > '0'"
+	res, rows = VH:SQLQuery(query)
+	if res and rows ~=0 then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip,nick,noleech = VH:SQLFetch(x)
+				minshares[x+1]={}
+				minshares[x+1].nick=nick
+				--VH:SendDataToAll("nick"..nick.."|",0,10)
+				minshares[x+1].ip=ip
+				--VH:SendDataToAll("ip"..ip.."|",0,10)
+				minshares[x+1].noleech=tonumber(noleech)
+				--table.insert(minshares,ms)
+			end
+		else
+			local res,ip,nick,noleech = VH:SQLFetch(0)
+			minshares.nick=nick
+			--VH:SendDataToAll("nick"..nick.."|",0,10)
+			minshares.ip=ip
+			--VH:SendDataToAll("ip"..ip.."|",0,10)
+			minshares.noleech=tonumber(noleech)
+		end
+	else
+		minshares = nil
+	end
+	if minshares then
+		if minshares[1] then
+			for i,v in ipairs(minshares) do
+				msg = msg .. "\r\n\t".. v.nick .. " [".. v.ip .. "]: \t".. getNormalShare(v.noleech)
+			end
+		else
+			msg = msg .. "\r\n\t".. minshares.nick .. " [".. minshares.ip .. "]: \t".. getNormalShare(minshares.noleech)
+		end
+	end
+	msg = msg .."\r\n"..messages[28].."\r\n"
+	BotSayToUser(sUser,msg);
+	ClearMem()
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function nlof(sUser)--+
+	if (tMainBufer.NoLeechBufer[sUser.sIP]) then
+		SQL_ModToUserList("maxnoleech", 0, "ip", sUser.sIP)
+		SQL_ModToUserList("noleech", 0, "ip", sUser.sIP)
+		tMainBufer.NoLeechBufer[sUser.sIP]=nil;
+		BotSayToUser(sUser,messages[87])
+		AddSysLog("nlof: ".. messages[87].." ("..sUser.sName..")");
+	else
+		BotSayToUser(sUser,messages[223])
+	end
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--M Y    I N F O 
+--------------------------------------------------------------------------------------------------------------------------------------------
+function showmyinfo(sUser)--+
+	BotSayToUser(sUser,getUserInfoLite(sUser.sIP))
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--S H O W B A N S 
+--------------------------------------------------------------------------------------------------------------------------------------------
+function Showbans(sUser,arg)--+
+	local btype=GetArg(arg)
+	--BotSayToUser(sUser,"btype: "..(btype or "err"))
+	if tonumber(btype) then
+		btype=tonumber(btype);
+		if (btype>6) or (btype<0) then
+			BotSayToUser(sUser,messages[19]..arg)
+			return 0
+		end
+	else
+		btype=-1
+	end
+	BotSayToUser(sUser,getbans(btype))
+	return 1
+end
+-----------------------------------------------------------
+function passNativeCommand(sUser,arg)
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--N E W S  
+--------------------------------------------------------------------------------------------------------------------------------------------
+function setnews(sUser,arg)
+	NEWSTEXT=arg;
+	--savetext(F_NEWSTEXT,NEWSTEXT)
+	SQL_ModNews(NEWSTEXT, "MainNews")
+	local msg=string.gsub(messages[137],"%[NEWSTEXT%]",NEWSTEXT)
+	BotSayToUser(sUser,msg);
+	AddSysLog("setnews: "..sUser.sName.."["..sUser.sIP.."]");		
+	return 1
+end
+function setopchatnews(sUser,arg)
+	OPCHATNEWSTEXT=arg;
+	--savetext(F_NEWSTEXT,NEWSTEXT)
+	SQL_ModNews(OPCHATNEWSTEXT, "OpChatNews")
+	local msg=string.gsub(messages[137],"%[NEWSTEXT%]",OPCHATNEWSTEXT)
+	BotSayToUser(sUser,msg);
+	AddSysLog("setopchatnews: "..sUser.sName.."["..sUser.sIP.."]");	
+	--BotSayToUser(sUser,"OPCHATNEWSTEXT: "..OPCHATNEWSTEXT);	
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- O F F L I N E         M E S S A G E S 
+--------------------------------------------------------------------------------------------------------------------------------------------
+function msgnick(sUser,arg)--=
+	local to, text = GetNickMsg(arg)
+	if to==nil then
+		BotSayToUser(sUser,messages[138])
+		return 1
+	end
+	if text==nil then
+		BotSayToUser(sUser,messages[139])
+		return 1
+	end
+	if CFG.MaxMailSize>0 then
+		if string.len (text) > CFG.MaxMailSize then 
+			BotSayToUser(sUser,string.gsub(messages[150], "%[MAXSIZE%]", CFG.MaxMailSize))
+			return 1
+		end
+	end
+	--msg = messages[144];
+	--msg = string.gsub(msg, "%[FROM%]", sUser.sName .. " ("..sUser.sIP..")")
+	--msg = string.gsub(msg, "%[TO%]", to)
+	--msg = string.gsub(msg, "%[TEXT%]", text)
+	local isbadword = 0
+	local badword, pos, context;
+	isbadword, badword, pos, context = isbad2(text,BAD_CHAT)
+	if isbadword == 1 then
+		BotSayToUser(sUser,messages[141])
+		local msg2=messages[96];
+		msg2=string.gsub(msg2,"%[PATTERN%]",badword);
+		msg2=string.gsub(msg2,"%[WORDS%]",context);
+		--AddSysLog("<"..BOTNAME.. "> ".. msg .."\r\n" .. msg2);		
+		return 1
+	end
+	--to=ToLowerCase(to);
+	--addmailnick(to, sUser,text)
+	if SQL_AddNickMail(sUser, to, text)==1 then
+		BotSayToUser(sUser,string.gsub(messages[142], "%[NICK%]", to))
+		tMainBufer.MailBufer.Nick[to]=1;
+	else
+		BotSayToUser(sUser,messages[222])
+	end
+	--AddSysLog("<"..BOTNAME.. "> ".. msg );		
+	return 1
+end
+-----------------------------------------------------------
+function msgip(sUser,arg)--+
+	local to, text = GetIpMsg(arg)
+	if to==nil then
+		BotSayToUser(sUser,messages[140])
+		return 1
+	end
+	if text==nil then
+		BotSayToUser(sUser,messages[139])
+		return 1
+	end
+	if CFG.MaxMailSize>0 then
+		if string.len (text) > CFG.MaxMailSize then 
+			BotSayToUser(sUser,string.gsub(messages[150], "%[MAXSIZE%]", CFG.MaxMailSize))
+			return 1
+		end
+	end	
+	--msg = messages[144];
+	--msg = string.gsub(msg, "%[FROM%]", sUser.sName .. " ("..sUser.sIP..")")
+	--msg = string.gsub(msg, "%[TO%]", to)
+	--msg = string.gsub(msg, "%[TEXT%]", "["..text.."]")
+	local isbadword = 0
+	local badword, pos, context;
+	isbadword, badword, pos, context = isbad2(text,BAD_CHAT)
+	if isbadword == 1 then
+		BotSayToUser(sUser,messages[141])
+		local msg2=messages[96];
+		msg2=string.gsub(msg2,"%[PATTERN%]",badword);
+		msg2=string.gsub(msg2,"%[WORDS%]",context);
+		--AddSysLog("<"..BOTNAME.. "> ".. msg .."\r\n" .. msg2);		
+		return 1
+	end
+	--addmailip(to, sUser,text)
+	if SQL_AddIpMail(sUser, to, text)==1 then
+		BotSayToUser(sUser,string.gsub(messages[143], "%[IP%]", to))
+		tMainBufer.MailBufer.IP[to]=1;
+	else
+		BotSayToUser(sUser,messages[222])
+	end
+	--AddSysLog("<"..BOTNAME.. "> ".. msg );		
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- TOPIC
+--------------------------------------------------------------------------------------------------------------------------------------------
+function topic(sUser,arg)--+
+	if arg=="" then
+		msg = messages[154];
+		msg = string.gsub(msg, "%[BY%]", sUser.sName)
+		BotSayToUser(sUser,msg)
+		--BotSayToAll(msg)
+	else
+		msg = messages[155];
+		msg = string.gsub(msg, "%[BY%]", sUser.sName)
+		msg = string.gsub(msg, "%[TOPIC%]", arg)
+		BotSayToUser(sUser,msg)
+		--BotSayToAll(msg)
+	end
+	--frmHub:SetHubTopic(arg)
+	--result, data = VH:SetConfig(config_name, varible, value)
+	--VH:SetConfig("config","topic",arg);
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+--S H A R E T O P 
+--------------------------------------------------------------------------------------------------------------------------------------------
+function sharetop(sUser,arg)--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	local num= GetArg(arg)
+	local sharetop={}
+	--SELECT ip, sharesize
+	--FROM `MainBot_userlist`
+	--ORDER BY `sharesize` ASC 
+	--LIMIT 0 , 1
+	if tonumber(num) then 
+		num=tonumber(num)
+	else
+		num=20
+	end
+	if num < 1 then
+		num = 1
+	elseif num > 200 then
+		num = 200
+	end	
+	local query = "SELECT ip, nick, sharesize FROM MainBot_userlist ORDER BY sharesize DESC LIMIT 0, "..num..""
+	local res, rows = VH:SQLQuery(query)
+	--VH:SendDataToAll("rows : "..rows.."|",10,10)
+	if res and rows then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res, ip, nick, sharesize = VH:SQLFetch(x)
+				sharetop[x+1] = {}
+				sharetop[x+1].ip = ip
+				sharetop[x+1].nick = nick
+				sharetop[x+1].sharesize = tonumber(sharesize)
+			end
+		else
+			local res, ip, nick, sharesize = VH:SQLFetch(0)
+			sharetop.ip = ip
+			--VH:SendDataToAll("ip : "..ip.."|",10,10)
+			sharetop.nick = nick
+			sharetop.sharesize = tonumber(sharesize)
+		end
+	end
+	local msg ="\r\n"..messages[28].."\r\n"..messages[167]
+	local indx=1;
+	if sharetop then
+		if sharetop[1] then
+			for i,v in ipairs(sharetop) do
+				local strsmg=""
+				if sUser.sIP==v.ip then 
+					strsmg="\r\n>>>\t".. messages[168]
+				else
+					strsmg="\r\n\t".. messages[169]
+				end
+				strsmg = string.gsub(strsmg, "%[POS%]", indx)
+				strsmg = string.gsub(strsmg, "%[NICK%]", v.nick)
+				strsmg = string.gsub(strsmg, "%[IP%]", v.ip)
+				strsmg = string.gsub(strsmg, "%[SHARE%]", getNormalShare(v.sharesize))
+				strsmg = string.gsub(strsmg, "%[TAB%]", "\t")
+				msg = msg .. strsmg
+				indx=indx+1
+			end	
+		else
+			local strsmg=""
+			if sUser.sIP==sharetop.ip then 
+				strsmg="\r\n>>>\t".. messages[168]
+			else
+				strsmg="\r\n\t".. messages[169]
+			end
+			strsmg = string.gsub(strsmg, "%[POS%]", indx)
+			strsmg = string.gsub(strsmg, "%[NICK%]", sharetop.nick)
+			strsmg = string.gsub(strsmg, "%[IP%]", sharetop.ip)
+			strsmg = string.gsub(strsmg, "%[SHARE%]", getNormalShare(sharetop.sharesize))
+			strsmg = string.gsub(strsmg, "%[TAB%]", "\t")
+			msg = msg .. strsmg
+			indx=indx+1
+		end
+	end
+	msg = msg .."\r\n"..messages[28].."\r\n"
+	--BotSayToUser(sUser,TableMaxSize(sharetop));
+	BotSayToUser(sUser,msg);
+	ClearMem()
+	return 1
+end
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+--Setreg
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- дает указанному нику указанный профиль. Если ник не был зарегистрирован - дает ему пароль, совпадающий с ником. Если был зарегистрирован - не меняет пароля. Если профиль не указан или неверен - не срабатыватывает
+function setreg(sUser,arg)--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	--[[
+	local Nick,profile=GetNickNum(arg);
+	profile= tonumber(profile)
+	if Nick and profile then
+		local tmp={
+			[1] = "1",
+			[2] = "2",
+			[3] = "3",
+			[4] = "4",
+			[5] = "5",
+			[10] = "10",
+		}
+		if tmp[profile] ~= nil then
+			if (sUser.iProfile <= profile) then
+				BotSayToUser(sUser,messages[184]);
+			else
+				local pswd=""
+				local msg=""
+				local res,prof=VH:GetUserClass(Nick)
+				local query = "SELECT login_pwd FROM reglist WHERE nick='"..Nick.."'"
+				local res, err = VH:SQLQuery(query)
+				if prof then
+					if (sUser.iProfile <= prof) then
+						BotSayToUser(sUser,messages[185]);
+						return 0;
+					end
+					--pswd=frmHub:GetUserPassword(Nick);
+					--DelRegUser(Nick);
+					msg=messages[182];
+				else 
+					msg=messages[183];
+					pswd=Nick;
+				end
+				local res, livello = VH:GetUserClass(Nick)				
+				if livello > 0 then
+					local query = "UPDATE reglist SET login_pwd=encrypt('"..password.."') WHERE nick='"..sUser.sName.."'"
+					local res, err = VH:SQLQuery(query)
+				else
+					local query = "INSERT INTO reglist (reg_date,reg_op,nick,class,login_pwd,pwd_change,pwd_crypt) VALUES (unix_timestamp(now()),'"..BOTNAME.."','"..Nick.."',1,encrypt('"..Nick.."'),0,1)"
+					local res, err = VH:SQLQuery(query)
+				end
+				--AddRegUser(Nick, pswd, profile)	-- Default profile numbers 0 Master 1 Operator 2 VIP 3 Reg
+
+				msg = string.gsub(msg, "%[USER%]", Nick)
+				msg = string.gsub(msg, "%[PROFNUM%]", profile.." ("..tCheck[profile][2]..")")
+	  			BotSayToUser(sUser,msg);
+			end
+		else
+			BotSayToUser(sUser,messages[181]);
+		end
+	else
+		BotSayToUser(sUser,messages[180]);
+	end
+	]]--
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function inetdown(sUser,arg) --+
+	if CFG.InetDown==0 then 
+		local ttext = messages[202]
+		BotSayToUser(sUser,ttext)
+		return 1
+	end
+	if not inDiap(sUser.sIP,IPCHECKS.LOCAL) then
+		local ttext = messages[206]
+		BotSayToUser(sUser,ttext)
+		return 1
+	end	
+	local s,e = string.find(arg, "off")
+	if s~=nil then
+		if (tMainBufer.InetDown[sUser.sIP]) then
+			if (type(tMainBufer.InetDown[sUser.sIP])=="table") then
+				if (tMainBufer.InetDown[sUser.sIP].inetdown==0)then
+					local ttext = messages[204] 
+					BotSayToUser(sUser,ttext)
+					return 1
+				end	
+			end
+		end
+		SQL_ModToUserList("InetDown", "0", "ip", sUser.sIP)
+		tMainBufer.InetDown[sUser.sIP]={};
+		tMainBufer.InetDown[sUser.sIP].ip=sUser.sIP;
+		tMainBufer.InetDown[sUser.sIP].inetdown=0;
+		local ttext = messages[200] 
+		BotSayToUser(sUser,ttext)
+		return 1
+	elseif string.find(arg, "on") then
+		if not (tMainBufer.InetDown[sUser.sIP]) then
+			if not (type(tMainBufer.InetDown[sUser.sIP])=="table") then
+			--if not (tMainBufer.InetDown[sUser.sIP].inetdown==1) then
+				local ttext = messages[205] 
+				BotSayToUser(sUser,ttext)
+				return 1
+			end
+		end
+		SQL_ModToUserList("InetDown", "1", "ip", sUser.sIP)
+		if (tMainBufer.InetDown[sUser.sIP].inetdown==0) then
+			tMainBufer.InetDown[sUser.sIP]=nil;
+		end
+		local ttext = messages[201] 
+		BotSayToUser(sUser,ttext)		
+		return 1
+	else
+		local ttext = messages[203] 
+		BotSayToUser(sUser,ttext)	
+	end
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function hubbasay(sUser,arg) -- пишем от лица бота --+
+	if arg=="" then
+		msg = messages[207];
+		BotSayToUser(sUser,msg)
+		return 1
+	else
+		BotSayToAll(arg)
+		return 1
+	end
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function mainbot_jokes(sUser,sData) -- шутки бота --+
+	for indx, val in pairs(tJokeFunctions) do
+		if (val.tLevels[sUser.iProfile]) then
+			local bParsed, tRetVal = val.tPattern(sUser,sData)
+			if (bParsed==0) and (tRetVal~=nil) then
+				return val.tFunc(sUser,sData,tRetVal)
+			end
+		end
+	end
+end
+--------------------------------------------------------------------------------------------------------------------------------------------

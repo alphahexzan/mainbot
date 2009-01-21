@@ -1,0 +1,62 @@
+PMBlocker = {}
+PMBlocker.tBlockList = {}
+PMBlocker.tCountLimit = {
+	ForIP = 15,
+	ForNick = 15,
+}
+---------
+function PMBlocker:Main()
+	local pmblokermain = "Модуль блокировки приватов. v.1.5."
+	LoadFunction (PMBLOCKERPATH.."PMBlocker_SQL.lu")
+	LoadFunction (PMBLOCKERPATH.."PMBlocker_Commands.lu")
+	PMBlocker:SQL_Init()
+	PMBlocker:SQL_LoadTable()
+	return pmblokermain
+end
+function PMBlocker:Protection(sUser,data,vUser)
+	if (sUser.iProfile < 3) then
+		--VH:SendDataToUser("PMBlocker:Protection. vUser.sIP ["..(vUser.sIP or "").."] vUser.sName ["..(vUser.sName or "").."] sUser.sIP ["..(sUser.sIP or "").."] sUser.sName ["..(sUser.sName or "").."]","Palmer")
+		if (type(PMBlocker.tBlockList[vUser.sIP])=="table") then
+			if (type(PMBlocker.tBlockList[vUser.sIP][vUser.sName])=="table") then
+				for indx, val in pairs(PMBlocker.tBlockList[vUser.sIP][vUser.sName]) do
+					if (val == sUser.sIP) or (val == sUser.sName) then
+							BotSayToUser(sUser,PMBlocker_tLangMsgs[2])
+							--VH:SendDataToUser("PMBlocker:Protection. sUser.sIP ["..(sUser.sIP or "").."] sUser.sName ["..(sUser.sName or "").."] data ["..data.."]","Palmer")
+							return 0
+					end
+				end
+			end
+		end
+	end
+	return 1
+end
+function PMBlocker:ParseCommand(sUser, data)
+	local _,_,prefix,cmd,arg=string.find(data, "(%S)(%S+)%s*(.*)")
+	if prefix==nil or prefix~="+" then return 1 end
+	---------
+	if PMBlocker_tCommands[string.lower(cmd)] then
+		cmd = string.lower(cmd)
+		if PMBlocker_tCommands[cmd].tLevels[sUser.iProfile] then
+			AddSysLog("PMBlocker:ParseCommand. nick ["..(sUser.sName or "").."] ip["..(sUser.sIP or "").."] cmd ["..cmd.."] arg ["..arg.."] sData ["..data.."]")
+			return PMBlocker_tCommands[cmd].tFunc(sUser,arg,prefix..cmd,data)
+		else
+			BotSayToUser(sUser,messages[57])
+			AddSysLog("PMBlocker:ParseCommand. Отклонено выполнение. nick ["..(sUser.sName or "").."] ip["..(sUser.sIP or "").."] cmd ["..cmd.."] arg ["..arg.."] sData ["..data.."]")
+			return 0
+		end
+	end
+	---------
+	return 1
+end
+-----------------------------------------------------------------------------------------------------------------
+function PMBlocker:sendUserCommands(sUser)--+
+	if sUser and sUser.sName and sUser.iProfile then
+		--VH:SendDataToUser("$UserCommand 0 3 $||", sUser.sName)
+		for i, v in pairs(PMBlocker_tCommands) do
+			if v.tLevels[sUser.iProfile] then
+				v.tMenu(sUser)
+			end
+		end
+	end
+end
+-----------------------------------------------------------------------------------------------------------------

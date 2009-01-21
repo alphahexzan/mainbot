@@ -1,0 +1,23 @@
+Release = {}
+Release.tOnOffUsers = {}
+Release.Settings = {}
+function Release:Main()
+	--if Settings.bReg then frmHub:RegBot(Settings.sBot) end
+	Release:tFunctions.RegTimer(tFunctions.Cleaner, Release.Settings.iCleanDelay*60*60*1000);
+	Release:tFunctions.RegTimer(tFunctions.TimedCat, 60*1000);
+	Release:SetTimer(TmrFreq); if Release.Settings.bTimer then StartTimer() end;
+	if tSetup[string.lower(Release.Settings.sMode)] then tTable = {}; tFunctions:load() end
+	tConfig.Cleaner = tConfig.Cleaner or "вкл"; tConfig.Link = tConfig.Link or "выкл"
+end
+
+function Release:ChatArrival(user,data)
+	local data = string.sub(data,1,-2)
+	local s,e,msg = string.find(data,"^%b<>%s+[%!%+](.*)")
+	if msg then return tFunctions.ParseCommands(user,msg) end
+end
+
+function Release:ToArrival(user,data)
+	local data = string.sub(data,1,-2)
+	local s,e,to,msg = string.find(data, "^%$To:%s+(%S+)%s+From:%s+%S+%s-%$%b<>%s+[%!%+](.*)")
+	if to == Settings.sBot and msg then return tFunctions.ParseCommands(user, msg) end
+end

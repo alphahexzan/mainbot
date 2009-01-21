@@ -1,0 +1,17 @@
+-- IP Functions
+IPFunc = {}
+IPFunc.IsRange = function(rangeIP)
+	if ( string.find(rangeIP,"(%S+)-(%S+)") ) then
+		return 1
+	else
+		return 0
+	end
+end
+IPFunc.IPRealValue = function(curIP)
+	local _,_,a,b,c,d = string.find(curIP, "(%d+).(%d+).(%d+).(%d+)")
+	if (tonumber(a) and tonumber(b) and tonumber(c) and tonumber(d) ) then
+		return a*16777216 + b*65536 + c*256 + d
+	else
+		return 0
+	end
+end

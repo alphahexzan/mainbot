@@ -1,0 +1,595 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+--таймерные функции 
+TimerRun = nil
+TimerTicks = nil
+TimerTemp = nil
+TimerTTHCount = 1
+TimerSystemFilesCount = 1
+--------------------------------------------------------------------------------------------------------------------------------------------
+function timer_save_US()--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	SaveFile(US,"US",F_USERS)
+	SaveFile(SHARES,"SHARES",F_SHARES)
+end
+-----------------------------------------------------------
+function timer_arch_US()--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	local curdate = os.date("_%Y_%m_%d_%H_%M_%S")
+	SaveFile(US,"US",F_USERS..curdate)
+	SaveFile(SHARES,"SHARES",F_SHARES..curdate)
+end
+-----------------------------------------------------------
+function Timer_Share()--+
+	--local users = frmHub:GetOnlineUsers()
+	--local users = ONLINEUSERS
+	--VH:SendDataToAll("<"..BOTNAME.. "> Timer_Share ON|",10,10)	
+	local askNick=""
+
+	if CFG.RandomAskShareNick==1 then
+		askNick=messages[117].."("..math.random (100000).. ")"
+	end
+	local msg=""
+	for i, vUser in pairs(ONLINEUSERS) do
+		if vUser.iShareSize==0 then
+			if CFG.AskShareToPm==1 then 
+				if CFG.RandomAskShareNick==1 then
+					--vUser:SendPM(askNick, "\r\n"..SHARETEXT)
+					--User.SendPvt("\r\n"..SHARETEXT, askNick)
+					VH:SendDataToUser("$To: "..vUser.sName.." From: "..askNick.." $<"..askNick.."> \r\n"..SHARETEXT.."|", vUser.sName)
+				else
+					--vUser:SendPM(BOTNAME, "\r\n"..SHARETEXT)
+					BotSayToUser(vUser, "\r\n"..SHARETEXT)
+					--VH:SendDataToUser("<"..BOTNAME.."> \r\n"..SHARETEXT.."|",vUser.sName)
+				end
+			else
+				--vUser:SendData( "\r\n"..SHARETEXT)
+				VH:SendDataToUser("<"..BOTNAME.."> \r\n"..SHARETEXT.."|",vUser.sName)
+			end
+			msg = msg .. vUser.sName.." ["..vUser.sIP .."]("..vUser.iShareSize.. "), "   
+		end
+	end	
+	if msg~="" then
+		--AddSysLog("<"..BOTNAME.. "> "..messages[84].. msg);	
+	end
+	
+end
+-----------------------------------------------------------
+function Timer_MomentOfTruth()
+	-- проверка банов
+	--$query = "SELECT concat('DELETE FROM temp WHERE prodid =\'',prod.ProdID, '\';') AS '' FROM prod LEFT JOIN catalog ON prod.ProdID = catalog.ProdID WHERE catalog.ProdID IS NULL";
+	local curUser = {}
+	local curdate = os.date("%Y-%m-%d %H:%M:%S")
+	local istatus = nil
+	curdate = tostring(curdate)
+	local query = "SELECT ip,context,user_when,user_by FROM MainBot_userlist WHERE whenexpires < '"..curdate.."' AND (user_status = 3 OR user_status = 4 OR user_status = 1)"
+	local res, rows = VH:SQLQuery(query)
+	--VH:SendPMToAll("rows: "..tonumber(rows).."|",BOTNAME,10,10)
+	--local board = ""
+	local x = 0
+	if res and rows>1 then
+		for x=0, rows-1 do
+			local res,ip,context,when,by = VH:SQLFetch(x)
+			if (ip~="could not fetch row") or (ip~="could not seek data") then
+				curUser[x+1] = {}
+				curUser[x+1].ip = ip
+				curUser[x+1].context = context
+				curUser[x+1].when = when
+				curUser[x+1].by = by
+			end
+		end
+		--if (curUser[1].ip == "could not fetch row") or (curUser[1].ip == "could not seek data") then curUsers = nil end
+	elseif res and rows==1 then
+		local res,ip,context,when,by = VH:SQLFetch(0)
+		if (ip~="could not fetch row") or (ip~="could not seek data") then
+			curUser[1] = {}
+			curUser[1].ip = ip
+			curUser[1].context = context
+			curUser[1].when = when
+			curUser[1].by = by
+		end
+		--if (curUser[1].ip == "could not fetch row") or (curUser[1].ip == "could not seek data") then curUsers = nil end
+	else
+		curUsers = nil
+	end
+	if curUser~=nil then
+		for i,v in pairs(curUser) do
+			--VH:SendPMToAll("ip:"..v.ip.." - "..(v.context or "").." ("..(v.when or "")..") Наказал: "..(v.by or "").." Кто снял: "..BOTNAME.."|",BOTNAME,10,10)
+			SQL_ModLastcussList(messages[69].." "..(v.context or "").." ("..(v.when or "")..") Наказал: "..(v.by or "").." Кто снял: "..BOTNAME, v.ip)
+			ChangeStatus(v.ip,0,0,BOTNAME,messages[8])
+		end
+	end
+	--unix_timestamp(now())
+	local query = "DELETE FROM banlist WHERE date_limit < unix_timestamp(now())"
+	local res, rows = VH:SQLQuery(query)
+	local query = "DELETE FROM kicklist WHERE time < unix_timestamp(now())"
+	local res, rows = VH:SQLQuery(query)
+	--[[
+	query = "DELETE FROM reglist WHERE class > 0 AND class < 3 AND (login_last IS NULL OR login_last < unix_timestamp(now() - interval 3 month))"
+	res, rows = VH:SQLQuery(query)
+	query = "DELETE FROM MainBot_MAIL_NICK WHERE maildate < now() - interval 1 month"
+	res, rows = VH:SQLQuery(query)
+	query = "DELETE FROM MainBot_MAIL_IP WHERE maildate < now() - interval 1 month"
+	res, rows = VH:SQLQuery(query)
+	]]--
+	--[[
+	query = "SELECT nick, class FROM reglist WHERE class >0 AND class <3 AND  (login_last IS NULL OR login_last < unix_timestamp(now() - interval 3 month))"
+	local Oldregs = {}
+	if res and rows~=0 then
+		for x=0, rows-1 do
+			local res,nick,class = VH:SQLFetch(x)
+			Oldregs[x+1] = {}
+			Oldregs[x+1].nick = nick
+			Oldregs[x+1].class = class
+		end
+		if Oldregs[1].ip == "could not fetch row" then Oldregs = nil end
+	else
+		local res,ip,nick = VH:SQLFetch(0)
+		Oldregs[1] = {}
+		Oldregs[1].nick = nick
+		Oldregs[1].class = class
+		if Oldregs[1].ip == "could not fetch row" then Oldregs = nil end
+	end
+	if OldBans then
+		for i,v in pairs(Oldregs) do
+			--VH:SendPMToAll("Устаревший бан: "..v.nick.." ["..v.ip.."]|",BOTNAME,10,10)
+		end
+	end
+	]]--
+end
+-----------------------------------------------------------
+function Timer_ClearMem()--+
+	local wasmem=gcinfo()
+	local curtime=os.time();
+	for i,v in pairs(NOYELL) do
+		if type(NOYELL[i])~="function" then
+			if NOYELL[i].curindex>0 then
+				if curtime - NOYELL[i].times[NOYELL[i].curindex-1] > CFG.NoYellTime*10 then 
+					NOYELL[i]=nil
+				end	
+			end
+		end
+	end
+	for i,v in pairs(NOADV) do
+		if type(NOADV[i])~="function" then
+			if NOADV[i].curindex>0 then
+				if curtime - NOADV[i].times[NOADV[i].curindex-1] > CFG.NoAdvTime*10 then 
+					NOADV[i]=nil
+				end	
+			end
+		end
+	end
+	for i,v in pairs(NOADV2) do
+		if type(NOADV2[i])~="function" then
+			if NOADV2[i].curindex>0 then
+				if curtime - NOADV2[i].times[NOADV2[i].curindex-1] > CFG.NoAdvTime*10 then 
+					NOADV2[i]=nil
+				end	
+			end
+		end
+	end
+	--[[
+	for i,v in pairs(NOTTH) do
+		if type(NOTTH[i])~="function" then
+			if NOTTH[i].curindex>0 then
+				if curtime - NOTTH[i].warntime > CFG.NoAdvTime*10 then 
+					NOTTH[i]=nil
+				end	
+			end
+		end
+	end
+	]]--
+	for i,v in pairs(NOLOW) do
+		if type(NOLOW[i])~="function" then
+			if NOLOW[i].curindex>0 then
+				if curtime - NOLOW[i].warntime > CFG.NoAdvTime*10 then 
+					NOLOW[i]=nil
+				end	
+			end
+		end
+	end
+	tempONLINEUSERS = {}
+	MakeOnlineUserTable(tempONLINEUSERS)
+	ONLINEUSERS = nil
+	ONLINEUSERS = {}
+	ONLINEUSERS = tempONLINEUSERS
+	tempONLINEUSERS = nil
+	ClearMem()
+	local msg = messages[125]
+	msg=string.gsub(msg,"%[WAS%]",wasmem);
+	msg=string.gsub(msg,"%[NOW%]",gcinfo());
+	AddSysLog("Timer_ClearMem. "..msg );
+	msg = nil;
+end
+-----------------------------------------------------------
+function Timer_ShowNews()--+
+	BotSayToAll("\r\n"..messages[28].."\r\n"..messages[136].."\r\n\r\n\t"..string.gsub(NEWSTEXT, "\n", "\n\t").."\r\n"..messages[28])
+end
+-----------------------------------------------------------
+function TimerReg(f, Interval)
+	if Interval <= 0 then 
+		return 0 
+	end
+	local tTmr = {n=0}
+	tTmr.func=f
+	tTmr.count=1
+	tTmr.trig=Interval
+	table.insert(TimersTable, tTmr)
+end
+-----------------------------------------------------------
+function SecondTimerReg(name, f, Interval_1, Interval_2)
+	if Interval_1 <= 0 or Interval_2 <= 0 then 
+		return 0 
+	end
+	local tTmr = {n=0}
+	tTmr.func=f
+	tTmr.name=name
+	tTmr.round=1
+	--tTmr.stopround1 = false
+	tTmr.stopround2 = false
+	tTmr.count1=1
+	tTmr.count2=1
+	tTmr.trig1=Interval_1
+	tTmr.trig2=Interval_2
+	table.insert(SecondTimersTable, tTmr)
+end
+-----------------------------------------------------------
+function OnTimer()--+
+	for i=1, TableMaxSize(TimersTable) do
+		TimersTable[i].count = TimersTable[i].count + 1
+		if TimersTable[i].count > TimersTable[i].trig then
+			TimersTable[i].count=1
+			TimersTable[i]:func()
+		end
+	end
+end
+-----------------------------------------------------------
+function SecondRoundTimer()--+
+	for i=1, TableMaxSize(SecondTimersTable) do
+		if SecondTimersTable[i].round == 1 then
+			SecondTimersTable[i].count1 = SecondTimersTable[i].count1 + 1
+			if SecondTimersTable[i].count1 > SecondTimersTable[i].trig1 then
+				SecondTimersTable[i].round = 2
+				SecondTimersTable[i].count1 = 1
+			end
+		elseif SecondTimersTable[i].round == 2 then
+			SecondTimersTable[i].count2 = SecondTimersTable[i].count2 + 1
+			if SecondTimersTable[i].count2 > SecondTimersTable[i].trig2 then
+				if SecondTimersTable[i].stopround2 == true then
+					SecondTimersTable[i].round = 1
+					SecondTimersTable[i].stopround2 = false
+					SecondTimersTable[i].count2 = 1
+				else
+					SecondTimersTable[i].count2 = 1
+					SecondTimersTable[i]:func()
+				end
+			end
+		end
+	end
+end
+-----------------------------------------------------------
+function VH_OnTimer()--+
+	OnTimer()
+	SecondRoundTimer()
+	return 1
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function timer_adv_rating()
+	if AVERUSERS.count==0 then 
+		AVERUSERS.count=1
+		AVERUSERS.numUsers=frmHub:GetUsersCount()
+	end
+	BotSayToAll(AVERUSERS.numUsers)
+	BotSayToAll(AVERUSERS.count)
+	BotSayToAll(AVERUSERS.numUsers/AVERUSERS.count)
+	AVERUSERS.count=1
+	AVERUSERS.numUsers=frmHub:GetUsersCount()
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function SetTimer(time)--+
+	TimerTicks = time / 1000
+	TimerTemp = TimerTicks
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function StartTimer()--+
+	TimerRun = true
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function StopTimer()--+
+	TimerRun = false
+end
+-----------------------------------------------------------
+function Timer_ClearDB() -- Очистка базы бота и базы зарегистрированных пользователей (by Palmer)
+	--ClearRegUsers()
+	--ClearUserDB()
+	local msg = "Timer_ClearDB:"
+	local query = "DELETE FROM reglist WHERE class > 0 AND class < 3 AND (login_last IS NULL OR login_last < unix_timestamp(now() - interval 3 month))"
+	--local res, rows = VH:SQLQuery(query)
+	--local res, value = VH:SQLFetch(0)
+	msg = msg.." reglist;"
+	---------
+	--[[
+	query = "SELECT ip FROM MainBot_MAIL_IP WHERE id=1 AND maildate < now() - interval 1 month"
+	res, rows = VH:SQLQuery(query)
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,ip = VH:SQLFetch(x)
+				if (tMainBufer.MailBufer.IP[ip]==1) then
+					tMainBufer.MailBufer.IP[ip]=nil;
+				end
+			end
+		else
+			local res,ip = VH:SQLFetch(0)
+			if (ip~="could not fetch row") or (ip~="could not seek data") then
+				if (tMainBufer.MailBufer.IP[ip]==1) then
+					tMainBufer.MailBufer.IP[ip]=nil;
+				end
+			end
+		end
+	end
+	query = "SELECT nick FROM MainBot_MAIL_NICK WHERE id=1 AND maildate < now() - interval 1 month"
+	res, rows = VH:SQLQuery(query)
+	if res and rows~=0  then
+		if rows > 1 then
+			for x=0, rows-1 do
+				local res,nick = VH:SQLFetch(x)
+				if (tMainBufer.MailBufer.Nick[nick]==1) then
+					tMainBufer.MailBufer.Nick[nick]=nil;
+				end
+			end
+		else
+			local res,nick = VH:SQLFetch(0)
+			if (nick~="could not fetch row") or (nick~="could not seek data") then
+				if (tMainBufer.MailBufer.Nick[nick]==1) then
+					tMainBufer.MailBufer.Nick[nick]=nil;
+				end
+			end
+		end
+	end
+	]]--
+	---------
+	query = "DELETE FROM MainBot_MAIL_NICK WHERE maildate < now() - interval 1 month"
+	--res, rows = VH:SQLQuery(query)
+	--res, value = VH:SQLFetch(0)
+	msg = msg.." MainBot_MAIL_NICK;"
+	query = "DELETE FROM MainBot_MAIL_IP WHERE maildate < now() - interval 1 month"
+	--res, rows = VH:SQLQuery(query)
+	--res, value = VH:SQLFetch(0)
+	msg = msg.." MainBot_MAIL_IP;"
+	tMainBufer.MailBufer.IP={};
+	tMainBufer.MailBufer.Nick={};
+	MailBufferInit();
+	SQL_OldTTHtoTTH_Archive(tostring(CFG.OldTTH_Num), CFG.OldTTH_Period);
+	ArchiveUsersDB();
+	--optimize  table
+	--repair  table
+	AddSysLog(msg);
+	msg=nil;
+end
+-----------------------------------------------------------
+function Timer_SetTag()
+	local tProfileTag = {
+		[0] = "",
+		[1] = "[ReG]",
+		[2] = "[ViP]",
+		[3] = "[OP]",
+		[4] = "[CheeF]",
+		[5] = "[AdMiN]",
+		[10] = "[MaSTeR]",
+	}
+	for id,usr in pairs(ONLINEUSERS) do
+		--if usr.sMyInfoString and (usr.sName~="•MainBot•" or usr.sName~="#OpChat" or usr.sName~="#4Флуд") then
+		if usr.iProfile > 2 then
+			if usr.sMyInfoString and usr.sName ~= BOTNAME and usr.sName ~= OPCHATNAME and usr.sName~="#4Флуд" then
+				if usr.sName and usr.sDescription and usr.sConnection and usr.sEmail and usr.iShareSize then
+					--local s,e,name,desc,speed,email,share = string.find(usr.sMyInfoString, "$MyINFO $ALL (%S+)%s+([^$]*)$ $([^$]*)$([^$]*)$([^$]+)")
+					VH:SendDataToAll("$MyINFO $ALL "..usr.sName.." "..tProfileTag[usr.iProfile].." "..usr.sDescription.."$ $"..usr.sConnection.."$"..usr.sEmail.."$"..usr.iShareSize.."$|",0,10)
+					--VH:SendDataToAll("Test: "..usr.sName.." - "..tProfileTag[usr.iProfile].." "..usr.sDescription.." - "..usr.sConnection.." - "..usr.sEmail.." - "..usr.iShareSize.."|",10,10)
+				end
+			end
+		end
+	end
+end
+-----------------------------------------------------------
+function Timer_UpdateOnlineUsers()
+	MakeOnlineUserTable(ONLINEUSERS)
+end
+-----------------------------------------------------------
+function Timer_SearchTTH()
+	--Выбор пользователя из списка
+	if tMainBufer.tSearchTTHBufer.counter==nil then
+		TTHBufferInit(0, tMainBufer.tSearchTTHBufer.limiter+1);	--tMainBufer.tSearchTTHBufer.mintthid==1;	tMainBufer.tSearchTTHBufer.maxtthid==24
+		--поиск первого значения из буфера
+		if tMainBufer.tSearchTTHBufer.mintthid~=nil and tMainBufer.tSearchTTHBufer.maxtthid~=nil and next(tMainBufer.tSearchTTHBufer.tTTH) then
+			VH:SendDataToAll("$Search Hub:"..BOTNAME.." F?T?0?9?TTH:"..tMainBufer.tSearchTTHBufer.tTTH[tMainBufer.tSearchTTHBufer.counter].tth.."|",0,3)
+			tMainBufer.tSearchTTHBufer.counter=2;
+		end
+	elseif tMainBufer.tSearchTTHBufer.counter~=nil and tMainBufer.tSearchTTHBufer.counter < tMainBufer.tSearchTTHBufer.bufferlength then
+		--поиск остальных значений из буфера
+		if tMainBufer.tSearchTTHBufer.mintthid~=nil and tMainBufer.tSearchTTHBufer.maxtthid~=nil and next(tMainBufer.tSearchTTHBufer.tTTH) then
+			VH:SendDataToAll("$Search Hub:"..BOTNAME.." F?T?0?9?TTH:"..tMainBufer.tSearchTTHBufer.tTTH[tMainBufer.tSearchTTHBufer.counter].tth.."|",0,3)
+			tMainBufer.tSearchTTHBufer.counter=tMainBufer.tSearchTTHBufer.counter+1;
+		end
+	elseif tMainBufer.tSearchTTHBufer.counter~=nil and tMainBufer.tSearchTTHBufer.counter == tMainBufer.tSearchTTHBufer.bufferlength then
+		--поиск последнего значения из буфера и заполнение буфера новыми данными
+		if tMainBufer.tSearchTTHBufer.mintthid~=nil and tMainBufer.tSearchTTHBufer.maxtthid~=nil and next(tMainBufer.tSearchTTHBufer.tTTH) then
+			VH:SendDataToAll("$Search Hub:"..BOTNAME.." F?T?0?9?TTH:"..tMainBufer.tSearchTTHBufer.tTTH[tMainBufer.tSearchTTHBufer.counter].tth.."|",0,3)
+			tMainBufer.tSearchTTHBufer.counter=tMainBufer.tSearchTTHBufer.counter+1;
+		end
+	elseif tMainBufer.tSearchTTHBufer.counter~=nil and tMainBufer.tSearchTTHBufer.counter > tMainBufer.tSearchTTHBufer.bufferlength then
+		----------------------------------------------------------
+		if tMainBufer.tSearchTTHBufer.tArchivePref.counter==nil then
+			ArchiveTTHBufferInit(0, tMainBufer.tSearchTTHBufer.tArchivePref.limiter+1);
+			if tMainBufer.tSearchTTHBufer.tArchivePref.mintthid~=nil and tMainBufer.tSearchTTHBufer.tArchivePref.maxtthid~=nil and next(tMainBufer.tSearchTTHBufer.tArchiveTTH) then
+				VH:SendDataToAll("$Search Hub:"..BOTNAME.." F?T?0?9?TTH:"..tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth.."|",0,3)
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.TTH = tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.findtime = tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter][tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth].findtime
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.bfind=nil
+				tMainBufer.tSearchTTHBufer.tArchivePref.counter=2;
+			end
+			----------------------------------------------------------
+			tMainBufer.tSearchTTHBufer.counter=nil;
+			TTHBufferInit(tMainBufer.tSearchTTHBufer.maxtthid, tMainBufer.tSearchTTHBufer.maxtthid+tMainBufer.tSearchTTHBufer.limiter+1)
+			----------------------------------------------------------
+		elseif tMainBufer.tSearchTTHBufer.tArchivePref.counter~=nil and tMainBufer.tSearchTTHBufer.tArchivePref.counter < tMainBufer.tSearchTTHBufer.tArchivePref.bufferlength then
+			if tMainBufer.tSearchTTHBufer.tArchivePref.mintthid~=nil and tMainBufer.tSearchTTHBufer.tArchivePref.maxtthid~=nil and next(tMainBufer.tSearchTTHBufer.tArchiveTTH) then
+				VH:SendDataToAll("$Search Hub:"..BOTNAME.." F?T?0?9?TTH:"..tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth.."|",0,3)
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.TTH = tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.findtime = tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter][tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth].findtime
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.bfind=nil
+				tMainBufer.tSearchTTHBufer.tArchivePref.counter=tMainBufer.tSearchTTHBufer.tArchivePref.counter+1;
+			end
+			----------------------------------------------------------
+			tMainBufer.tSearchTTHBufer.counter=nil;
+			TTHBufferInit(tMainBufer.tSearchTTHBufer.maxtthid, tMainBufer.tSearchTTHBufer.maxtthid+tMainBufer.tSearchTTHBufer.limiter+1)
+			----------------------------------------------------------
+		elseif tMainBufer.tSearchTTHBufer.tArchivePref.counter~=nil and tMainBufer.tSearchTTHBufer.tArchivePref.counter == tMainBufer.tSearchTTHBufer.tArchivePref.bufferlength then
+			if tMainBufer.tSearchTTHBufer.tArchivePref.mintthid~=nil and tMainBufer.tSearchTTHBufer.tArchivePref.maxtthid~=nil and next(tMainBufer.tSearchTTHBufer.tArchiveTTH) then
+				VH:SendDataToAll("$Search Hub:"..BOTNAME.." F?T?0?9?TTH:"..tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth.."|",0,3)
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.TTH = tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.findtime = tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter][tMainBufer.tSearchTTHBufer.tArchiveTTH[tMainBufer.tSearchTTHBufer.tArchivePref.counter].tth].findtime
+				tMainBufer.tSearchTTHBufer.tFindTime.CurentArchive.bfind=nil
+				tMainBufer.tSearchTTHBufer.tArchivePref.counter=nil;
+				ArchiveTTHBufferInit(tMainBufer.tSearchTTHBufer.tArchivePref.maxtthid, tMainBufer.tSearchTTHBufer.tArchivePref.maxtthid+tMainBufer.tSearchTTHBufer.tArchivePref.limiter+1)
+			end
+			----------------------------------------------------------
+			tMainBufer.tSearchTTHBufer.counter=nil;
+			TTHBufferInit(tMainBufer.tSearchTTHBufer.maxtthid, tMainBufer.tSearchTTHBufer.maxtthid+tMainBufer.tSearchTTHBufer.limiter+1)
+			----------------------------------------------------------
+		end
+		----------------------------------------------------------
+	end
+end
+-----------------------------------------------------------
+function Timer_ClearLowUsers()
+	for id,usr in pairs(ONLINEUSERS) do
+		if (usr.iProfile<3) then
+			if (usr.iShareSize) and (tMainBufer.ChatRoomsBufer[usr.sName]~=1) and (usr.sName~=SHUBNAME) and (usr.sName~=BOTNAME)then
+				if usr.sName and usr.sIP and usr.iShareSize < CFG.LowShare_Limit then
+					if (BanException(usr.sIP,"lowshare")~=1) and (BanException(usr.sName,"lowshare")~=1) then
+						--last check
+						local res, myinfo = VH:GetMyINFO(usr.sName)
+						myinfo = string.gsub(myinfo,"%$MyINFO%s%$ALL%s","")
+						local sharesize = string.gsub(myinfo, "^%S+%s.*<.+>%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$","%3")
+						if sharesize~=nil then
+							sharesize = tonumber(sharesize)
+						else
+							sharesize = 0
+						end
+						--VH:SendDataToUser("$To: Palmer From: Timer_ClearLowUsers $<Timer_ClearLowUsers> ip ["..(usr.sIP or "").."] nick ["..(usr.sName or "").."] sharesize ["..(getNormalShare(CFG.LowShare_Limit) or "err").."] myinfo["..(myinfo or "").."]|","Palmer")
+						if sharesize < CFG.LowShare_Limit then
+							local LowRetval = 0
+							if NOLOW[usr.sIP] then
+								LowRetval = 1
+							else
+								local query = "SELECT nick FROM MainBot_userlist WHERE ip = '"..usr.sIP.."' and fl < (now() - interval 1 week)"
+								local res, rows = VH:SQLQuery(query)
+								if res and rows~=0 then
+									local res, value = VH:SQLFetch(0)
+									if (value == "could not fetch row") or (value == "could not seek data") then 
+										LowRetval = 0
+									else
+										LowRetval = 1
+									end
+								else
+									LowRetval = 0
+								end
+							end
+							if LowRetval == 1 then
+								if (LowShareFilter(usr.sName, usr.sIP, ""..(getNormalShare(CFG.LowShare_Limit) or "err").."")==1) then
+									------------------------------------------------------------
+									local bantime = CFG.BANTIME*8
+									--string.gsub(messages[215],"%[SHARE%]","1ГБ")
+									AddIPToHubBanList(usr.sName,bantime,BOTNAME,string.gsub(messages[215],"%[SHARE%]",""..(getNormalShare(CFG.LowShare_Limit) or "err")..""))
+									AddSysLog("Timer_ClearLowUsers: nick["..(usr.sName or "").."] ip["..(usr.sIP or "").."] log["..(NOLOW[usr.sIP].logs or "").."] sharesize["..(getNormalShare(sharesize) or "err").."] myinfo["..(myinfo or "").."]")
+									------------------------------------------------------------
+									alertByIP(usr.sIP,getBanInfo(usr.sIP),true)
+									if NOLOW[usr.sIP] then
+										NOLOW[usr.sIP]=nil
+									end
+								end
+							end
+						else
+							AddSysLog("Timer_ClearLowUsers_[ERR]: nick["..(usr.sName or "").."] ip["..(usr.sIP or "").."] sharesize["..(getNormalShare(sharesize) or "").."] myinfo["..(myinfo or "").."]")
+							ONLINEUSERS[usr.sName].iShareSize = sharesize;
+							SQL_ModToUserList("sharesize", sharesize, "ip", usr.sIP)
+							if NOLOW[usr.sIP] then
+								NOLOW[usr.sIP]=nil
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end
+-----------------------------------------------------------
+function Timer_BackupDB()
+	local TimeHM = os.date("%H:%M")
+	local StartTime = "04:00"
+	--if (HourTime > 20) and (HourTime < 21) and (MinuteTime > 40) and (MinuteTime < 45) then
+	if StartTime == TimeHM then
+		local Data_Name = tostring(os.date("%y.%m.%d_%H.%M"))
+		os.execute("mysqldump -u verlihub -p7EP5kZ9U verlihub > "..BACKUPPATH.."verlihub_"..Data_Name..".sql")
+		--os.execute("mysqldump verlihub > "..BACKUPPATH.."verlihub_"..Data_Name..".sql")
+		AddSysLog("Timer_BackupDB. Бэкап: verlihub_"..Data_Name..".sql")
+	end
+end
+-----------------------------------------------------------
+function Timer_SearchSystemFiles()
+	----------------------------------------------------------------------------------
+	local maxid = 0
+	local query = "SELECT MAX(id) FROM MainBot_sysfiles"
+	local res, err = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	if (value == "could not fetch row") or (value == "could not seek data") then maxid=nil end
+	if maxid~=nil then
+		maxid = tonumber(value)
+		if TimerSystemFilesCount <= maxid then
+			query = "SELECT tth FROM MainBot_sysfiles WHERE id="..TimerSystemFilesCount..""
+		    res, err = VH:SQLQuery(query)
+			res,tth = VH:SQLFetch(0)
+			if (tth ~= "could not fetch row") and (tth ~= "could not seek data") then
+				VH:SendDataToAll("$Search Hub:"..OPCHATNAME.." F?T?0?9?TTH:"..tth.."|",0,10)
+				TimerSystemFilesCount = TimerSystemFilesCount+1
+			else
+				VH:SendPMToAll("Timer_SearchSystemFiles: TTH["..TimerSystemFilesCount.."]: Error|",BOTNAME,3,10)
+			end
+			if TimerSystemFilesCount > maxid then
+				for i=1, TableMaxSize(SecondTimersTable) do
+					if SecondTimersTable[i].name == "Timer_SearchSystemFiles" then
+						SecondTimersTable[i].stopround2 = true
+						TimerSystemFilesCount = 1
+					end
+				end
+			end
+		end
+	end
+	----------------------------------------------------------------------------------
+end
+-----------------------------------------------------------
+function Timer_ReloadBuffers()
+	--local msg="Timer_ReloadBuffers: ";
+	tMainBufer.IPSecBufer=nil;
+	tMainBufer.IPSecBufer={};
+	IPSecBufferInit();
+	--msg=msg.."[1] IPSecBufferInit.";
+	--AddSysLog(msg);
+end
+-----------------------------------------------------------

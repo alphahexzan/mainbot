@@ -1,0 +1,759 @@
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- HUBBABOT Hub's Big Ass Bot. Bot for DC hub PtokaX 
+-- Copyright  ©  2004-2005  NoNick ( nwod@mail.ru )
+-- Second Edition  
+--------------------------------------------------------------------------------------------------------------------------------------------
+--This program is free software; you can redistribute it and/or
+--modify it under the terms of the GNU General Public License
+--as published by the Free Software Foundation; either version 2
+--of the License, or (at your option) any later version.
+
+--This program is distributed in the hope that it will be useful,
+--but WITHOUT ANY WARRANTY; without even the implied warranty of
+--MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+--GNU General Public License for more details.
+
+--You should have received a copy of the GNU General Public License
+--along with this program; if not, write to the Free Software
+--Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--------------------------------------------------------------------------------------------------------------------------------------------
+--us.lu  Функции работы с различными данными по юзерам
+--------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Функции шартопа
+--------------------------------------------------------------------------------------------------------------------------------------------
+function storeSharetop(sUser)
+	local exp_date=getDateAfter(CFG.ShareRecordTIME);
+	local ip=sUser.sIP
+	--[[
+	if SHARES[ip]== nil then 
+		SHARES[ip]={}
+	end	
+	SHARES[ip].size=sUser.iShareSize;
+	SHARES[ip].sdate=exp_date
+	SHARES[ip].nick=sUser.sName;
+	]]--
+	local users = ONLINEUSERS
+	--local res, nicks = VH:GetNickList()
+	for i, vUser in pairs(users) do
+		if vUser.sIP==ip then
+			if SHARES[ip].size < vUser.iShareSize then
+				SHARES[ip].size = vUser.iShareSize;
+				SHARES[ip].sdate = exp_date
+				SHARES[ip].nick = vUser.sName;
+			end
+		end
+	end
+	return 1
+end
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Функции параноидальной проверки чата
+--------------------------------------------------------------------------------------------------------------------------------------------
+function paranoidCheck(sUser,sData)--+
+	pEntry=PARANOID[sUser.sIP]
+	local indx=pEntry.curindex;
+	pEntry.times[indx]=os.date("%Y-%m-%d %H:%M:%S");
+	pEntry.posts[indx]=string.gsub(sData, "[%p%s%c]", "");
+	pEntry.fullposts[indx]=sData;
+	hashstring="";
+	local first=indx-CFG.MaxParanoidHistory;
+	if first>=0 then 
+		pEntry.times[first]=nil
+		pEntry.posts[first]=nil
+		pEntry.fullposts[first]=nil;
+		first=first+1
+	else
+		first=0
+	end
+	for index = first,indx,1 do
+		hashstring=hashstring..pEntry.posts[index];
+	end
+	
+	local par_badword, par_pos, par_context;
+	local par_isbadword = 0
+	par_isbadword, par_badword, par_pos, par_context = isbad2(hashstring,BAD_PARANOID_CHAT)
+
+	if par_isbadword == 1 then
+		msg="\n"..messages[28].."\n";
+		msg=msg.. "["..os.date("%Y-%m-%d %H:%M:%S").."] <"..BOTNAME.. "> ".. messages[101] .. "\n";
+		msg=msg.. messages[128].. " "..sUser.sName.. " ["..sUser.sIP .."]\n"
+		msg=msg.. messages[104].."\n";
+
+		for index = first,indx,1 do
+			msg=msg.. "<"..pEntry.times[index].."> ".. sUser.sName.. " ["..sUser.sIP .."] ".. pEntry.fullposts[index].."\n";
+		end
+		msg=msg.. messages[103].." ["..par_context.. "]\n";
+		msg=msg.. messages[102].." "..par_badword.."\n";
+		msg=msg.. messages[28].."\n";
+		AddParanoidLog(msg);
+		
+		--if CFG.ReportParanoidToOp==1 or CFG.ReportParanoidToMaster==1 then
+			--local ops=frmHub:GetOnlineOperators()
+			--for indx,op in pairs(ops) do
+				if CFG.ReportParanoidToOp==1 then
+					VH:SendPMToAll(msg, BOTNAME, 3, 4)			
+				end
+				if CFG.ReportParanoidToMaster==1 then
+					VH:SendPMToAll(msg, BOTNAME, 5, 10)
+				end
+			--end
+		--end
+		PARANOID[sUser.sIP]=nil
+	else
+		pEntry.curindex=indx+1;
+	end
+end
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+function paranoidCheckAntiAdv2(sUser,sData)--+
+	pEntry=PARANOID2[sUser.sIP]
+	local indx=pEntry.curindex;
+	pEntry.times[indx]=os.date("%Y-%m-%d %H:%M:%S");
+	pEntry.posts[indx]=string.gsub(sData, "[%p%s%c]", "");
+	pEntry.fullposts[indx]=sData;
+	hashstring="";
+	local first=indx-CFG.MaxParanoidHistory;
+	if first>=0 then 
+		pEntry.times[first]=nil
+		pEntry.posts[first]=nil
+		pEntry.fullposts[first]=nil;
+		first=first+1
+	else
+		first=0
+	end
+	for index = first,indx,1 do
+		hashstring=hashstring..pEntry.posts[index];
+	end
+	
+	--local par_badword, par_pos, par_context;
+	--local par_isbadword = 0
+	--par_isbadword, par_badword, par_pos, par_context = isbad2(hashstring,BAD_PARANOID_CHAT)
+	--local BadAdv, Context = isbadantiadv(hashstring, ADV_patDNS01, ADV_patMSigns, ADV_patDom, ADV_patDNS02)
+	local BadAdv, Context = isbadantiadv(sData, ADV_patDNS01wDom, ADV_patMSigns, ADV_patDNS02)
+	if (BadAdv == 1) and  Context then
+		msg="\n"..messages[28].."\n";
+		msg=msg.. "["..os.date("%Y-%m-%d %H:%M:%S").."] <"..BOTNAME.. "> ".. messages[101] .. "\n";
+		msg=msg.. messages[128].. " "..sUser.sName.. " ["..sUser.sIP .."]\n"
+		msg=msg.. messages[104].."\n";
+
+		for index = first,indx,1 do
+			msg=msg.. "<"..pEntry.times[index].."> ".. sUser.sName.. " ["..sUser.sIP .."] ".. pEntry.fullposts[index].."\n";
+		end
+		msg=msg.. messages[103].." ["..Context.. "]\n";
+		--msg=msg.. messages[102].." "..par_badword.."\n";
+		msg=msg.. messages[28].."\n";
+		AddParanoidLog(msg);
+		
+		--if CFG.ReportParanoidToOp==1 or CFG.ReportParanoidToMaster==1 then
+			--local ops=frmHub:GetOnlineOperators()
+			--for indx,op in pairs(ops) do
+				if CFG.ReportParanoidToOp==1 then
+					VH:SendPMToAll(msg, BOTNAME, 3, 4)			
+				end
+				if CFG.ReportParanoidToMaster==1 then
+					VH:SendPMToAll(msg, BOTNAME, 5, 10)
+				end
+			--end
+		--end
+		PARANOID2[sUser.sIP]=nil
+	else
+		pEntry.curindex=indx+1;
+	end
+end
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Функции проверки ора
+--------------------------------------------------------------------------------------------------------------------------------------------
+function isYELL(sData)--+
+	local i, j, UserName= string.find(sData, "^([^%s]+)%s*:")
+	if UserName then
+		local vUser=GetItemByName(UserName)  		
+		if vUser then
+			sData=string.sub(sData,j)
+		end			
+	end
+	
+	if string.len(sData) > CFG.NoYellSize then
+		NoSpaces = string.gsub(sData , "[%s%p%c]", "")
+		local NoSpaces = string.gsub(sData , "[%s%p%c]", "")
+		if string.len(NoSpaces) > CFG.NoYellSize then
+			local NoSpacesLen = string.len(NoSpaces)
+			if NoSpacesLen==0 then
+				return false
+			end	
+			local NoCAPSLen = string.len(string.gsub(NoSpaces , "[%uАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЬЭЮЯЫ]", ""))
+			return (NoSpacesLen - NoCAPSLen)/NoSpacesLen > CFG.NoYellVal
+		end	
+	end
+	return false
+end
+------------------------------------------------------------------------
+function YELLCheck(sUser,sData)--+
+-- Возвращает
+-- 0 если это не ор
+-- 1 если это ор, но лимит на ор не превышен
+-- 2 если это ор и лимит превышен
+	if isYELL(sData) then 
+		if CFG.NoYellCount==0 then -- первый ор когда ор запрещен вообще
+			return 2
+		end	
+		local curtime=os.time();
+		local yEntry = NOYELL[sUser.sIP]
+
+		local first=yEntry.curindex-CFG.NoYellCount
+		if first < 0 then -- пока проорал меньше лимита
+			yEntry.times[yEntry.curindex]=curtime;
+			yEntry.curindex=yEntry.curindex+1;
+			return 1 
+		end	
+		if curtime - yEntry.times[first] > CFG.NoYellTime then
+			yEntry.times[first]=nil;
+			yEntry.times[yEntry.curindex]=curtime;
+			yEntry.curindex=yEntry.curindex+1;
+			return 1
+		else
+			NOYELL[sUser.sIP]=nil
+			return 2
+		end
+	end
+	return 0 	
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+function NOFLOODCheck(sUser,sData)--+
+--Если за CFG.FLOODTIME секунд сказано больше CFG.FloodWarn сообщений - предупреждение.
+--Если за CFG.FLOODTIME секунд сказано больше CFG.FloodValue сообщений - бан.
+-- Возвращает
+-- 0 если предупреждать о флуде не надо 
+-- 1 если пора предупреждать о флуде 
+-- 2 если перефлудил уже
+	local retval=0;
+	local curtime=os.time();
+	local fEntry = NOFLOOD[sUser.sIP]
+
+	if CFG.FloodValue==0 then
+		return 2
+	else	
+		local banPos=fEntry.curindex-CFG.FloodValue;
+		if banPos>=0 then
+			if curtime - fEntry.times[banPos] < CFG.FLOODTIME then
+				NOFLOOD[sUser.sIP]=nil
+				return 2
+			end
+			fEntry.times[banPos]=nil;
+		end
+	end
+	
+	if CFG.FloodWarn==0 then 
+		retval=1;
+	else	
+		local indx=fEntry.curindex-CFG.FloodWarn;
+		while (indx>=0) and (fEntry.times[indx]) do
+			if curtime - fEntry.times[indx] < CFG.FLOODTIME then
+				retval=1;
+				break;
+			end	
+			indx=indx-1;
+		end
+	end
+	fEntry.times[fEntry.curindex]=curtime;
+	fEntry.curindex=fEntry.curindex+1;
+	return retval
+end
+--------------------------------------------------------------------------------------------------------------------------------------------
+-- Функции проверки рекламы
+--------------------------------------------------------------------------------------------------------------------------------------------
+function NOADVCheck(sUser,sData)--+
+--Если за CFG.NoAdvTime секунд сказано больше CFG.NoAdvWarn рекламных сообщений - предупреждение.
+--Если за CFG.NoAdvTime секунд сказано больше CFG.NoAdvBan рекламных сообщений - бан.
+-- Возвращает
+-- 0 если предупреждать не надо 
+-- 1 если пора предупреждать 
+-- 2 если уже пора банить
+	local isbadword = 0
+	local badword, pos, context;
+	isbadword, badword, pos, context = isbad2(sData,ANTIADV)
+	if isbadword==0 then 
+		return 0
+	end	
+
+	local curtime=os.time();
+	local aEntry = NOADV[sUser.sIP]
+	local retval=0;
+
+	if CFG.NoAdvBan==0 then
+		return 2
+	else
+		local banPos=aEntry.curindex-CFG.NoAdvBan;
+		if banPos>=0 then
+			if curtime - aEntry.times[banPos] < CFG.NoAdvTime then
+				NOADV[sUser.sIP]=nil
+				return 2
+			end
+			aEntry.times[banPos]=nil;
+		end
+	end	
+
+	if CFG.NoAdvWarn==0	then 
+		retval=1;
+	else	
+		local indx=aEntry.curindex-CFG.NoAdvWarn;
+		while (indx>=0) and (aEntry.times[indx]) do
+			if curtime - aEntry.times[indx] < CFG.NoAdvTime then
+				retval=1;
+				break;
+			end	
+			indx=indx-1;
+		end
+	end	
+	aEntry.times[aEntry.curindex]=curtime;
+	aEntry.curindex=aEntry.curindex+1;
+	return retval
+end
+-------------------------------------------------------------------
+--полное инфо о юзере, для админа
+-------------------------------------------------------------------
+function getUserInfo(ip)--+
+	local sUser = {}
+	sUser.sIP = ip
+	--VH:SendDataToAll("sUser.sIP"..sUser.sIP.."|",10,10)
+	local luser=SQL_FindInUserListByIP(sUser)
+	local uinfo = "";
+	if luser~=nil and luser.nick and luser.ip then
+	uinfo = "\r\n".. messages[28].."\r\n"
+	--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	uinfo = uinfo .."\r\n\t".. messages[14] .. luser.nick
+	--VH:SendDataToAll("luser.nick : "..luser.nick.."|",10,10)
+	uinfo = uinfo .. "\r\n\t".. messages[13] .. luser.ip
+	--VH:SendDataToAll("luser.ip : "..luser.ip.."|",10,10)
+	uinfo = uinfo .. "\r\n\t" .. messages[7] .. luser.status.. " ("..txtStatus[luser.status] ..")"
+	--VH:SendDataToAll("luser.status : "..luser.status.."|",10,10)
+	uinfo = uinfo .. "\r\n\t".. messages[26] .. luser.bancount
+
+	uinfo = uinfo .. "\r\n\t".. messages[66] .. luser.by
+	uinfo = uinfo .. "\r\n\t".. messages[68] .. luser.forwhat
+	uinfo = uinfo .. "\r\n\t".. messages[69] .. "["..luser.context.."]"
+	uinfo = uinfo .. "\r\n\t".. messages[67] .. luser.when
+	uinfo = uinfo .. "\r\n\t".. messages[70] .. luser.whenexpires
+
+	uinfo = uinfo .. "\r\n\t".. messages[64] .. luser.lastonline
+	local curUserlastnicks = {}
+	curUserlastnicks = SQL_FindInLastnicksList(luser.ip)
+	if curUserlastnicks ~= nil then
+		local str = ""
+		for i,val in pairs(curUserlastnicks) do
+			if ((val~=" ") or (val~=nil) or (val~="")) and (string.len(val) > 1) then
+				str = str.." "..val
+			end
+		end
+		uinfo = uinfo .. "\r\n\t".. messages[209] .. str
+	end
+	uinfo = uinfo .. "\r\n\t".. messages[105] .. getNormalShare(luser.sharesize)	
+	uinfo = uinfo .. "\r\n\t".. messages[106] .. getNormalShare(luser.noleech)
+
+	if CFG.InetDown==1 then
+	uinfo = uinfo .. "\r\n\t".. messages[208] .. luser.InetDown
+	end	
+
+	if luser.locknick~="" then
+		uinfo = uinfo .. "\r\n\t".. messages[110] .. luser.locknick
+	else
+		uinfo = uinfo .. "\r\n\t".. messages[111]
+	end
+	local curUserlastcuss = {}
+	curUserlastcuss = SQL_FindInLastcussList(luser.ip)
+	if curUserlastnicks ~= nil then
+		local str = "\r\n\t"
+		for i,val in pairs(curUserlastcuss) do
+			--val=string.gsub(val,"\n","")
+			--val=string.gsub(val,"\r","")
+			if ((val~=" ") or (val~=nil) or (val~="")) and (string.len(val) > 1) then
+				str = str..val.."\r\n\t"
+			end
+		end
+		uinfo = uinfo .. "\r\n\t".. messages[210] .. str
+	end
+	uinfo = uinfo .."\r\n".. messages[28].."\r\n"
+	end
+	return uinfo 
+end
+function getUserInfoCompact(ip)--+
+	local sUser = {}
+	sUser.sIP = ip
+	--VH:SendDataToAll("sUser.sIP"..sUser.sIP.."|",10,10)
+	local luser=SQL_FindInUserListByIP(sUser)
+	local uinfo = "";
+	if luser~=nil then
+		uinfo = uinfo..(luser.nick or "")
+		uinfo = uinfo.." ["..(luser.ip or "").."]"
+		uinfo = uinfo.."\t\t\t"..(luser.status or "").."("..(txtStatus[luser.status] or "")..")"
+		uinfo = uinfo.."\t"..(luser.bancount or "")
+		uinfo = uinfo.."\t"..(luser.by or "")
+		uinfo = uinfo.."\t"..(luser.forwhat or "")
+		uinfo = uinfo.."\t"..(luser.context or "")
+		uinfo = uinfo.."\t"..(luser.whenexpires or "")
+	end
+	return uinfo 
+end
+-------------------------------------------------------------------
+-- сообщение о наказании, посылаемое самому юзеру 
+-------------------------------------------------------------------
+function getBanInfo(ip)--+
+	return getUserInfoLite(ip)
+end	
+-------------------------------------------------------------------
+--Инфо о смене статуса для записи в сислог
+-------------------------------------------------------------------
+function getSysLogBanMsg(sUser,ip)--+
+	local msg = ""
+	if sUser==nil and ip==nil then 
+		return msg
+	end
+	local luser = {}
+	if sUser~=nil then
+		s_ip=sUser.sIP
+		luser=SQL_FindInUserListByIP(sUser)
+		if luser~=nil then 
+			luser.nick=sUser.sName
+		else 
+			luser=nil
+			--VH:SendDataToAll("getSysLogBanMsg: luser == nil, ip="..ip.."|",10,10)
+			--VH:SendPMToAll("getSysLogBanMsg: luser == nil, ip="..ip.."|",BOTNAME,10,10)
+		end
+	else
+		s_ip=ip
+		local tUser = {}
+		tUser.sIP = s_ip
+		luser=SQL_FindInUserListByIP(tUser)
+	end
+	if luser~=nil then
+		msg = (luser.nick or "").. " ["..s_ip.."] ".. txtStatus[(luser.status or 0)]..". "..messages[4]..(luser.context or "")..". "..messages[66]..(luser.by or "")..". ".. messages[70]..(luser.whenexpires or "")..". "..messages[26]..(luser.bancount or "").."."
+	end
+	return msg
+end
+-------------------------------------------------------------------
+--Инфо о себе, присылаемое юзеру по его команде
+-------------------------------------------------------------------
+function getUserInfoLite(ip)--+
+	--VH:SendDataToAll("ip : "..ip.."|",10,10)
+	local sUser = {}
+	sUser.sIP = ip
+	local luser=SQL_FindInUserListByIP(sUser)
+	local uinfo = ""
+	if luser~=nil and luser.nick then
+		uinfo = "\r\n".. messages[28].."\r\n\t".. messages[107].."\r\n".. messages[28]
+		--!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		uinfo = uinfo .."\r\n\t".. messages[14] .. luser.nick
+		--VH:SendDataToAll("luser.nick : "..luser.nick.."|",10,10)
+		uinfo = uinfo .. "\r\n\t".. messages[13] .. luser.ip
+		--VH:SendDataToAll("luser.ip : "..luser.ip.."|",10,10)
+		uinfo = uinfo .. "\r\n\t" .. messages[16] .. txtStatus[luser.status]
+		--VH:SendDataToAll("luser.status : "..luser.status.."|",10,10)
+
+		if luser.status~=0 then
+			uinfo = uinfo .. "\r\n\t".. messages[2] .. luser.by
+			uinfo = uinfo .. "\r\n\t".. messages[3] .. luser.forwhat
+			uinfo = uinfo .. "\r\n\t".. messages[4] .. "["..luser.context.."]"
+			uinfo = uinfo .. "\r\n\t".. messages[11] .. luser.when
+			uinfo = uinfo .. "\r\n\t".. messages[5] .. luser.whenexpires
+		end
+		uinfo = uinfo .. "\r\n\t".. messages[26] .. luser.bancount
+		uinfo = uinfo .. "\r\n\t".. messages[106] .. getNormalShare(luser.noleech)
+
+		if CFG.InetDown==1 then
+		uinfo = uinfo .. "\r\n\t".. messages[208] .. luser.InetDown
+		end	
+
+		if luser.maxnoleech==1 then 
+			uinfo=uinfo.." (".. messages[179]..")";
+		end
+		--VH:SendDataToAll("sUser.iProfile : "..sUser.iProfile.."|",10,10)
+		if sUser~=nil then
+			local res, value = VH:GetUserClass(luser.nick)
+			local class = tonumber(value)
+			if class then
+				if class < 0 then class = 0 end
+				if class >5 and class ~=10 then class = 0 end
+				if tCheck[class][2] then
+					local ClassName = tCheck[class][2]
+					if ClassName then
+						uinfo = uinfo .. "\r\n\t".. string.gsub(messages[56],"%[ROLE%]",tCheck[class][2])
+					end
+				end
+			end
+		end
+		uinfo = uinfo .. "\r\n\t".. messages[6].. OWNERContact
+		uinfo = uinfo .."\r\n".. messages[28].."\r\n"
+	end
+	return uinfo 
+end
+-------------------------------------------------------------------
+-- сообщение о наказании, выводимое в чат для всех юзеров
+-------------------------------------------------------------------
+function genBanMessage(ip)--+
+	local sUser = {}
+	sUser.sIP = ip
+	local luser=SQL_FindInUserListByIP(sUser)
+	local msg = ""
+	if luser then
+		msg = messages[9].." "..(luser.nick or "").." "..(txtStatus[luser.status] or "")..". "..messages[3]..(luser.forwhat or "")..". "..messages[5] ..(luser.whenexpires or "")..". ".. messages[2]..(luser.by or "")
+	end
+	return msg
+end
+-------------------------------------------------------------------
+-- показ списка наказанных для администраторов
+-------------------------------------------------------------------
+function getbans(stat)--+
+	local bansinfo ="\r\n"..messages[28].. "\r\n\t"
+	if stat == -1 then
+		local US = {}
+		local query = "SELECT ip FROM MainBot_userlist WHERE user_status > 0"
+		local res, rows = VH:SQLQuery(query)
+		if res and rows~=0 then
+			if rows > 1 then
+				for x=0, rows-1 do
+					local res, value = VH:SQLFetch(x)
+					US[x+1] = {}
+					US[x+1].ip = value
+				end
+			else
+				local res, value = VH:SQLFetch(0)
+				US[1].ip = value
+				if (value == "could not fetch row") or (value == "could not seek data") then US = nil end
+			end
+		else
+			US = nil
+		end
+		bansinfo = bansinfo.."\r\nНик [ip]\t\t\t\tСтатус\tКол-во банов\tКем забанен\tПричина\tКонтекст\tДата окончания".."\r\n"..messages[28]
+		if US then
+			--if US[1] then
+				for i,v in pairs(US) do
+					--if v.status ~= 0 then
+						bansinfo=bansinfo .. "\r\n" ..getUserInfoCompact(v.ip) 
+					--end
+				end
+			--[[
+			else
+				if US.status ~= 0 then
+					bansinfo=bansinfo .. "\r\n" ..getUserInfoCompact(US.ip) 
+				end
+			end
+			]]--
+		end
+		US=nil
+	else
+		local US = {}
+		local query = "SELECT ip FROM MainBot_userlist WHERE user_status = "..stat..""
+		local res, rows = VH:SQLQuery(query)
+		--VH:SendPMToAll("rows: "..(rows or "err").."|", BOTNAME, 10, 10)
+		if res and rows~=0 then
+			if rows > 1 then
+				for x=0, rows-1 do
+					local res, value = VH:SQLFetch(x)
+					US[x+1] = {}
+					US[x+1].ip = value
+				end
+			else
+				local res, value = VH:SQLFetch(0)
+				US[1].ip = value
+				if (value == "could not fetch row") or (value == "could not seek data") then US = nil end
+			end
+		else
+			US = nil
+		end
+		bansinfo=bansinfo..string.gsub(messages[53],"%[STATUS%]",stat.." ("..txtStatus[stat]..")")
+		bansinfo = bansinfo.."\r\nНик [ip]\t\t\t\tСтатус\tКол-во банов\tКем забанен\tПричина\tКонтекст\tДата окончания".."\r\n"..messages[28]
+		if US then
+			--if US[1] then
+				for i,v in pairs(US) do
+					--if v.status == stat then
+						bansinfo=bansinfo .. "\r\n" .. getUserInfoCompact(v.ip) 
+					--end
+				end
+			--[[
+			else
+				if US.status == stat then
+						bansinfo=bansinfo .. "\r\n" .. getUserInfo(US.ip) 
+					end
+			end
+			]]--
+		end
+		US=nil
+	end
+	bansinfo=bansinfo .. "\r\n\t" .. messages[54]	.."\r\n"..messages[28]	
+    return bansinfo
+end
+-------------------------------------------------------------------
+-- Смена статуса 
+-------------------------------------------------------------------
+function ChangeStatus(IP,status,forwhat,by,context)--+
+	local query = "SELECT bancount FROM MainBot_userlist WHERE ip='"..IP.."'"
+	local res, rows = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	local bancount = tonumber(value)
+	local whenexpires
+	if status==0 then
+		SQL_ModToUserList("whenexpires", messages[72], "ip", IP)
+	elseif status==1 then
+		if bancount then bancount = bancount+1 else bancount=1 end
+		whenexpires=getDateAfter(CFG.BANTIME*bancount)
+		SQL_ModToUserList("bancount", bancount, "ip", IP)
+		SQL_ModToUserList("whenexpires", whenexpires, "ip", IP)
+	elseif status==2 then
+		if bancount then bancount = bancount+1 else bancount=1 end
+		whenexpires=messages[72]
+		SQL_ModToUserList("bancount", bancount, "ip", IP)
+		SQL_ModToUserList("whenexpires", whenexpires, "ip", IP)
+	elseif status==3 then
+		if bancount then bancount = bancount+1 else bancount=1 end
+		whenexpires=getDateAfter(CFG.BANTIME*bancount)
+		SQL_ModToUserList("bancount", bancount, "ip", IP)
+		SQL_ModToUserList("whenexpires", whenexpires, "ip", IP)
+	elseif status==4 then
+		if bancount then bancount = bancount+1 else bancount=1 end
+		whenexpires=getDateAfter(CFG.BANTIME*bancount)
+		SQL_ModToUserList("bancount", bancount, "ip", IP)
+		SQL_ModToUserList("whenexpires", whenexpires, "ip", IP)
+	elseif status==5 then
+		if bancount then bancount = bancount+1 else bancount=1 end
+		whenexpires=messages[72]
+		SQL_ModToUserList("bancount", bancount, "ip", IP)
+		SQL_ModToUserList("whenexpires", whenexpires, "ip", IP)
+	elseif status==6 then
+		if bancount then bancount = bancount+1 else bancount=1 end
+		whenexpires=messages[72]
+		SQL_ModToUserList("bancount", bancount, "ip", IP)
+		SQL_ModToUserList("whenexpires", whenexpires, "ip", IP)
+	elseif status==7 then
+		if bancount then bancount = bancount+1 else bancount=1 end
+		whenexpires=getDateAfter(CFG.BANTIME*bancount)
+		SQL_ModToUserList("bancount", bancount, "ip", IP)
+		SQL_ModToUserList("whenexpires", whenexpires, "ip", IP)
+	elseif status==8 then
+		if bancount then bancount = bancount+1 else bancount=1 end
+		whenexpires=messages[72]
+		SQL_ModToUserList("bancount", bancount, "ip", IP)
+		SQL_ModToUserList("whenexpires", whenexpires, "ip", IP)
+	end
+	if forwhat == nil then forwhat = 0 end
+	if context == nil then context = messages[1] end
+	local when=os.date("%Y-%m-%d %H:%M:%S");
+	SQL_ModToUserList("user_status", status, "ip", IP)
+	SQL_ModToUserList("forwhat", forwhat, "ip", IP)
+	SQL_ModToUserList("user_when", when, "ip", IP)
+	SQL_ModToUserList("user_by", by, "ip", IP)
+	SQL_ModToUserList("context", context, "ip", IP)
+	if status==4 or status==6 then
+		tMainBufer.ViolationsBufer.MuteChat[IP]={};
+		tMainBufer.ViolationsBufer.MuteChat[IP].ip=IP;
+		tMainBufer.ViolationsBufer.MuteChat[IP].bancount=bancount
+		tMainBufer.ViolationsBufer.MuteChat[IP].whenexpires=whenexpires
+		tMainBufer.ViolationsBufer.MuteChat[IP].by=by
+		tMainBufer.ViolationsBufer.MuteChat[IP].status=status
+		tMainBufer.ViolationsBufer.MuteChat[IP].forwhat=forwhat
+		tMainBufer.ViolationsBufer.MuteChat[IP].when=when
+		tMainBufer.ViolationsBufer.MuteChat[IP].context=context
+		--VH:SendDataToUser("$To: Palmer From: ChangeStatus $<ChangeStatus> [chat] ip["..(IP or "").."] user_status["..(status or "").."] bancount["..(bancount or "").."] forwhat["..(forwhat or "").."] whenexpires["..(whenexpires or "").."] user_when["..(when or "").."] user_by["..(by or "").."] context["..(context or "").."] |","Palmer")
+		--AddSysLog("<ChangeStatus> [chat] ip["..(IP or "").."] user_status["..(status or "").."] bancount["..(bancount or "").."] forwhat["..(forwhat or "").."] whenexpires["..(whenexpires or "").."] user_when["..(when or "").."] user_by["..(by or "").."] context["..(context or "").."]")
+	elseif status==1 or status==2 then
+		if (type(tMainBufer.ViolationsBufer.MuteChat[IP])=="table") then
+			tMainBufer.ViolationsBufer.MuteChat[IP]=nil;
+		end
+		tMainBufer.ViolationsBufer.MutePM[IP]={};
+		tMainBufer.ViolationsBufer.MutePM[IP].ip=IP;
+		tMainBufer.ViolationsBufer.MutePM[IP].bancount=bancount
+		tMainBufer.ViolationsBufer.MutePM[IP].whenexpires=whenexpires
+		tMainBufer.ViolationsBufer.MutePM[IP].by=by
+		tMainBufer.ViolationsBufer.MutePM[IP].status=status
+		tMainBufer.ViolationsBufer.MutePM[IP].forwhat=forwhat
+		tMainBufer.ViolationsBufer.MutePM[IP].when=when
+		tMainBufer.ViolationsBufer.MutePM[IP].context=context
+		--VH:SendDataToUser("$To: Palmer From: ChangeStatus $<ChangeStatus> [pm] ip["..(IP or "").."] user_status["..(status or "").."] bancount["..(bancount or "").."] forwhat["..(forwhat or "").."] whenexpires["..(whenexpires or "").."] user_when["..(when or "").."] user_by["..(by or "").."] context["..(context or "").."] |","Palmer")
+		--AddSysLog("<ChangeStatus> [pm] ip["..(IP or "").."] user_status["..(status or "").."] bancount["..(bancount or "").."] forwhat["..(forwhat or "").."] whenexpires["..(whenexpires or "").."] user_when["..(when or "").."] user_by["..(by or "").."] context["..(context or "").."]")
+	elseif status==3 or status==5 then
+		if (type(tMainBufer.ViolationsBufer.MuteChat[IP])=="table") then
+			tMainBufer.ViolationsBufer.MuteChat[IP]=nil;
+		end
+		if (type(tMainBufer.ViolationsBufer.MutePM[IP])=="table") then
+			tMainBufer.ViolationsBufer.MutePM[IP]=nil;
+		end
+		tMainBufer.ViolationsBufer.Ban[IP]={};
+		tMainBufer.ViolationsBufer.Ban[IP].ip=IP;
+		tMainBufer.ViolationsBufer.Ban[IP].bancount=bancount
+		tMainBufer.ViolationsBufer.Ban[IP].whenexpires=whenexpires
+		tMainBufer.ViolationsBufer.Ban[IP].by=by
+		tMainBufer.ViolationsBufer.Ban[IP].status=status
+		tMainBufer.ViolationsBufer.Ban[IP].forwhat=forwhat
+		tMainBufer.ViolationsBufer.Ban[IP].when=when
+		tMainBufer.ViolationsBufer.Ban[IP].context=context
+		--VH:SendDataToUser("$To: Palmer From: ChangeStatus $<ChangeStatus> [ban] ip["..(IP or "").."] user_status["..(status or "").."] bancount["..(bancount or "").."] forwhat["..(forwhat or "").."] whenexpires["..(whenexpires or "").."] user_when["..(when or "").."] user_by["..(by or "").."] context["..(context or "").."] |","Palmer")
+		--AddSysLog("<ChangeStatus> [ban] ip["..(IP or "").."] user_status["..(status or "").."] bancount["..(bancount or "").."] forwhat["..(forwhat or "").."] whenexpires["..(whenexpires or "").."] user_when["..(when or "").."] user_by["..(by or "").."] context["..(context or "").."]")
+	elseif status==0 then
+		if (type(tMainBufer.ViolationsBufer.MuteChat[IP])=="table") then
+			tMainBufer.ViolationsBufer.MuteChat[IP]=nil;
+			--VH:SendDataToUser("$To: Palmer From: ChangeStatus $<ChangeStatus>[0].chat|","Palmer")
+			--AddSysLog("<ChangeStatus>[0].chat")
+		end
+		if (type(tMainBufer.ViolationsBufer.MutePM[IP])=="table") then
+			tMainBufer.ViolationsBufer.MutePM[IP]=nil;
+			--VH:SendDataToUser("$To: Palmer From: ChangeStatus $<ChangeStatus>[0].pm|","Palmer")
+			--AddSysLog("<ChangeStatus>[0].pm")
+		end
+		if (type(tMainBufer.ViolationsBufer.Ban[IP])=="table") then
+			tMainBufer.ViolationsBufer.Ban[IP]=nil;
+			--VH:SendDataToUser("$To: Palmer From: ChangeStatus $<ChangeStatus>[0].ban|","Palmer")
+			--AddSysLog("<ChangeStatus>[0].ban")
+		end
+	end
+end
+-------------------------------------------------------------------
+-- 
+-------------------------------------------------------------------
+function decBancount(IP)--+
+	local query = "SELECT bancount FROM MainBot_userlist WHERE ip='"..IP.."'"
+	--local res, locknick = VH:SQLQuery(query)
+	local res, row = VH:SQLQuery(query)
+	local res, value = VH:SQLFetch(0)
+	local bancount = tonumber(value)
+	if bancount>0 then
+		SQL_ModToUserList("bancount", bancount-1, "ip", IP)
+		--US[IP].bancount=US[IP].bancount-1
+	end
+end
+-------------------------------------------------------------------
+function checkName(sUser)--+
+	SQL_ModToUserList("nick", sUser.sName, "ip", sUser.sIP)
+	--US[sUser.sIP].nick=sUser.sName
+end
+-------------------------------------------------------------------
+function ViolationInfo(ip, vtype)--+
+	--tMainBufer.ViolationsBufer.MuteChat, tMainBufer.ViolationsBufer.MutePM, tMainBufer.ViolationsBufer.Ban
+	if (vtype=="ban") then
+		return getUserInfoFromBufer(tMainBufer.ViolationsBufer.Ban[ip]);
+	elseif (vtype=="mutechat") then
+		return getUserInfoFromBufer(tMainBufer.ViolationsBufer.MuteChat[ip]);
+	elseif (vtype=="mutepm") then
+		return getUserInfoFromBufer(tMainBufer.ViolationsBufer.MutePM[ip]);
+	end
+end
+-------------------------------------------------------------------
+function getUserInfoFromBufer(tUserV)--+
+	local uinfo = "";
+	if (type(tUserV)=="table") then
+		uinfo = "\r\n".. messages[28].."\r\n\t".. messages[107].."\r\n".. messages[28]
+		--uinfo = uinfo.."\r\n\t"..messages[14]..tUserV.nick
+		uinfo = uinfo.."\r\n\t"..messages[13]..tUserV.ip
+		uinfo = uinfo.."\r\n\t"..messages[16]..txtStatus[tUserV.status]
+		uinfo = uinfo.."\r\n\t"..messages[2]..tUserV.by
+		uinfo = uinfo.."\r\n\t"..messages[3]..tUserV.forwhat
+		uinfo = uinfo.."\r\n\t"..messages[4].."["..tUserV.context.."]"
+		uinfo = uinfo.."\r\n\t"..messages[11]..tUserV.when
+		uinfo = uinfo.."\r\n\t"..messages[5]..tUserV.whenexpires
+		uinfo = uinfo.."\r\n\t"..messages[26].. tUserV.bancount
+		uinfo = uinfo.."\r\n"..messages[28].."\r\n"
+	end
+	--VH:SendDataToUser("$To: Palmer From: getUserInfoFromBufer $<getUserInfoFromBufer> uinfo["..(uinfo or "").."] |","Palmer")
+	--AddSysLog("<getUserInfoFromBufer> uinfo["..(uinfo or "").."]")
+	return uinfo 
+end
+-------------------------------------------------------------------
