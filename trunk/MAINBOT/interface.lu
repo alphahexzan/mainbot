@@ -219,6 +219,11 @@ function GetTTHNamePath(sData)
 	return arg1,arg2,arg3
 end
 -----------------------------------------------------------
+function GetTTH(sData)
+	local s,e,arg1 = string.find(sData, "^.*(%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S%S).*$")
+	return arg1
+end
+-----------------------------------------------------------
 function GetParam2NumPatternDate(sData)
 	local s,e,arg1,arg2,arg3,arg4,arg5 = string.find(sData, "(%S+)%s+(%d+)%s+(%d+)%s+(%S+)%s+(%S+)")
 	return arg1,arg2,arg3,arg4,arg5
