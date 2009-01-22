@@ -91,15 +91,18 @@ tOtherCommands = {
 	mbaddbadtth = {
 		tFunc = function(sUser,arg,cmd,sData)
 			--[ K37SVPMB6M AMUQOLGMCK XOF3FAIOFY AGWLCDAVA ] -- 39
-			if (string.len(arg) ~= 39) then
+			local tth = GetTTH(arg);
+			--VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> tth["..tth.."]|", sUser.sName)
+			if (string.len(tth) ~= 39) then
 				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. ">***Ошибка! Длина строки не соответствует TTH|", sUser.sName)
 				return 1
 			end
 			local retval = SQL_TTHAdd(arg);
 			if retval == "tth_added" then
-				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH["..arg.."] добавлен.|", sUser.sName)
+				VH:SendDataToAll("$Search Hub:"..BOTNAME.." F?T?0?9?TTH:"..tth.."|",0,3)
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH["..tth.."] добавлен.|", sUser.sName)
 			else
-				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH["..arg.."] ID ["..(retval or "ERR").."] уже имеется в базе.|", sUser.sName)
+				VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> TTH["..tth.."] ID ["..(retval or "ERR").."] уже имеется в базе.|", sUser.sName)
 			end
 			return 1
 		end,
