@@ -23,7 +23,7 @@ function SQL_Init()
             res, err = VH:SQLQuery(query)
 			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OWNER', 'Palmer')"
             res, err = VH:SQLQuery(query)
-			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OWNERContact', 'Персональные сообщения')"
+			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('OWNERContact', 'Mail: solnet.dc.hub.admin@gmail.com или JID: palmer@jabber.ru')"
             res, err = VH:SQLQuery(query)
 			query = "INSERT INTO MainBot_settings (name , valore) VALUES ('AdminMail', 'solnet.dc.hub.admin@gmail.com')"
             res, err = VH:SQLQuery(query)
@@ -257,24 +257,28 @@ function SQL_Init()
             local res, name, valore = VH:SQLFetch(0)
             --VH:SendDataToAll(""..valore.."|",3,10)
             BOTNAME = valore
+			CFG.BOTNAME = valore
 			--VH:SendDataToAll("BOTNAME : "..BOTNAME.."|",10,10)
             --VH:SendDataToAll("xx-"..valore,10,10)
 			query = "SELECT * FROM MainBot_settings WHERE name='BOTPattern'"
             res, rows = VH:SQLQuery(query)
             res, name, valore = VH:SQLFetch(0)
             BOTPattern = valore
+			CFG.BOTPattern = valore
 			--VH:SendDataToAll("BOTPattern : "..BOTPattern.."|",10,10)
 			query = "SELECT * FROM MainBot_settings WHERE name='OWNER'"
             res, rows = VH:SQLQuery(query)
             res, name, valore = VH:SQLFetch(0)
             --VH:SendDataToAll(""..valore.."|",3,10)
             OWNER = valore
+			CFG.OWNER = valore
 			--VH:SendDataToAll("OWNER : "..OWNER.."|",10,10)
             query = "SELECT * FROM MainBot_settings WHERE name='OWNERContact'"
             res, rows = VH:SQLQuery(query)
             res, name, valore = VH:SQLFetch(0)
             --VH:SendDataToAll(""..valore.."|",3,10)
             OWNERContact = valore
+			CFG.OWNERContact = valore
 			--VH:SendDataToAll("OWNERContact : "..OWNERContact.."|",10,10)
 			query = "SELECT * FROM MainBot_settings WHERE name='AdminMail'"
             res, rows = VH:SQLQuery(query)
