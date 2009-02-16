@@ -1,5 +1,5 @@
 -----------------------------------------------
-VERSION = "0.9.2[g5]";
+VERSION = "0.9.2[g6]";
 -----------------------------------------------
 --  ŒÕ—“¿Õ“€
 VERLIPATH	=	"/etc/verlihub/";
@@ -1471,6 +1471,7 @@ end
 function VH_OnParsedMsgAny(nick, data)
 	local SRpoint = string.sub(data,1,3)
 	if SRpoint == "$SR" then
+		--VH:SendDataToUser("$To: Palmer From: MainSearch_ArchiveTTH.a $<MainSearch_ArchiveTTH.a> data["..(data or "ERR").."]|","Palmer")
 		local res, value = VH:GetUserClass(nick)
 		local class = tonumber(value)
 		if class > 3 then return 1 end
@@ -1509,6 +1510,7 @@ function VH_OnParsedMsgAny(nick, data)
 			end
 			if (searcher_nick == "‚Ä¢MainBot‚Ä¢") then
 				local s,e,path = string.find(data, "$SR%s+%S+%s+(.+)%x+%s+%x+/%x+")
+				--VH:SendDataToUser("$To: Palmer From: MainSearch_ArchiveTTH.b $<MainSearch_ArchiveTTH.b> data["..(data or "ERR").."] |","Palmer")
 				if path then
 					local searcher_TTH = string.gsub(data, "(.*)TTH:(.*)%s%((.*)%)(.*)","%2")
 					------------------------------------------------------------

@@ -46,22 +46,26 @@ function Timer_Share()--+
 	end
 	local msg=""
 	for i, vUser in pairs(ONLINEUSERS) do
-		if vUser.iShareSize==0 then
-			if CFG.AskShareToPm==1 then 
-				if CFG.RandomAskShareNick==1 then
-					--vUser:SendPM(askNick, "\r\n"..SHARETEXT)
-					--User.SendPvt("\r\n"..SHARETEXT, askNick)
-					VH:SendDataToUser("$To: "..vUser.sName.." From: "..askNick.." $<"..askNick.."> \r\n"..SHARETEXT.."|", vUser.sName)
-				else
-					--vUser:SendPM(BOTNAME, "\r\n"..SHARETEXT)
-					BotSayToUser(vUser, "\r\n"..SHARETEXT)
-					--VH:SendDataToUser("<"..BOTNAME.."> \r\n"..SHARETEXT.."|",vUser.sName)
+		if vUser.sName and vUser.sIP and vUser.iShareSize then
+			if (BanException(vUser.sIP,"lowshare")~=1) and (BanException(vUser.sName,"lowshare")~=1) then
+				if vUser.iShareSize==0 then
+					if CFG.AskShareToPm==1 then 
+						if CFG.RandomAskShareNick==1 then
+							--vUser:SendPM(askNick, "\r\n"..SHARETEXT)
+							--User.SendPvt("\r\n"..SHARETEXT, askNick)
+							VH:SendDataToUser("$To: "..vUser.sName.." From: "..askNick.." $<"..askNick.."> \r\n"..SHARETEXT.."|", vUser.sName)
+						else
+							--vUser:SendPM(BOTNAME, "\r\n"..SHARETEXT)
+							BotSayToUser(vUser, "\r\n"..SHARETEXT)
+							--VH:SendDataToUser("<"..BOTNAME.."> \r\n"..SHARETEXT.."|",vUser.sName)
+						end
+					else
+						--vUser:SendData( "\r\n"..SHARETEXT)
+						VH:SendDataToUser("<"..BOTNAME.."> \r\n"..SHARETEXT.."|",vUser.sName)
+					end
+					msg = msg .. vUser.sName.." ["..vUser.sIP .."]("..vUser.iShareSize.. "), "   
 				end
-			else
-				--vUser:SendData( "\r\n"..SHARETEXT)
-				VH:SendDataToUser("<"..BOTNAME.."> \r\n"..SHARETEXT.."|",vUser.sName)
 			end
-			msg = msg .. vUser.sName.." ["..vUser.sIP .."]("..vUser.iShareSize.. "), "   
 		end
 	end	
 	if msg~="" then
