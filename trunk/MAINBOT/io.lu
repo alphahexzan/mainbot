@@ -55,43 +55,46 @@ function readVersions(filename)
 	local f  = io.open(filename, "r")
 	if (f) then
 		--local line = f:read("*line")
+		local count_version=1;
+		local last_tag="";
 		for line in f:lines() do
-		--while line do
 			--FlylinkDC++|r342|i|_
 			--FlylinkDC++|r329|i|_
+			--FlylinkDC++|^%S*[3][7][56789]%S*|i|_
+			--"([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$"
 			--FlylinkDC++|*|s|oldflylinkdc.txt
 			local _, _, tag, ver ,todo, textfile = string.find(line , "(%S+)%s*|%s*([^|]*)%s*|%s*(%S*)%s*|%s*(%S*)")
 			--VH:SendDataToAll("tag: "..(tag or "nil").." ver: "..(ver or "nil").." todo: "..(todo or "nil").." textfile: "..(textfile or "nil").." |",10,10)
+			--VH:SendDataToUser("$To: Palmer From: readVersions $<readVersions> tag["..(tag or "nil").."] ver["..(ver or "nil").."] todo["..(todo or "nil").."] textfile["..(textfile or "nil").."]|","Palmer")
 			if tag then
-				--VH:SendDataToAll("tag: "..tag.."|",10,10)
+				--VH:SendDataToUser("$To: Palmer From: readVersions $<readVersions> count_version["..(count_version or "nil").."] last_tag["..(last_tag or "nil").."]|","Palmer")
+				if last_tag == tag then
+					count_version=count_version+1;
+				else
+					last_tag = tag;
+					count_version=1;
+				end
 				if retval[tag]==nil then
 					retval[tag]={}
 				end
 				if ver==nil then 
 					ver="*"
-					--VH:SendDataToAll("ver: "..ver.."|",10,10)
 				end
-				--VH:SendDataToAll("ver: "..ver.."|",10,10)
-				--if tonumber(ver) then 
-					--ver=tonumber(ver) 
-				--end
-				if retval[tag][ver] ==nil then 
-					retval[tag][ver]={}
+				if retval[tag][count_version]==nil then 
+					retval[tag][count_version]={}
 				end
-				
+				retval[tag][count_version].version=ver;
 				if todo==nil then 
 					todo="i" 
-					--VH:SendDataToAll("todo: "..todo.."|",10,10)
 				end
-				--VH:SendDataToAll("todo: "..todo.."|",10,10)
-				retval[tag][ver].todo=todo
-				--VH:SendDataToAll("textfile: "..textfile.."|",10,10)
+				retval[tag][count_version].todo=todo
 				if textfile~=nil then
-					retval[tag][ver].text=loadtext(CLIENTSPATH..textfile)
-					--retval[tag][ver].text=textfile
+					retval[tag][count_version].text=loadtext(CLIENTSPATH..textfile)
+				else
+					retval[tag][count_version].text="";
 				end
+				--VH:SendDataToUser("$To: Palmer From: readVersions $<readVersions> count_version["..(count_version or "nil").."] tag["..(tag or "nil").."] ver["..(ver or "nil").."] todo["..(todo or "nil").."] textfile["..(textfile or "nil").."]|","Palmer")
 			end
-			--line = f:read("*l")
 		end
 		f:close()
 		return retval
@@ -518,19 +521,16 @@ function loadlist( filename )
 end
 ----------------------------------------------------
 function loadtext(filename)
-	--VH:SendDataToAll("loadtext"..filename.."|",10,10)
 	local message = "";
-	local f = io.open( filename, "r" )
-	if f then
-		message=f:read("*all") 
-		--local line = f:read("*line")
-		--while line do
-			--message = message.."\r\n"..line
-			--line = f:read("*line")
-		--end
-		message=string.gsub(message,"|"," ")
-		--message=string.gsub(message,"\n","\r\n")
-		f:close()
+		if filename~=nil then
+		local f = io.open( filename, "r" )
+		if f then
+			message=f:read("*all") 
+			if message~=nil then
+				message=string.gsub(message,"|"," ")
+			end
+			f:close()
+		end
 	end
 	return message
 end

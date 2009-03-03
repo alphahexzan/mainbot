@@ -1,25 +1,11 @@
-oDC|*|s|odc.txt
-++|0.674|i|_
-++|0.691|i|_
-++|0.694|i|_
-++|0.698|i|_
-++|0.699|i|_
-++|0.704|i|_
-++|0.68|k|badclient.txt
+++|%S*[0]%.[7][01][0123456789]%S*|i|
+++|%S*[0]%.[6][9][789]%S*|i|
 ++|*|s|++.txt
-StrgDC++|1.00 RC9|k|badstrong9f2.txt
-StrgDC++|1.00 RC9f2|k|badstrong9f2.txt
-StrgDC++|1.00 RC10|i|_
-StrgDC++|1.00 RC10cvs126|i|_
-StrgDC++|1.00 RC10cvs129|i|_
-StrgDC++|2.03|i|_
-StrgDC++|2.04|i|_
-StrgDC++|2.05|i|_
-StrgDC++|2.06|i|_
-StrgDC++|2.1|i|_
+StrgDC++|%S*[2]%.[2][0123456]%S*|i|
+StrgDC++|%S*[2]%.[1][0123456]%S*|i|
+StrgDC++|%S*[1]%.[0][0]%s[R][C][1][0]%S*|i|
+StrgDC++|%S*[1]%.[0][0]%s[R][C][9]%S*|k|badstrong9f2.txt
 StrgDC++|*|s|oldsdc.txt
-netallDC|1.0|s|oldnetalldc.txt
-netallDC_L|1.2|i|_
-netallDC_F|1.2|i|_
-netallDC_L|1.22|i|_
-netallDC_F|1.22|i|_
+FlylinkDC++|%S*[3][7][456789]%S*|i|
+FlylinkDC++|%S*[3][8][0123456]%S*|i|
+FlylinkDC++|*|s|oldflylinkdc.txt
