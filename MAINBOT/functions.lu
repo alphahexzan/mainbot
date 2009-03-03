@@ -569,6 +569,7 @@ function checkTags(sUser)--+
 	if not inDiap(sUser.sIP,IPCHECKS.NO_V) then 
 		-----------------------------------------------------------
 		-- Проверка версии клиента
+		--[[
 		if VERSIONS[client] ~=nil then
 			--VH:SendDataToAll("VERSIONS[client]: есть|",10,10)
 			if VERSIONS[client][version]~=nil then
@@ -583,37 +584,73 @@ function checkTags(sUser)--+
 					ONLINEUSERS[sUser.sName] = nil
 				end	
 			elseif VERSIONS[client]["*"]~=nil then 
-					-- с версией "*" - для всех версий клиента
-					if VERSIONS[client]["*"].todo=="s" then
-						BotSayToUser(sUser,VERSIONS[client]["*"].text)
-						--AddSysLog("checkTags [*s]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
-					elseif VERSIONS[client]["*"].todo=="k" then
-						BotSayToUser(sUser,VERSIONS[client]["*"].text)
-						AddSysLog("checkTags [*k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
-						VH:CloseConnection(sUser.sName);
-						ONLINEUSERS[sUser.sName] = nil
-					end	
-			else
-				--come_msg=come_msg..	messages[151].. " клиент={" .. client.."} версия={" .. version.."}"	
+				-- с версией "*" - для всех версий клиента
+				if VERSIONS[client]["*"].todo=="s" then
+					BotSayToUser(sUser,VERSIONS[client]["*"].text)
+					--AddSysLog("checkTags [*s]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+				elseif VERSIONS[client]["*"].todo=="k" then
+					BotSayToUser(sUser,VERSIONS[client]["*"].text)
+					AddSysLog("checkTags [*k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+					VH:CloseConnection(sUser.sName);
+					ONLINEUSERS[sUser.sName] = nil
+				end	
 			end
-		else
-			--come_msg=come_msg..	messages[151].. " клиент={" .. client.."} версия={" .. version.."}"	
 		end
+		--]]
 		-----------------------------------------------------------
+		if VERSIONS[client] ~=nil then
+			local find_client=0;
+			for count,table in pairs(VERSIONS[client]) do
+				if find_client==0 then
+					-----------------------------------------------------------
+					if VERSIONS[client][count].version~="*" and find_client~=1 then
+						--if VERSIONS[client][count].todo~="i" then
+							--version=string.gsub(version,"%(","")
+							--version=string.gsub(version,"%)","")
+							--version=string.gsub(version,"%[","")
+							--version=string.gsub(version,"%]","")
+							local s,e = string.find(version, VERSIONS[client][count].version)
+							if (s~=nil) and (e~=nil) then
+								find_client=1;
+								--VH:SendDataToUser("$To: Palmer From: checkTags $<checkTags> ~=* User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] count["..(count or "nil").."] client["..(client or "nil").."] version["..(version or "nil").."] regexp["..(VERSIONS[client][count].version or "nil").."]|","Palmer")
+								-----------------------------------------------------------
+								if VERSIONS[client][count].todo=="s" then
+									BotSayToUser(sUser,VERSIONS[client][count].text)
+								-----------------------------------------------------------
+								elseif VERSIONS[client][count].todo=="k" then
+									BotSayToUser(sUser,VERSIONS[client][count].text)
+									AddSysLog("checkTags [k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+									VH:CloseConnection(sUser.sName);
+									ONLINEUSERS[sUser.sName] = nil
+								end
+								-----------------------------------------------------------
+							end
+						--else
+							--find_client=1;
+						--end
+					-----------------------------------------------------------
+					elseif VERSIONS[client][count].version=="*" and find_client~=1 then
+						find_client=1;
+						--VH:SendDataToUser("$To: Palmer From: checkTags $<checkTags> ==* User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] count["..(count or "nil").."] client["..(client or "nil").."] version["..(version or "nil").."] regexp["..(VERSIONS[client][count].version or "nil").."]|","Palmer")
+						if VERSIONS[client][count].todo=="s" then
+							BotSayToUser(sUser,VERSIONS[client][count].text)
+						-----------------------------------------------------------
+						elseif VERSIONS[client][count].todo=="k" then
+							BotSayToUser(sUser,VERSIONS[client][count].text)
+							AddSysLog("checkTags [*k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+							VH:CloseConnection(sUser.sName);
+							ONLINEUSERS[sUser.sName] = nil
+						end
+						-----------------------------------------------------------
+					end
+					-----------------------------------------------------------
+				else
+					break;
+				end
+			end
+		end
 	end	
-	-----------------------------------------------------------
-	-- запись в лог инфы о юзере
-	--local curUser=SQL_FindInUserListByIP(sUser)
-	--local query = "SELECT locknick FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
-	--local res, locknick = VH:SQLQuery(query)
-	--local res, row = VH:SQLQuery(query)
-	--local res, value = VH:SQLFetch(0)
-	--local locknick = value
-	--if not bancount then bancount = 0 end
-	--if (locknick~="" and locknick~=sUser.sName) then
-		--come_msg=come_msg..messages[110]..locknick	
-	--end	
-	--AddSysLog(come_msg);		
+	-----------------------------------------------------------		
 end
 -----------------------------------------------------------------------------------------------------------------
 function saveUSExpress()--Не используется.
@@ -1217,7 +1254,7 @@ end
 function BanException(sNameOrIP, sType)
 	if tBanException[sNameOrIP] then
 		if tBanException[sNameOrIP][sType]==1 then
-			AddSysLog("BanException. sNameOrIP["..(sNameOrIP or "").."]  sType["..(sType or "").."]")
+			--AddSysLog("BanException. sNameOrIP["..(sNameOrIP or "").."]  sType["..(sType or "").."]")
 			return 1
 		end
 	end
