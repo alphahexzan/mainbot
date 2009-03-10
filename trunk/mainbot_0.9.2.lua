@@ -1,5 +1,5 @@
 -----------------------------------------------
-VERSION = "0.9.2[g7]";
+VERSION = "0.9.2[g8]";
 -----------------------------------------------
 --  ŒÕ—“¿Õ“€
 VERLIPATH	=	"/etc/verlihub/";
@@ -79,6 +79,7 @@ F_HALLOTEXT = 			TEXTSPATH.."hallo.txt";
 F_HALLOTEXTSHORT =		TEXTSPATH.."hallo.short.txt";
 F_HUBINFOTEXT 	=		TEXTSPATH.."hub.info.txt";
 F_PASSIVETEXT = 		TEXTSPATH.."passive.txt";
+F_PASSIVELOCALTEXT = 		TEXTSPATH.."passive_local.txt";
 F_SHORTRULESTEXT=		TEXTSPATH.."rulesshort.txt";
 F_NOLEECHTEXT = 		TEXTSPATH.."noleech.txt";
 F_SINGLEIPTEXT = 		TEXTSPATH.."singleip.txt";
@@ -124,6 +125,7 @@ HALLOTEXT = 	"";
 NEWSTEXT =	"";
 OPCHATNEWSTEXT = "";
 PASSIVETEXT = 	"";
+PASSIVELOCALTEXT = "";
 SHORTRULESTEXT= "";
 NOLEECHTEXT = 	"";
 SMALLSHARETEXT ="";
@@ -435,6 +437,7 @@ function Main()
 	HALLOTEXTSHORT=	loadtext(F_HALLOTEXTSHORT)
 	HUBINFOTEXT=	loadtext(F_HUBINFOTEXT)
 	PASSIVETEXT = 	loadtext(F_PASSIVETEXT)
+	PASSIVELOCALTEXT = loadtext(F_PASSIVELOCALTEXT)
 	SHORTRULESTEXT= loadtext(F_SHORTRULESTEXT)
 	NOLEECHTEXT = 	loadtext(F_NOLEECHTEXT)
 	SMALLSHARETEXT =loadtext(F_SMALLSHARETEXT)
