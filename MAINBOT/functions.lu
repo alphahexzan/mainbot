@@ -549,70 +549,79 @@ function checkTags(sUser)--+
 	--VH:SendDataToAll("client: "..sUser.sClient.." 1|",10,10)
 	local version = sUser.sClientVersion
 	--VH:SendDataToAll("client: "..sUser.sClientVersion.." 1|",10,10)
-	if sUser.sClient==nil or sUser.sClientVersion ==nil or sUser.sMode==nil then
+	if sUser.sClient==nil or sUser.sClientVersion==nil or sUser.sMode==nil then
 		AddSysLog("checkTags [tag error]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."]");
-		client= "ошибка в теге клиента" 
-		version="ошибка в теге клиента"
-		mode=""
-	end
-	
-	-----------------------------------------------------------
-	--проверка на пассивный режим
-	if sUser.sMode == "P" then
-		if not inDiap(sUser.sIP,IPCHECKS.NO_P) then
-			if not BlockPassiveLocalUsers(sUser) then
-				BotSayToUser(sUser,PASSIVETEXT)
-				--AddSysLog("checkTags: ".. string.gsub(messages[85], "%[WHO%]",sUser.sName.. " ["..sUser.sIP .."]"));
-			end
+		--client= "ошибка в теге клиента" 
+		--version="ошибка в теге клиента"
+		--mode=""
+		VH:CloseConnection(sUser.sName);
+		ONLINEUSERS[sUser.sName] = nil
+	elseif sUser.sClient=="" or sUser.sClientVersion=="" or sUser.sMode=="" then
+		AddSysLog("checkTags [tag error]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."]");
+		--client= "ошибка в теге клиента" 
+		--version="ошибка в теге клиента"
+		--mode=""
+		VH:CloseConnection(sUser.sName);
+		ONLINEUSERS[sUser.sName] = nil
+	else	
+		-----------------------------------------------------------
+		--проверка на пассивный режим
+		if sUser.sMode == "P" then
+			if not inDiap(sUser.sIP,IPCHECKS.NO_P) then
+				if not BlockPassiveLocalUsers(sUser) then
+					BotSayToUser(sUser,PASSIVETEXT)
+					--AddSysLog("checkTags: ".. string.gsub(messages[85], "%[WHO%]",sUser.sName.. " ["..sUser.sIP .."]"));
+				end
+			end	
 		end	
-	end	
-	local come_msg=messages[109]..sUser.sName.."["..sUser.sIP.. "] "
-	if not inDiap(sUser.sIP,IPCHECKS.NO_V) then 
-		if VERSIONS[client] ~=nil then
-			local find_client=0;
-			for count,table in pairs(VERSIONS[client]) do
-				if find_client==0 then
-					-----------------------------------------------------------
-					if VERSIONS[client][count].version~="*" and find_client~=1 then
-						local s,e = string.find(version, VERSIONS[client][count].version)
-						if (s~=nil) and (e~=nil) then
+		local come_msg=messages[109]..sUser.sName.."["..sUser.sIP.. "] "
+		if not inDiap(sUser.sIP,IPCHECKS.NO_V) then 
+			if VERSIONS[client] ~=nil then
+				local find_client=0;
+				for count,table in pairs(VERSIONS[client]) do
+					if find_client==0 then
+						-----------------------------------------------------------
+						if VERSIONS[client][count].version~="*" and find_client~=1 then
+							local s,e = string.find(version, VERSIONS[client][count].version)
+							if (s~=nil) and (e~=nil) then
+								find_client=1;
+								--VH:SendDataToUser("$To: Palmer From: checkTags $<checkTags> ~=* User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] count["..(count or "nil").."] client["..(client or "nil").."] version["..(version or "nil").."] regexp["..(VERSIONS[client][count].version or "nil").."]|","Palmer")
+								-----------------------------------------------------------
+								if VERSIONS[client][count].todo=="s" then
+									BotSayToUser(sUser,VERSIONS[client][count].text)
+								-----------------------------------------------------------
+								elseif VERSIONS[client][count].todo=="k" then
+									BotSayToUser(sUser,VERSIONS[client][count].text)
+									AddSysLog("checkTags [k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+									VH:CloseConnection(sUser.sName);
+									ONLINEUSERS[sUser.sName] = nil
+								end
+								-----------------------------------------------------------
+							end
+						-----------------------------------------------------------
+						elseif VERSIONS[client][count].version=="*" and find_client~=1 then
 							find_client=1;
-							--VH:SendDataToUser("$To: Palmer From: checkTags $<checkTags> ~=* User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] count["..(count or "nil").."] client["..(client or "nil").."] version["..(version or "nil").."] regexp["..(VERSIONS[client][count].version or "nil").."]|","Palmer")
-							-----------------------------------------------------------
+							--VH:SendDataToUser("$To: Palmer From: checkTags $<checkTags> ==* User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] count["..(count or "nil").."] client["..(client or "nil").."] version["..(version or "nil").."] regexp["..(VERSIONS[client][count].version or "nil").."]|","Palmer")
 							if VERSIONS[client][count].todo=="s" then
 								BotSayToUser(sUser,VERSIONS[client][count].text)
 							-----------------------------------------------------------
 							elseif VERSIONS[client][count].todo=="k" then
 								BotSayToUser(sUser,VERSIONS[client][count].text)
-								AddSysLog("checkTags [k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+								AddSysLog("checkTags [*k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
 								VH:CloseConnection(sUser.sName);
 								ONLINEUSERS[sUser.sName] = nil
 							end
 							-----------------------------------------------------------
 						end
-					-----------------------------------------------------------
-					elseif VERSIONS[client][count].version=="*" and find_client~=1 then
-						find_client=1;
-						--VH:SendDataToUser("$To: Palmer From: checkTags $<checkTags> ==* User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] count["..(count or "nil").."] client["..(client or "nil").."] version["..(version or "nil").."] regexp["..(VERSIONS[client][count].version or "nil").."]|","Palmer")
-						if VERSIONS[client][count].todo=="s" then
-							BotSayToUser(sUser,VERSIONS[client][count].text)
 						-----------------------------------------------------------
-						elseif VERSIONS[client][count].todo=="k" then
-							BotSayToUser(sUser,VERSIONS[client][count].text)
-							AddSysLog("checkTags [*k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
-							VH:CloseConnection(sUser.sName);
-							ONLINEUSERS[sUser.sName] = nil
-						end
-						-----------------------------------------------------------
+					else
+						break;
 					end
-					-----------------------------------------------------------
-				else
-					break;
 				end
 			end
-		end
-	end	
-	-----------------------------------------------------------		
+		end	
+		-----------------------------------------------------------	
+	end
 end
 -----------------------------------------------------------------------------------------------------------------
 function BlockPassiveLocalUsers(sUser)
@@ -879,16 +888,35 @@ function MakeUserTable(sNick, sUser)
 		sUser.sMyInfoString = "unknown"
 	end
 	-----------------------------------------------
+	local myinfo_num = 0
+	for k = 1, string.len (myinfo), 1 do
+		if string.sub (myinfo, k, k) == "<" then
+			myinfo_num = myinfo_num + 1
+		end
+	end
+	if myinfo_num > 1 then
+		myinfo = string.gsub (myinfo, "<", ".", myinfo_num - 1)
+	end
+	myinfo_num = 0
+	for k = 1, string.len (myinfo), 1 do
+		if string.sub (myinfo, k, k) == ">" then
+			myinfo_num = myinfo_num + 1
+		end
+	end
+	if myinfo_num > 1 then
+		myinfo = string.gsub (myinfo, ">", ".", myinfo_num - 1)
+	end
+	-----------------------------------------------
     local description, tag, connection, email, sharesize = "", "", "", "", 0
 	local temp = string.sub(myinfo, 15 + string.len(sNick), string.len(myinfo))
-	description = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%1")
+	description = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$.*$?", "%1")
 	local descidc = string.sub(description, 1, 1)
 	if descidc == "<" then
 		local lungh = string.len(description) 
 		temp = string.sub(myinfo, 15 + string.len(sNick) + lungh, string.len(myinfo) )               
-		tag = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%2")
+		tag = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$.*$?", "%2")
     else
-		tag = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%2")
+		tag = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$.*$?", "%2")
     end
 	sUser.sTag = tag
 	-----------------------------------------------
@@ -910,16 +938,16 @@ function MakeUserTable(sNick, sUser)
 	sUser.sClientVersion = version
 	--VH:SendDataToUser("$To: Palmer From: MakeUserTable $<MakeUserTable> sUser.sClient["..(sUser.sClient or "ERR").."] sUser.sClientVersion["..(sUser.sClientVersion or "ERR").."] tag["..(tag or "ERR").."]|","Palmer")
 	-----------------------------------------------
-    connection = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%3")
-	sUser.sConnection = connection
+    connection = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$.*$?", "%3")
     connection = string.sub(connection, 1, string.len(connection)-1)
+	sUser.sConnection = connection
 	-----------------------------------------------
 	-----------------------------------------------
-	email = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%4")
+	email = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$.*$?", "%4")
 	-----------------------------------------------
 	sUser.sEmail = email
 	-----------------------------------------------
-	sharesize = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$", "%5")
+	sharesize = string.gsub(temp, "([^<]*)<?([^>]*)>?%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$.*$?", "%5")
 	local share_other = 0;
 	_, _, share_other = string.find(myinfo, "$MyINFO $ALL [^$]+$ $[^$]*$[^$]*$([^$]+)")
 	sharesize = tonumber(sharesize)
@@ -942,11 +970,17 @@ function MakeUserTable(sNick, sUser)
     local mode = ""
     mode = string.gsub(tag, "(.*)M:([%d]*)(.*)", "%3")
     local modet = string.sub(mode, 1, 1)
-	
 	if modet == "A" then
 		sUser.bActive = true
+	elseif modet ~= "P" then
+		local _, _, find_passive = string.find(myinfo, ".*M:P.*")
+		if find_passive then
+			modet = "P";
+			AddDebugLog("MakeUserTable_PassiveMode","sUser.sName["..(sUser.sName or "ERR").."] sUser.sIP["..(sUser.sIP or "ERR").."] sUser.sClient["..(sUser.sClient or "ERR").."] sUser.sClientVersion["..(sUser.sClientVersion or "ERR").."] tag["..(tag or "ERR").."]")
+		end
 	end
 	sUser.sMode = modet
+	--VH:SendDataToUser("$To: Palmer From: MakeUserTable $<MakeUserTable> END: sUser.sName["..(sUser.sName or "ERR").."] sUser.sIP["..(sUser.sIP or "ERR").."] sUser.sClient["..(sUser.sClient or "ERR").."] sUser.sClientVersion["..(sUser.sClientVersion or "ERR").."] tag["..(tag or "ERR").."]|","Palmer")
 end
 -----------------------------------------------------------------------------------------------------------------
 function MakeOnlineUserTable(ONLINEUSERS)
@@ -977,6 +1011,7 @@ function MakeOnlineUserTable(ONLINEUSERS)
 	for i,v in pairs(tNicks) do
 		ONLINEUSERS[v] = {}
 		MakeUserTable(v, ONLINEUSERS[v])
+		--VH:SendDataToUser("$To: Palmer From: MakeOnlineUserTable $<MakeOnlineUserTable> ["..(i or "ERR").."] sUser.sName["..(ONLINEUSERS[v].sName or "ERR").."] sUser.sIP["..(ONLINEUSERS[v].sIP or "ERR").."] sUser.sClient["..(ONLINEUSERS[v].sClient or "ERR").."] sUser.sClientVersion["..(ONLINEUSERS[v].sClientVersion or "ERR").."] sUser.sConnection["..(ONLINEUSERS[v].sConnection or "ERR").."] sUser.sMyInfoString["..(ONLINEUSERS[v].sMyInfoString or "ERR").."]|","Palmer")
 	end
 	tNicks = nil
 end
