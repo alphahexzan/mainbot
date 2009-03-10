@@ -559,75 +559,37 @@ function checkTags(sUser)--+
 	-----------------------------------------------------------
 	--проверка на пассивный режим
 	if sUser.sMode == "P" then
-		if not inDiap(sUser.sIP,IPCHECKS.NO_P) then 
-			BotSayToUser(sUser,PASSIVETEXT)
-			--AddSysLog("checkTags: ".. string.gsub(messages[85], "%[WHO%]",sUser.sName.. " ["..sUser.sIP .."]"));		
+		if not inDiap(sUser.sIP,IPCHECKS.NO_P) then
+			if not BlockPassiveLocalUsers(sUser) then
+				BotSayToUser(sUser,PASSIVETEXT)
+				--AddSysLog("checkTags: ".. string.gsub(messages[85], "%[WHO%]",sUser.sName.. " ["..sUser.sIP .."]"));
+			end
 		end	
 	end	
 	local come_msg=messages[109]..sUser.sName.."["..sUser.sIP.. "] "
-
 	if not inDiap(sUser.sIP,IPCHECKS.NO_V) then 
-		-----------------------------------------------------------
-		-- Проверка версии клиента
-		--[[
-		if VERSIONS[client] ~=nil then
-			--VH:SendDataToAll("VERSIONS[client]: есть|",10,10)
-			if VERSIONS[client][version]~=nil then
-				-- точное соответствие
-				if VERSIONS[client][version].todo=="s" then
-					BotSayToUser(sUser,VERSIONS[client][version].text)
-					--AddSysLog("checkTags [s]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
-				elseif VERSIONS[client][version].todo=="k" then
-					BotSayToUser(sUser,VERSIONS[client][version].text)
-					AddSysLog("checkTags [k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
-					VH:CloseConnection(sUser.sName);
-					ONLINEUSERS[sUser.sName] = nil
-				end	
-			elseif VERSIONS[client]["*"]~=nil then 
-				-- с версией "*" - для всех версий клиента
-				if VERSIONS[client]["*"].todo=="s" then
-					BotSayToUser(sUser,VERSIONS[client]["*"].text)
-					--AddSysLog("checkTags [*s]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
-				elseif VERSIONS[client]["*"].todo=="k" then
-					BotSayToUser(sUser,VERSIONS[client]["*"].text)
-					AddSysLog("checkTags [*k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
-					VH:CloseConnection(sUser.sName);
-					ONLINEUSERS[sUser.sName] = nil
-				end	
-			end
-		end
-		--]]
-		-----------------------------------------------------------
 		if VERSIONS[client] ~=nil then
 			local find_client=0;
 			for count,table in pairs(VERSIONS[client]) do
 				if find_client==0 then
 					-----------------------------------------------------------
 					if VERSIONS[client][count].version~="*" and find_client~=1 then
-						--if VERSIONS[client][count].todo~="i" then
-							--version=string.gsub(version,"%(","")
-							--version=string.gsub(version,"%)","")
-							--version=string.gsub(version,"%[","")
-							--version=string.gsub(version,"%]","")
-							local s,e = string.find(version, VERSIONS[client][count].version)
-							if (s~=nil) and (e~=nil) then
-								find_client=1;
-								--VH:SendDataToUser("$To: Palmer From: checkTags $<checkTags> ~=* User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] count["..(count or "nil").."] client["..(client or "nil").."] version["..(version or "nil").."] regexp["..(VERSIONS[client][count].version or "nil").."]|","Palmer")
-								-----------------------------------------------------------
-								if VERSIONS[client][count].todo=="s" then
-									BotSayToUser(sUser,VERSIONS[client][count].text)
-								-----------------------------------------------------------
-								elseif VERSIONS[client][count].todo=="k" then
-									BotSayToUser(sUser,VERSIONS[client][count].text)
-									AddSysLog("checkTags [k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
-									VH:CloseConnection(sUser.sName);
-									ONLINEUSERS[sUser.sName] = nil
-								end
-								-----------------------------------------------------------
+						local s,e = string.find(version, VERSIONS[client][count].version)
+						if (s~=nil) and (e~=nil) then
+							find_client=1;
+							--VH:SendDataToUser("$To: Palmer From: checkTags $<checkTags> ~=* User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] count["..(count or "nil").."] client["..(client or "nil").."] version["..(version or "nil").."] regexp["..(VERSIONS[client][count].version or "nil").."]|","Palmer")
+							-----------------------------------------------------------
+							if VERSIONS[client][count].todo=="s" then
+								BotSayToUser(sUser,VERSIONS[client][count].text)
+							-----------------------------------------------------------
+							elseif VERSIONS[client][count].todo=="k" then
+								BotSayToUser(sUser,VERSIONS[client][count].text)
+								AddSysLog("checkTags [k]: User["..(sUser.sName or "").." ("..(sUser.sIP or "")..")] Tag["..(sUser.sTag or "").."] Client["..(sUser.sClient or "").."] Version["..(sUser.sClientVersion or "").."]");
+								VH:CloseConnection(sUser.sName);
+								ONLINEUSERS[sUser.sName] = nil
 							end
-						--else
-							--find_client=1;
-						--end
+							-----------------------------------------------------------
+						end
 					-----------------------------------------------------------
 					elseif VERSIONS[client][count].version=="*" and find_client~=1 then
 						find_client=1;
@@ -651,6 +613,18 @@ function checkTags(sUser)--+
 		end
 	end	
 	-----------------------------------------------------------		
+end
+-----------------------------------------------------------------------------------------------------------------
+function BlockPassiveLocalUsers(sUser)
+	if inDiap(sUser.sIP,IPCHECKS.LOCAL) then
+	--if sUser.sName=="Palmer" then
+		VH:SendDataToUser("<"..BOTNAME.."> "..PASSIVELOCALTEXT.."|",sUser.sName)
+		VH:CloseConnection(sUser.sName);
+		ONLINEUSERS[sUser.sName] = nil
+		return true;
+	else
+		return false;
+	end
 end
 -----------------------------------------------------------------------------------------------------------------
 function saveUSExpress()--Не используется.
