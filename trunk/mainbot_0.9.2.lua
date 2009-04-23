@@ -1,5 +1,5 @@
 -----------------------------------------------
-VERSION = "0.9.2[g8]";
+VERSION = "0.9.2[g9]";
 -----------------------------------------------
 --  ќЌ—“јЌ“џ
 VERLIPATH	=	"/etc/verlihub/";
@@ -744,8 +744,9 @@ function VH_OnUserLogout(nick)
 end
 -----------------------------------------------
 function VH_OnParsedMsgMyINFO(nick, sData)
-	local first_str, last_str = string.find(nick, "[\#\@\Х]", 1)
-	if first_str == 1 then 
+	--local first_str, last_str = string.find(nick, "[\#\@\Х]", 1)
+	--if first_str == 1 then
+	if (tMainBufer.ChatRoomsBufer[nick]==1) or (nick==SHUBNAME) or (nick==BOTNAME) then
 		return 1
 	end
 	local sUser = {}
@@ -772,6 +773,16 @@ function VH_OnParsedMsgMyINFO(nick, sData)
 			VH:CloseConnection(nick);
 			return 0 
 		end
+		--проверка на пассивный режим
+		if sUser.sMode == "P" then
+			if not inDiap(sUser.sIP,IPCHECKS.NO_P) then
+				if BlockPassiveLocalUsers(sUser) then
+					--VH:SendDataToUser("$To: Palmer From: VH_OnParsedMsgMyINFO $<VH_OnParsedMsgMyINFO> User["..(sUser.sName or "").."] IP["..(sUser.sIP or "").."] sData["..(sData or "").."]|","Palmer")
+					AddDebugLog("Main_BlockPassiveLocalUsers","Main_BlockPassiveLocalUsers User["..(sUser.sName or "").."] IP["..(sUser.sIP or "").."] sData["..(sData or "").."]")
+					return 0 
+				end
+			end	
+		end	
 	end
 	LogStats();
 	SQL_ModToUserList("sharesize", sUser.iShareSize, "ip", sUser.sIP)
