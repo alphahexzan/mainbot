@@ -439,8 +439,8 @@ tOtherCommands = {
 			local query = "SELECT ip,nick_op,reason FROM banlist WHERE nick='_ipban_' and date_limit"
 			local res, rows = VH:SQLQuery(query)
 			if not res then
-		        Users.SendToMain("Error in query: "..query,5, 10)
-		        Users.SendToMain("Error: "..rows,5, 10)
+		        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		        VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		    end
 			local IPBanList = {}
 			if res and rows~=0  then
@@ -509,8 +509,8 @@ tOtherCommands = {
 			local query = "SELECT ip,nick_op,reason FROM banlist WHERE nick='_ipban_' and date_limit is NULL"
 			local res, rows = VH:SQLQuery(query)
 			if not res then
-		        Users.SendToMain("Error in query: "..query,5, 10)
-		        Users.SendToMain("Error: "..rows,5, 10)
+		        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		        VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		    end
 			local IPBanList = {}
 			if res and rows~=0  then
@@ -561,8 +561,8 @@ tOtherCommands = {
 			local query = "SELECT COUNT(ip) FROM banlist WHERE nick='_ipban_' and date_limit"
 			local res, rows = VH:SQLQuery(query)
 			if not res then
-		        Users.SendToMain("Error in query: "..query,5, 10)
-		        Users.SendToMain("Error: "..rows,5, 10)
+		        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		        VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		    else
 				local res, count = VH:SQLFetch(0)
 				count = tonumber(count)

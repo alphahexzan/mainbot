@@ -2,9 +2,7 @@ function SQL_Init()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_settings (name varchar(50), valore varchar(100))TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        --Users.SendToMain("Error in query: "..query,5, 10)
 		VH:SendDataToAll("Error in query: "..query.."|",10,10)
-        --Users.SendToMain("Error: "..err,5, 10)
 		VH:SendDataToAll("Error: "..err.."|",10,10)
     end
     --check if settings database is filled
@@ -550,8 +548,8 @@ function SQL_UserList()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_userlist(ip varchar( 15 ) NOT NULL default '',nick varchar( 64 ) NOT NULL default '',bancount int( 10 ) unsigned NOT NULL default '0',user_status int( 10 ) unsigned NOT NULL default '0',forwhat int( 10 ) unsigned NOT NULL default '0',whenexpires datetime,user_when datetime,user_by varchar( 64 ) NOT NULL default '',context varchar( 100 ) NOT NULL default '',lastonline datetime,noleech double NOT NULL default '0',maxnoleech int( 10 ) unsigned NOT NULL default '0',locknick varchar( 64 ) NOT NULL default '',sharesize double NOT NULL default '0',fl datetime,InetDown varchar( 5 ) NOT NULL default '1', user_rank double NOT NULL default '0', sessiontime double NOT NULL default '0', totaltime double NOT NULL default '0',PRIMARY KEY ( ip ) ,KEY nick(nick( 64 )),KEY sharesize(sharesize),KEY bancount(bancount),KEY user_status(user_status),KEY noleech(noleech),KEY user_rank(user_rank))TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	query = "CREATE TABLE IF NOT EXISTS MainBot_userlist_lastnicks("
 	query = query.."ip varchar( 15 ) NOT NULL default '', lastnickcount int( 10 ) unsigned NOT NULL default '0',"
@@ -561,8 +559,8 @@ function SQL_UserList()
 	query = query.."PRIMARY KEY ( ip ))TYPE = MYISAM ;"
 	res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	query = "CREATE TABLE IF NOT EXISTS MainBot_userlist_lastcuss("
 	query = query.."ip varchar( 15 ) NOT NULL default '', lastcusscount int( 10 ) unsigned NOT NULL default '0',"
@@ -572,8 +570,8 @@ function SQL_UserList()
 	query = query.."PRIMARY KEY ( ip ))TYPE = MYISAM ;"
 	res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("Функция SQL_UserList выполнена.")
 end
@@ -582,20 +580,20 @@ function SQL_AddToUserList(sUser)
 	local query = "INSERT INTO MainBot_userlist (ip,nick,bancount,user_status,forwhat,whenexpires,user_when,user_by,context,lastonline,noleech,maxnoleech,locknick,sharesize,fl,InetDown,user_rank,sessiontime,totaltime) VALUES ('"..sUser.sIP.."','"..SQL_Escape(sUser.sName).."',0,0,0,'','','','',now(),0,0,'','"..sUser.iShareSize.."',now(),'1',0,0,0)"
 	res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	local query = "INSERT INTO MainBot_userlist_lastnicks (ip, lastnickcount) VALUES ('"..sUser.sIP.."',0)"
 	res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	local query = "INSERT INTO MainBot_userlist_lastcuss (ip, lastcusscount) VALUES ('"..sUser.sIP.."',0)"
 	res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_AddToUserList. Новый пользователь: ip ["..sUser.sIP.."] nick ["..sUser.sName.."]")
 end
@@ -613,16 +611,16 @@ function SQL_ModToUserList(sParm, pValue, sName, nValue)
 	local query = "UPDATE MainBot_userlist SET "..sParm.."="..pValue.." WHERE "..sName.."='"..SQL_Escape(nValue).."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	end
 	if (type(pValue) == "string") then
 	local query = "UPDATE MainBot_userlist SET "..sParm.."='"..SQL_Escape(pValue).."' WHERE "..sName.."='"..SQL_Escape(nValue).."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	end
 end
@@ -966,8 +964,8 @@ function SQL_TimersCfg()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_timeconfig (name varchar( 50 ) NOT NULL default '', valore double NOT NULL default '0')TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	query = "SELECT * FROM MainBot_timeconfig WHERE name ='FREEMEMTIME'"
     res, err = VH:SQLQuery(query)
@@ -1101,16 +1099,16 @@ function SQL_SetTimersCfg(TName, Value)
 		local query = "UPDATE MainBot_timeconfig SET valore="..Value.." WHERE name='"..TName.."'"
 		local res, err = VH:SQLQuery(query)
 		if not res then
-	        Users.SendToMain("Error in query: "..query,5, 10)
-	        Users.SendToMain("Error: "..err,5, 10)
+	        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	        VH:SendDataToAll("Error: "..err.."|",5, 10)
 	    end
 	end
 	if (type(Value) == "string") then
 		local query = "UPDATE MainBot_timeconfig SET valore='"..SQL_Escape(Value).."' WHERE name='"..TName.."'"
 		local res, err = VH:SQLQuery(query)
 		if not res then
-	        Users.SendToMain("Error in query: "..query,5, 10)
-	        Users.SendToMain("Error: "..err,5, 10)
+	        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	        VH:SendDataToAll("Error: "..err.."|",5, 10)
 	    end
 	end
 end
@@ -1119,8 +1117,8 @@ function SQL_AddTimersCfg(TName, Value)
 	--local query = "UPDATE MainBot_TCFG SET valore="..Value.." WHERE name='"..TName.."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 end
 function SQL_SendQuery(sQuery)
@@ -1133,8 +1131,8 @@ function SQL_IPSecurity()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_ipsec (nick varchar( 64 ) NOT NULL default '', id MEDIUMINT NOT NULL AUTO_INCREMENT,ip varchar( 15 ) NOT NULL default '',PRIMARY KEY ( nick,id ))TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("Функция SQL_IPSecurity выполнена.")
 end
@@ -1147,8 +1145,8 @@ function SQL_IPSecurityFindNick(sNick)
 	local query = "SELECT ip FROM MainBot_ipsec WHERE nick='"..SQL_Escape(sNick).."'"
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
 	local sIP = {}
 	if res and rows~=0 then
@@ -1175,8 +1173,8 @@ function SQL_IPSecurityFindID(sNick, sIP)
 			--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFindID $<SQL_IPSecurityFindID> query ["..(query or "ERR").."]|","Palmer")
 			local res, rows = VH:SQLQuery(query)
 			if not res then
-		        Users.SendToMain("Error in query: "..query,5, 10)
-		        Users.SendToMain("Error: "..rows,5, 10)
+		        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		        VH:SendDataToAll("Error: "..rows.."|",5, 10)
 				AddSysLog("SQL_IPSecurityFindID_[ERR]. Ошибка: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]")
 		    end
 			local res, value = VH:SQLFetch(0)
@@ -1223,8 +1221,8 @@ function SQL_IPSecurityModNick(sNick, sIP)--!!!
 	local query = "UPDATE MainBot_ipsec SET nick='"..SQL_Escape(sNick).."' WHERE ip='"..sIP.."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_IPSecurityModNick. Изменения: nick ["..sNick.."] ip ["..sIP.."]")
 end
@@ -1232,8 +1230,8 @@ function SQL_IPSecurityModIP(sNick, sIP)--!!!
 	local query = "UPDATE MainBot_ipsec SET ip='"..sIP.."' WHERE nick='"..SQL_Escape(sNick).."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_IPSecurityModIP. Изменения: nick ["..sNick.."] ip ["..sIP.."]")
 end
@@ -1241,8 +1239,8 @@ function SQL_IPSecurityDeleteIP(sIP)
 	local query = "DELETE FROM MainBot_ipsec WHERE ip='"..sIP.."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_IPSecurityDeleteIP. Удалён: ip ["..sIP.."]")
 end
@@ -1256,8 +1254,8 @@ function SQL_IPSecurityDeleteNickIP(sNick, sIP)
 				--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityDeleteNickIP $<SQL_IPSecurityDeleteNickIP> nick ["..(sNick or "").."] sIP ["..(sIP or "").."] query ["..(query or "ERR").."]|","Palmer")
 				local res, err = VH:SQLQuery(query)
 				if not res then
-			        Users.SendToMain("Error in query: "..query,5, 10)
-			        Users.SendToMain("Error: "..err,5, 10)
+			        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+			        VH:SendDataToAll("Error: "..err.."|",5, 10)
 					AddSysLog("SQL_IPSecurityDeleteNickIP_[ERR]. Ошибка удаления: query ["..(query or "ERR").."] err ["..(err or "ERR").."]")
 			    end
 				SQL_IPSecurityFix(sNick,iID);
@@ -1276,8 +1274,8 @@ function SQL_IPSecurityDeleteNick(sNick)
 	local query = "DELETE FROM MainBot_ipsec WHERE nick='"..SQL_Escape(sNick).."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_IPSecurityDeleteNick. Удалён: nick ["..sNick.."]")
 end
@@ -1289,16 +1287,16 @@ function SQL_IPSecurityFix(sNick,iID)
 	--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFix $<SQL_IPSecurityFix> nick ["..(SQL_Escape(sNick) or "").."] id ["..(iID or "").."]|","Palmer")
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-		Users.SendToMain("Error in query: "..query,5, 10)
-		Users.SendToMain("Error: "..rows,5, 10)
+		VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		AddSysLog("SQL_TTHFix. Ошибка[1]: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]")
 		--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFix $<SQL_IPSecurityFix> Ошибка[1]: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]|","Palmer")
 	end
 	query = "ALTER TABLE MainBot_ipsec AUTO_INCREMENT 1"
 	res, rows = VH:SQLQuery(query)
 	if not res then
-		Users.SendToMain("Error in query: "..query,5, 10)
-		Users.SendToMain("Error: "..rows,5, 10)
+		VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		AddSysLog("SQL_TTHFix. Ошибка[2]: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]")
 		--VH:SendDataToUser("$To: Palmer From: SQL_IPSecurityFix $<SQL_IPSecurityFix> Ошибка[2]: query ["..(query or "ERR").."] rows ["..(rows or "ERR").."]|","Palmer")
 	end
@@ -1307,14 +1305,14 @@ function SQL_Mail()
 	local query = "CREATE TABLE IF NOT EXISTS  MainBot_MAIL_NICK (nick varchar(64) NOT NULL default '', id MEDIUMINT NOT NULL AUTO_INCREMENT, maildate datetime,from_nick varchar(64) NOT NULL default '',from_ip varchar(15) NOT NULL default '',msg_text mediumtext NOT NULL,PRIMARY KEY (nick, id),KEY from_nick (from_nick(64)),KEY from_ip (from_ip(15)))TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	local query = "CREATE TABLE IF NOT EXISTS  MainBot_MAIL_IP (ip varchar(64) NOT NULL default '', id MEDIUMINT NOT NULL AUTO_INCREMENT, maildate datetime,from_nick varchar(64) NOT NULL default '',from_ip varchar(15) NOT NULL default '',msg_text mediumtext NOT NULL,PRIMARY KEY (ip, id),KEY from_nick (from_nick(64)),KEY from_ip (from_ip(15)))TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("Функция SQL_Mail выполнена.")
 end
@@ -1368,8 +1366,8 @@ function SQL_AddNickMail(sUser, nick, msg)
 			local query = "INSERT INTO MainBot_MAIL_NICK (nick,maildate,from_nick,from_ip,msg_text)	VALUES ('"..nick.."',now(),'"..SQL_Escape(sUser.sName).."','"..sUser.sIP.."','"..SQL_Escape(msg).."')"
 			local res, err = VH:SQLQuery(query)
 			if not res then
-		        Users.SendToMain("Error in query: "..query,5, 10)
-		        Users.SendToMain("Error: "..err,5, 10)
+		        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		        VH:SendDataToAll("Error: "..err.."|",5, 10)
 		    end
 			AddSysLog("SQL_AddNickMail. Добавлено: nick ["..nick.."] from_nick ["..sUser.sName.."] from_ip ["..sUser.sIP.."] msg ["..msg.."]")
 			return 1
@@ -1385,8 +1383,8 @@ function SQL_AddIpMail(sUser, ip, msg)
 			local query = "INSERT INTO MainBot_MAIL_IP (ip,maildate,from_nick,from_ip,msg_text) VALUES ('"..ip.."',now(),'"..SQL_Escape(sUser.sName).."','"..sUser.sIP.."','"..SQL_Escape(msg).."')"
 			local res, err = VH:SQLQuery(query)
 			if not res then
-		        Users.SendToMain("Error in query: "..query,5, 10)
-		        Users.SendToMain("Error: "..err,5, 10)
+		        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		        VH:SendDataToAll("Error: "..err.."|",5, 10)
 		    end
 			AddSysLog("SQL_AddIpMail. Добавлено: ip ["..ip.."] from_nick ["..sUser.sName.."] from_ip ["..sUser.sIP.."] msg ["..msg.."]")
 			return 1
@@ -1453,8 +1451,8 @@ function SQL_DeleteNickMail(sUser)
 	local query = "DELETE FROM MainBot_MAIL_NICK WHERE nick = '"..SQL_Escape(sUser.sName).."'"
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
 end
 function SQL_FindIpMail(sUser)
@@ -1494,8 +1492,8 @@ function SQL_DeleteIpMail(sUser)
 	local query = "DELETE FROM MainBot_MAIL_IP WHERE ip = '"..sUser.sIP.."'"
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
 end
 function SQL_News()
@@ -1503,8 +1501,8 @@ function SQL_News()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_NEWS (name varchar(50), valore mediumtext NOT NULL, PRIMARY KEY (name))TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	query = "SELECT * FROM MainBot_NEWS WHERE name ='News'"
     res, err = VH:SQLQuery(query)
@@ -1531,16 +1529,16 @@ function SQL_ModNews(sNews, sType)
 		local query = "UPDATE MainBot_NEWS SET valore='"..SQL_Escape(sNews).."' WHERE name='News'"
 		local res, err = VH:SQLQuery(query)
 		if not res then
-	        Users.SendToMain("Error in query: "..query,5, 10)
-	        Users.SendToMain("Error: "..err,5, 10)
+	        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	        VH:SendDataToAll("Error: "..err.."|",5, 10)
 	    end
 		AddSysLog("SQL_ModNews. Изменено: News ["..sNews.."]")
 	elseif sType == "OpChatNews" then
 		local query = "UPDATE MainBot_NEWS SET valore='"..SQL_Escape(sNews).."' WHERE name='OpChatNews'"
 		local res, err = VH:SQLQuery(query)
 		if not res then
-	        Users.SendToMain("Error in query: "..query,5, 10)
-	        Users.SendToMain("Error: "..err,5, 10)
+	        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	        VH:SendDataToAll("Error: "..err.."|",5, 10)
 	    end
 		AddSysLog("SQL_ModNews. Изменено: OpChatNews ["..sNews.."]")
 	end
@@ -1550,8 +1548,8 @@ function SQL_ModOpChatNews(sNews)
 	local query = "UPDATE MainBot_NEWS SET valore='"..SQL_Escape(sNews).."' WHERE name='OpChatNews'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_ModOpChatNews. Изменено: OpChatNews ["..sNews.."]")
 end
@@ -1560,8 +1558,8 @@ function SQL_Stats()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_STATS (name varchar(50), valore varchar(100))TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	query = "SELECT * FROM MainBot_STATS WHERE name ='MaxShare'"
     res, err = VH:SQLQuery(query)
@@ -1599,16 +1597,16 @@ function SQL_ModStats(pValue, nValue)
 		local query = "UPDATE MainBot_STATS SET valore="..pValue.." WHERE name='"..SQL_Escape(nValue).."'"
 		local res, err = VH:SQLQuery(query)
 		if not res then
-			Users.SendToMain("Error in query: "..query,5, 10)
-			Users.SendToMain("Error: "..err,5, 10)
+			VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+			VH:SendDataToAll("Error: "..err.."|",5, 10)
 		end
 	end
 	if (type(pValue) == "string") then
 		local query = "UPDATE MainBot_STATS SET valore='"..SQL_Escape(pValue).."' WHERE name='"..SQL_Escape(nValue).."'"
 		local res, err = VH:SQLQuery(query)
 		if not res then
-			Users.SendToMain("Error in query: "..query,5, 10)
-			Users.SendToMain("Error: "..err,5, 10)
+			VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+			VH:SendDataToAll("Error: "..err.."|",5, 10)
 		end
 	end
 end
@@ -1616,8 +1614,8 @@ function SQL_TTH()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_TTH (id mediumint NOT NULL auto_increment, tth varchar(50), findtime datetime NOT NULL,PRIMARY KEY (id))TYPE = MYISAM ;"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-	Users.SendToMain("Error in query: "..query,5, 10)
-	Users.SendToMain("Error: "..err,5, 10)
+	VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	VH:SendDataToAll("Error: "..err.."|",5, 10)
 	end
 	AddSysLog("Функция SQL_TTH выполнена.")
 end
@@ -1625,8 +1623,8 @@ function SQL_TTH_Archive()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_TTH_Archive (id mediumint NOT NULL auto_increment, tth varchar(50), findtime datetime NOT NULL,PRIMARY KEY (id))TYPE = MYISAM ;"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-	Users.SendToMain("Error in query: "..query,5, 10)
-	Users.SendToMain("Error: "..err,5, 10)
+	VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	VH:SendDataToAll("Error: "..err.."|",5, 10)
 	end
 	AddSysLog("Функция SQL_TTH_Archive выполнена.")
 end
@@ -1640,8 +1638,8 @@ function SQL_TTHAdd(sTTH)
 		local query = "INSERT INTO MainBot_TTH (tth, findtime) VALUES ('"..SQL_Escape(sTTH).."', now())"
 		res, err = VH:SQLQuery(query)
 		if not res then
-	        Users.SendToMain("Error in query: "..query,5, 10)
-	        Users.SendToMain("Error: "..err,5, 10)
+	        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	        VH:SendDataToAll("Error: "..err.."|",5, 10)
 			AddSysLog("SQL_TTHAdd_[ERR]. Ошибка: TTH ["..sTTH.."]")
 	    end
 		AddSysLog("SQL_TTHAdd. Добавлено: TTH ["..sTTH.."]")
@@ -1656,8 +1654,8 @@ function SQL_TTHAdd_Archive(sTTH)
 		local query = "INSERT INTO MainBot_TTH_Archive (tth, findtime) VALUES ('"..SQL_Escape(sTTH).."', now())"
 		res, err = VH:SQLQuery(query)
 		if not res then
-	        Users.SendToMain("Error in query: "..query,5, 10)
-	        Users.SendToMain("Error: "..err,5, 10)
+	        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	        VH:SendDataToAll("Error: "..err.."|",5, 10)
 			AddSysLog("SQL_TTHAdd_Archive_[ERR]. Ошибка: TTH ["..sTTH.."]")
 	    end
 		AddSysLog("SQL_TTHAdd_Archive. Добавлено: TTH ["..sTTH.."]")
@@ -1755,8 +1753,8 @@ function SQL_TTHDelete(sTTH)
 			query = "DELETE FROM MainBot_TTH WHERE tth = '"..SQL_Escape(sTTH).."'"
 			res, rows = VH:SQLQuery(query)
 			if not res then
-				Users.SendToMain("Error in query: "..query,5, 10)
-				Users.SendToMain("Error: "..err,5, 10)
+				VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+				VH:SendDataToAll("Error: "..err.."|",5, 10)
 				AddSysLog("SQL_TTHDelete. Ошибка удаления: TTH ["..sTTH.."] ERR ["..rows.."]")
 			else
 				for x=1, tempmaxrows do
@@ -1772,8 +1770,8 @@ function SQL_TTHDelete(sTTH)
 				query = "DELETE FROM MainBot_TTH WHERE tth = '"..SQL_Escape(sTTH).."'"
 				res, rows = VH:SQLQuery(query)
 				if not res then
-			        Users.SendToMain("Error in query: "..query,5, 10)
-			        Users.SendToMain("Error: "..err,5, 10)
+			        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+			        VH:SendDataToAll("Error: "..err.."|",5, 10)
 					AddSysLog("SQL_TTHDelete. Ошибка удаления: TTH ["..sTTH.."] ERR ["..rows.."]")
 					return nil;
 				else
@@ -1805,8 +1803,8 @@ function SQL_TTHDelete_Archive(sTTH)
 			query = "DELETE FROM MainBot_TTH_Archive WHERE tth = '"..SQL_Escape(sTTH).."'"
 			res, rows = VH:SQLQuery(query)
 			if not res then
-				Users.SendToMain("Error in query: "..query,5, 10)
-				Users.SendToMain("Error: "..err,5, 10)
+				VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+				VH:SendDataToAll("Error: "..err.."|",5, 10)
 				AddSysLog("SQL_TTHDelete_Archive. Ошибка удаления: TTH ["..sTTH.."] ERR ["..rows.."]")
 			else
 				for x=1, tempmaxrows do
@@ -1822,8 +1820,8 @@ function SQL_TTHDelete_Archive(sTTH)
 				query = "DELETE FROM MainBot_TTH_Archive WHERE tth = '"..SQL_Escape(sTTH).."'"
 				res, rows = VH:SQLQuery(query)
 				if not res then
-			        Users.SendToMain("Error in query: "..query,5, 10)
-			        Users.SendToMain("Error: "..err,5, 10)
+			        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+			        VH:SendDataToAll("Error: "..err.."|",5, 10)
 					AddSysLog("SQL_TTHDelete_Archive. Ошибка удаления: TTH ["..sTTH.."] ERR ["..rows.."]")
 					return nil;
 				else
@@ -1847,15 +1845,15 @@ function SQL_TTHFix(iID)
 	local query = "UPDATE MainBot_TTH SET id=id-1 where id > "..iID..""
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-		Users.SendToMain("Error in query: "..query,5, 10)
-		Users.SendToMain("Error: "..rows,5, 10)
+		VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		AddSysLog("SQL_TTHFix. Ошибка[1]: "..rows.."")
 	end
 	query = "ALTER TABLE MainBot_TTH AUTO_INCREMENT 1"
 	res, rows = VH:SQLQuery(query)
 	if not res then
-		Users.SendToMain("Error in query: "..query,5, 10)
-		Users.SendToMain("Error: "..rows,5, 10)
+		VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		AddSysLog("SQL_TTHFix. Ошибка[2]: "..rows.."")
 	end
 end
@@ -1866,15 +1864,15 @@ function SQL_TTHFix_Archive(iID)
 	local query = "UPDATE MainBot_TTH_Archive SET id=id-1 where id > "..iID..""
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-		Users.SendToMain("Error in query: "..query,5, 10)
-		Users.SendToMain("Error: "..rows,5, 10)
+		VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		AddSysLog("SQL_TTHFix_Archive. Ошибка[1]: "..rows.."")
 	end
 	query = "ALTER TABLE MainBot_TTH_Archive AUTO_INCREMENT 1"
 	res, rows = VH:SQLQuery(query)
 	if not res then
-		Users.SendToMain("Error in query: "..query,5, 10)
-		Users.SendToMain("Error: "..rows,5, 10)
+		VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+		VH:SendDataToAll("Error: "..rows.."|",5, 10)
 		AddSysLog("SQL_TTHFix_Archive. Ошибка[2]: "..rows.."")
 	end
 end
@@ -1955,16 +1953,16 @@ function SQL_TTHSetTime(sTTH, sTime)
 				local query = "UPDATE MainBot_TTH SET findtime=now() where tth='"..SQL_Escape(sTTH).."'"
 				local res, rows = VH:SQLQuery(query)
 				if not res then
-					Users.SendToMain("Error in query: "..query,5, 10)
-					Users.SendToMain("Error: "..rows,5, 10)
+					VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+					VH:SendDataToAll("Error: "..rows.."|",5, 10)
 					AddSysLog("SQL_TTHSetTime_[ERR]. Ошибка[1]: "..rows.."")
 				end
 			else
 				local query = "UPDATE MainBot_TTH SET findtime='"..SQL_Escape(sTime).."' where tth='"..SQL_Escape(sTTH).."'"
 				local res, rows = VH:SQLQuery(query)
 				if not res then
-					Users.SendToMain("Error in query: "..query,5, 10)
-					Users.SendToMain("Error: "..rows,5, 10)
+					VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+					VH:SendDataToAll("Error: "..rows.."|",5, 10)
 					AddSysLog("SQL_TTHSetTime_[ERR]. Ошибка[2]: "..rows.."")
 				end
 			end
@@ -2012,8 +2010,8 @@ function SQL_TTHArchivetoTTHActive(sTTH, sTime)
 		local query = "INSERT INTO MainBot_TTH (tth, findtime) VALUES ('"..SQL_Escape(sTTH).."', '"..SQL_Escape(sTime).."')"
 		local res, err = VH:SQLQuery(query)
 		if not res then
-	        Users.SendToMain("Error in query: "..query,5, 10)
-	        Users.SendToMain("Error: "..err,5, 10)
+	        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+	        VH:SendDataToAll("Error: "..err.."|",5, 10)
 			AddSysLog("SQL_TTHArchivetoTTHActive_[ERR]. Ошибка: TTH["..sTTH.."] time["..sTime.."]")
 			--VH:SendDataToUser("$To: Palmer From: SQL_TTHArchivetoTTHActive $<SQL_TTHArchivetoTTHActive> SQL_TTHArchivetoTTHActive_[ERR]. Ошибка: TTH["..sTTH.."] time["..sTime.."]|","Palmer")
 			return nil;
@@ -2038,8 +2036,8 @@ function SQL_IPSpy()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_ipspy (ip varchar( 15 ) NOT NULL default '',text mediumtext NOT NULL,PRIMARY KEY (ip))TYPE = MYISAM ;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("Функция SQL_IPSpy выполнена.")
 end
@@ -2052,8 +2050,8 @@ function SQL_IPSpyFindIP(sIP)
 	local query = "SELECT text FROM MainBot_ipspy WHERE ip='"..sIP.."'"
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
 	if res and rows~=0 then
 		local res, value = VH:SQLFetch(0)
@@ -2090,8 +2088,8 @@ function SQL_IPSpyModIP(sIP, sText)
 	local query = "UPDATE MainBot_ipspy SET text='"..SQL_Escape(sText).."' WHERE ip='"..sIP.."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_IPSpyModIP. Изменено: ip ["..sIP.."] text ["..sText.."]")
 end
@@ -2099,8 +2097,8 @@ function SQL_IPSpyDeleteIP(sIP)
 	local query = "DELETE FROM MainBot_ipspy WHERE ip='"..sIP.."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_IPSpyDeleteIP. Удалено: ip ["..sIP.."]")
 end
@@ -2116,8 +2114,8 @@ function SQL_AddToHubBanList(ip,nick,bantype,range_fr,range_to,date_start,date_l
 	local res, err = VH:SQLQuery(query)
 	if not res then
 		--VH:SendDataToUser("$To: Palmer From: banip $<banip> query["..query.."] err["..err.."]|","Palmer")
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_AddToHubBanList. Добавлено: ip ["..ip.."] nick ["..nick.."] bantype ["..bantype.."] nick_op ["..nick_op.."] reason ["..reason.."]")
 end
@@ -2125,8 +2123,8 @@ function SQL_DelFromHubBanList(ip,nick,nick_op)
 	local query = "DELETE FROM banlist WHERE ip='"..ip.."' AND nick='"..SQL_Escape(nick).."'"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_DelFromHubBanList. Удалено: ip ["..ip.."] nick ["..nick.."] nick_op ["..nick_op.."]")
 end
@@ -2134,8 +2132,8 @@ function SQL_DelFromHubReglist(nick)
 	local query = "DELETE FROM reglist WHERE nick='"..SQL_Escape(nick).."' AND class > 0 AND class < 3"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_DelFromHubReglist. Удалено: nick ["..nick.."]")
 end
@@ -2143,8 +2141,8 @@ function SQL_DelFromHubReglistByIP(ip)
 	local query = "DELETE FROM reglist WHERE (login_ip='"..SQL_Escape(ip).."' OR alternate_ip='"..SQL_Escape(ip).."') AND class > 0 AND class < 3"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_DelFromHubReglistByIP. Удалено: ip ["..ip.."]")
 end
@@ -2195,8 +2193,8 @@ function SQL_SystemFiles()
 	local query = "CREATE TABLE IF NOT EXISTS MainBot_sysfiles (id MEDIUMINT NOT NULL AUTO_INCREMENT, tth varchar(50), file_name mediumtext NOT NULL, file_path mediumtext NOT NULL,PRIMARY KEY (id))TYPE = MYISAM;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
 	--else
 		--VH:SendPMToAll("SQL_SystemFiles: not err[ "..err.." ]|",BOTNAME,10,10)
     end
@@ -2206,8 +2204,8 @@ function SQL_SystemFilesAdd(sTTH, sName, sPath)
 	local query = "INSERT INTO MainBot_sysfiles (tth,file_name,file_path)	VALUES ('"..SQL_Escape(sTTH).."','"..SQL_Escape(sName).."','"..SQL_Escape(sPath).."')"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	AddSysLog("SQL_SystemFilesAdd. Добавлен: tth ["..sTTH.."] file_name ["..sName.."] file_path ["..sPath.."]")
 end
@@ -2215,8 +2213,8 @@ function SQL_SystemFilesDelete(sTTH)
 	local query = "DELETE FROM MainBot_sysfiles WHERE tth = '"..SQL_Escape(sTTH).."'"
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
     end
 	SQL_SystemFilesFix()
 	AddSysLog("SQL_SystemFilesDelete. Удалено: TTH ["..sTTH.."]")
@@ -2226,8 +2224,8 @@ function SQL_SystemFilesFix()
 	local query = "SELECT tth,file_name,file_path FROM MainBot_sysfiles"
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
 	if res and rows~=0  then
 		if rows > 1 then
@@ -2256,8 +2254,8 @@ function SQL_SystemFilesFix()
 				query = "INSERT INTO MainBot_sysfiles (tth,file_name,file_path)	VALUES ('"..tempSF[indx].tth.."','"..tempSF[indx].file_name.."','"..SQL_Escape(tempSF[indx].file_path).."')"
 				res, err = VH:SQLQuery(query)
 				if not res then
-			        Users.SendToMain("Error in query: "..query,5, 10)
-			        Users.SendToMain("Error: "..err,5, 10)
+			        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+			        VH:SendDataToAll("Error: "..err.."|",5, 10)
 			    end
 			end
 			AddSysLog("Функция SQL_SystemFilesFix выполнена.")

@@ -2,8 +2,8 @@ function PMBlocker:SQL_Init()
 local query = "CREATE TABLE IF NOT EXISTS MainBot_PMBloker (ip  varchar(15) NOT NULL default '', nick varchar( 64 ) NOT NULL default '', id MEDIUMINT NOT NULL AUTO_INCREMENT, bnickorip varchar( 64 ) NOT NULL default '',PRIMARY KEY (ip,nick,id))TYPE = MYISAM;"
     local res, err = VH:SQLQuery(query)
     if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..err,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..err.."|",5, 10)
 	--else
 		--VH:SendPMToAll("SQL_SystemFiles: not err[ "..err.." ]|",BOTNAME,10,10)
     end
@@ -23,8 +23,8 @@ function PMBlocker:SQL_LoadTable()
 		end
 	end
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
     AddSysLog("Функция PMBlocker:SQL_LoadTable выполнена.")
 end
@@ -33,8 +33,8 @@ function PMBlocker:SQL_AddNickOrIP(ip,nick,bnickorip)
 	--local query = "INSERT INTO MainBot_PMBloker (ip,nick,bnickorip)	VALUES ('192.168.52.205','Palmer','')"
 	local res, err = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
 	--AddSysLog("PMBlocker:SQL_AddNickOrIP. Добавлено: ip ["..ip.."] nick ["..nick.."] bnickorip ["..bnickorip.."]")
 end
@@ -56,8 +56,8 @@ function PMBlocker:SQL_DeleteNickOrIP(ip,nick,bnickorip)
 	end
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
     --VH:SendDataToUser("PMBlocker:SQL_DeleteNickOrIP. ip ["..(ip or "все").."] nick ["..(nick or "все").."] bnickorip ["..(bnickorip or "все").."] query "..query.."","Palmer")
     AddSysLog("PMBlocker:SQL_DeleteNickOrIP. Удалено: ip ["..(ip or "все").."] nick ["..(nick or "все").."] bnickorip ["..(bnickorip or "все").."]")
@@ -66,8 +66,8 @@ function PMBlocker:SQL_DeleteNickOrIPByID(ip,nick,id)
 	local query = "DELETE FROM MainBot_PMBloker WHERE ip = '"..ip.."' AND nick = '"..SQL_Escape(nick).."' AND id = '"..id.."'"
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
     --VH:SendDataToUser("PMBlocker:SQL_DeleteNickOrIP. ip ["..(ip or "все").."] nick ["..(nick or "все").."] bnickorip ["..(bnickorip or "все").."] query "..query.."","Palmer")
     AddSysLog("PMBlocker:SQL_DeleteNickOrIPByID. Удалено: ip ["..(ip or "err").."] nick ["..(nick or "err").."] id ["..(id or "err").."]")
@@ -108,13 +108,13 @@ function PMBlocker:SQL_FixTable(ip,nick)
 		tempPMBlockerTable=nil
 	end
 	if not res then
-        Users.SendToMain("Error in query: "..query,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
     local res, rows = VH:SQLQuery(query2)
     if not res then
-        Users.SendToMain("Error in query: "..query2,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query2.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows.."|",5, 10)
     end
     if tempPMBlockerTable then
     local indx, indx2, indx3, val, val2, val3;
@@ -134,8 +134,8 @@ function PMBlocker:SQL_ClearDB(ip)
 	local query = "DELETE FROM MainBot_PMBloker WHERE ip='"..ip.."'"
 	local res, rows = VH:SQLQuery(query)
 	if not res then
-        Users.SendToMain("Error in query: "..query2,5, 10)
-        Users.SendToMain("Error: "..rows,5, 10)
+        VH:SendDataToAll("Error in query: "..query.."|",5, 10)
+        VH:SendDataToAll("Error: "..rows,5, 10)
     end
     AddSysLog("Функция PMBlocker:SQL_ClearDB выполнена.")
 end
