@@ -563,7 +563,7 @@ function Timer_SearchSystemFiles()
 	local res, err = VH:SQLQuery(query)
 	local res, value = VH:SQLFetch(0)
 	if (value == "could not fetch row") or (value == "could not seek data") then maxid=nil end
-	if maxid~=nil then
+	if (maxid~=nil) and (value~=nil) then
 		maxid = tonumber(value)
 		if TimerSystemFilesCount <= maxid then
 			query = "SELECT tth FROM MainBot_sysfiles WHERE id="..TimerSystemFilesCount..""
