@@ -1653,8 +1653,13 @@ function regme(sUser,arg)--+
 		end
 		--VH:SendPMToAll("\r\nНик: "..usr.sName.." ["..usr.sIP.."], Шара: "..usr.iShareSize..",LowRetval: "..LowRetval.."|",BOTNAME,10,10)
 		if LowRetval == 1 then
-			query = "INSERT INTO reglist (reg_date,reg_op,nick,class,login_pwd,pwd_change,pwd_crypt) VALUES (unix_timestamp(now()),'"..BOTNAME.."','"..sUser.sName.."',1,encrypt('"..password.."'),0,1)"
-			res, err = VH:SQLQuery(query)
+			--query = "INSERT INTO reglist (reg_date,reg_op,nick,class,login_pwd,pwd_change,pwd_crypt) VALUES (unix_timestamp(now()),'"..BOTNAME.."','"..sUser.sName.."',1,encrypt('"..password.."'),0,1)"
+			--res, err = VH:SQLQuery(query)
+			VH:AddRegUser(sUser.sName,1,password,BOTNAME);
+			--AddDebugLog("regme","nick["..sUser.sName.."] password["..password.."]")
+			--VH:SendDataToUser("$To: Palmer From: regme $<regme> nick["..sUser.sName.."] password["..password.."]|","Palmer")
+			--VH:AddRegUser(nick,class,password,op);
+			--VH:DelRegUser(nick);
 		else
 			return 1
 		end

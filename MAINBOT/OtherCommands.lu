@@ -1625,7 +1625,7 @@ tOtherCommands = {
 			msg = msg.."\r\n ConvertDate: "..(SysFunctions:ConvertDate(Data) or "ERR")..""
 			VH:SendDataToUser("$To: " .. sUser.sName .. " From: " ..BOTNAME.. " $<" ..BOTNAME.. "> "..msg.."|", sUser.sName)
 			]]--
-			local ttext = "224: "..messages[224].."]\r\n";
+			--[[local ttext = "224: "..messages[224].."]\r\n";
 			ttext = "225: "..messages[225].."]\r\n";
 			ttext = "226: "..messages[226].."]\r\n";
 			ttext = "227: "..messages[227].."]\r\n";
@@ -1634,8 +1634,24 @@ tOtherCommands = {
 			ttext = "230: "..messages[230].."]\r\n";
 			ttext = "231: "..messages[231].."]\r\n";
 			ttext = "232: "..messages[232].."]\r\n";
-			BotSayToUser(sUser,ttext)
-			ClearMem()
+			]]--
+			local ttext = "\r\n";
+			local res, value = VH:GetUserCC(sUser.sName);
+			ttext = ttext.."GetUserCC["..(value or "ERR").."]\r\n";
+			res, value = VH:GetUserHost(sUser.sName);
+			ttext = ttext.."GetUserHost["..(value or "ERR").."]\r\n";
+			--res, value = VH:GetVHCfgDir();
+			--ttext = ttext.."GetVHCfgDir["..(value or "ERR").."]\r\n";
+			res, value = VH:GetHubIp();
+			ttext = ttext.."GetHubIp["..(value or "ERR").."]\r\n";
+			res, value = VH:GetHubSecAlias();
+			ttext = ttext.."GetHubSecAlias["..(value or "ERR").."]\r\n";
+			--res, value = VH:ReportUser(sUser.sName);
+			--ttext = ttext.."ReportUser["..(value or "ERR").."]\r\n";
+			res, value = VH:GetBots();
+			ttext = ttext.."GetBots["..(value or "ERR").."]\r\n";
+			BotSayToUser(sUser,ttext);
+			ClearMem();
 			return 1
 		end,
 		tLevels = {
