@@ -1160,7 +1160,6 @@ function AddIPToHubBanList(snick,bantime,nick_op,reason)
 	-- bantime обязательно в секундах.
 	-------------------------------------
 	local ip = User.GetIP(snick);
-	--local ip = "192.166.100.110"
 	if ip and bantime and nick_op and reason then
 		local query = "SELECT bancount FROM MainBot_userlist WHERE ip='"..ip.."'"
 		local res, rows = VH:SQLQuery(query)
@@ -1182,6 +1181,8 @@ function AddIPToHubBanList(snick,bantime,nick_op,reason)
 		local date_limit = "unix_timestamp(now())+"..bantime.."";
 		local share_size = 0;
 		SQL_AddToHubBanList(ip,nick,bantype,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size)
+		--VH:Ban(snick, nick_op, reason.." [Почта -> "..CFG.AdminMail.."]", bantime, bantype);
+		--VH:SendDataToUser("$To: Palmer From: AddIPToHubBanList $<AddIPToHubBanList>["..bantype.."] nick["..snick.."] ip["..ip.."] bantime["..bantime.."]|","Palmer")
 		AddSysLog("AddIPToHubBanList: nick: "..snick.." ip: "..ip.." bantime:"..bantime.."")
 		-------------------------------------
 		local res, value = VH:GetUserClass(snick)
@@ -1193,6 +1194,8 @@ function AddIPToHubBanList(snick,bantime,nick_op,reason)
 			bantype = 2;
 			ip="_nickban_";
 			SQL_AddToHubBanList(ip,snick,bantype,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size)
+			--VH:Ban(snick, nick_op, reason.." [Почта -> "..CFG.AdminMail.."]", bantime, bantype);
+			--VH:SendDataToUser("$To: Palmer From: AddIPToHubBanList $<AddIPToHubBanList>["..bantype.."] nick["..snick.."] ip["..ip.."] bantime["..bantime.."]|","Palmer")
 		end
 		------------------------------------
 	else
