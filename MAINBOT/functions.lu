@@ -1276,7 +1276,7 @@ function TTHBufferInit(bufminid, bufmaxid)
 		local res, err = VH:SQLQuery(query)
 		local res, value = VH:SQLFetch(0)
 		local fullmaxid = tonumber(value)
-		if value == "could not fetch row" then fullmaxid=nil end
+		if (value == "could not fetch row") or (value == "could not seek data") or (value == nil) then fullmaxid=nil end
 		if fullmaxid~=nil and bufmaxid <= fullmaxid+1 then
 			SQL_TTHBuffer(bufminid, bufmaxid);
 		elseif fullmaxid~=nil and  bufminid < fullmaxid and bufmaxid > fullmaxid+1 then

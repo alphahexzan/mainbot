@@ -1,5 +1,5 @@
 -----------------------------------------------
-VERSION = "0.9.2[g9]";
+VERSION = "0.9.2[g10]";
 -----------------------------------------------
 -- КОНСТАНТЫ
 VERLIPATH	=	"/etc/verlihub/";
@@ -1353,6 +1353,7 @@ function VH_OnUserCommand(nick, sData)
 	sUser = nil
 	return 1
 end
+-----------------------------------------------
 function VH_OnOperatorCommand(nick, data)
 	local _,_,prefix,cmd,arg=string.find(data,"(%S)(%S+)%s*(.*)")
 	local ip = User.GetIP(nick);
@@ -1491,7 +1492,7 @@ function VH_OnParsedMsgAny(nick, data)
 		if class > 3 then return 1 end
 		local searcher_nick = string.gsub(data, "(.*)TTH:(.*)%s%((.*)%)(.*)","%4")
 		if searcher_nick then
-			if searcher_nick == OPCHATNAME then
+			if (searcher_nick == OPCHATNAME) then
 				local s,e,path = string.find(data, "$SR%s+%S+%s+(.+)%x+%s+%x+/%x+")
 				if path then
 					local searcher_TTH = string.gsub(data, "(.*)TTH:(.*)%s%((.*)%)(.*)","%2")
@@ -1522,7 +1523,9 @@ function VH_OnParsedMsgAny(nick, data)
 					end
 				end
 			end
-			if (searcher_nick == "вЂўMainBotвЂў") then
+			if (searcher_nick == "вЂўMainBotвЂў") or (searcher_nick==BOTNAME) then
+			-- первая часть условия необходима для корректной работы кода с не правильным значением возвращаемого ника.
+			-- если у вас код не работает с вторым условиме - измените первое до совпадения с ником вашего бота.
 				local s,e,path = string.find(data, "$SR%s+%S+%s+(.+)%x+%s+%x+/%x+")
 				--VH:SendDataToUser("$To: Palmer From: MainSearch_ArchiveTTH.b $<MainSearch_ArchiveTTH.b> data["..(data or "ERR").."] |","Palmer")
 				if path then
