@@ -1179,11 +1179,11 @@ function AddIPToHubBanList(snick,bantime,nick_op,reason)
 		local range_to = 0;
 		local date_start = "unix_timestamp(now())";
 		local date_limit = "unix_timestamp(now())+"..bantime.."";
-		local share_size = 0;
+		local share_size = ONLINEUSERS[snick].iShareSize or 0;
 		SQL_AddToHubBanList(ip,nick,bantype,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size)
 		--VH:Ban(snick, nick_op, reason.." [Почта -> "..CFG.AdminMail.."]", bantime, bantype);
 		--VH:SendDataToUser("$To: Palmer From: AddIPToHubBanList $<AddIPToHubBanList>["..bantype.."] nick["..snick.."] ip["..ip.."] bantime["..bantime.."]|","Palmer")
-		AddSysLog("AddIPToHubBanList: nick: "..snick.." ip: "..ip.." bantime:"..bantime.."")
+		AddSysLog("AddIPToHubBanList: nick["..snick.."] ip["..ip.."] bantime["..bantime.."] reason["..reason.."] share_size["..share_size.."]")
 		-------------------------------------
 		local res, value = VH:GetUserClass(snick)
 		local class = tonumber(value)
@@ -1413,6 +1413,43 @@ function ListMainBufer(sUser)
 		BotSayToUser(sUser,(sResult or "ERR"))
 		os.execute("rm "..HUBDATAPATH.."ListMainBufer.dat")
 	end
+end
+-----------------------------------------------------------------------------------------------------------------
+function ListOnlineUsersBufer(sUser)
+	local handle,err = io.open(HUBDATAPATH.."ListUsersBufer.dat","w");
+	if (handle) then
+		Serialize(ONLINEUSERS, "ONLINEUSERS", handle);
+		handle:flush();
+		handle:close();
+		local sResult = loadtext(HUBDATAPATH.."ListUsersBufer.dat")
+		BotSayToUser(sUser,(sResult or "ERR"))
+		os.execute("rm "..HUBDATAPATH.."ListUsersBufer.dat")
+	end
+	--[[
+	--creating local copy online users bufer
+	local tTable = ONLINEUSERS; 
+	local sTableName = "ListUsersBufer";
+	local sMessage = sTableName..":\r\n";
+	assert(tTable, "tTable equals nil");
+	assert(sTableName, "sTableName equals nil");
+	assert(hFile, "hFile equals nil");
+	assert(type(tTable) == "table", "tTable must be a table!");
+	assert(type(sTableName) == "string", "sTableName must be a string!");
+	for key, value in pairs(tTable) do
+		if type(value)~= "function" then
+			local sKey = (type(key) == "string") and string.format("[%q]",key) or string.format("[%d]",key);
+			if(type(value) == "table") then
+				Serialize(value, sKey, hFile, sTab.."\t");
+			else
+				local sValue = (type(value) == "string") and string.format("%q",value) or tostring(value);
+				hFile:write(sTab.."\t"..sKey.." = "..sValue);
+			end
+			hFile:write(",\n");
+		end	
+	end
+	hFile:write(sTab.."}");
+	end
+	]]--
 end
 -----------------------------------------------------------------------------------------------------------------
 function ReLoadTexts()
