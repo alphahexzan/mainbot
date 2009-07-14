@@ -487,6 +487,7 @@ function Timer_ClearLowUsers()
 			if (usr.iShareSize) and (tMainBufer.ChatRoomsBufer[usr.sName]~=1) and (usr.sName~=SHUBNAME) and (usr.sName~=BOTNAME)then
 				if usr.sName and usr.sIP and usr.iShareSize < CFG.LowShare_Limit then
 					if (BanException(usr.sIP,"lowshare")~=1) and (BanException(usr.sName,"lowshare")~=1) then
+						------------------------------------------------------------
 						--last check
 						local res, myinfo = VH:GetMyINFO(usr.sName)
 						myinfo = string.gsub(myinfo,"%$MyINFO%s%$ALL%s","")
@@ -497,6 +498,7 @@ function Timer_ClearLowUsers()
 							sharesize = 0
 						end
 						--VH:SendDataToUser("$To: Palmer From: Timer_ClearLowUsers $<Timer_ClearLowUsers> ip ["..(usr.sIP or "").."] nick ["..(usr.sName or "").."] sharesize ["..(getNormalShare(CFG.LowShare_Limit) or "err").."] myinfo["..(myinfo or "").."]|","Palmer")
+						------------------------------------------------------------
 						if sharesize < CFG.LowShare_Limit then
 							local LowRetval = 0
 							if NOLOW[usr.sIP] then
@@ -530,12 +532,34 @@ function Timer_ClearLowUsers()
 								end
 							end
 						else
-							AddSysLog("Timer_ClearLowUsers_[ERR]: nick["..(usr.sName or "").."] ip["..(usr.sIP or "").."] sharesize["..(getNormalShare(sharesize) or "").."] myinfo["..(myinfo or "").."]")
+							AddSysLog("Timer_ClearLowUsers_[ERR]: nick["..(usr.sName or "").."] ip["..(usr.sIP or "").."] log["..(NOLOW[usr.sIP].logs or "").."] sharesize["..(getNormalShare(sharesize) or "").."] myinfo["..(myinfo or "").."]")
 							ONLINEUSERS[usr.sName].iShareSize = sharesize;
 							SQL_ModToUserList("sharesize", sharesize, "ip", usr.sIP)
 							if NOLOW[usr.sIP] then
 								NOLOW[usr.sIP]=nil
 							end
+						end
+					end
+				end
+				if (usr.iProfile==1) then
+					if usr.sName and usr.sIP and usr.iShareSize < (CFG.RegShare_Limit * Gbyte) then
+						------------------------------------------------------------
+						--last check
+						local res, reg_myinfo = VH:GetMyINFO(usr.sName)
+						reg_myinfo = string.gsub(reg_myinfo,"%$MyINFO%s%$ALL%s","")
+						local reg_sharesize = string.gsub(reg_myinfo, "^%S+%s.*<.+>%$.%$([^%$]-)%$([^%$]-)%$([^%$]-)%$","%3")
+						if reg_sharesize~=nil then
+							reg_sharesize = tonumber(reg_sharesize)
+						else
+							reg_sharesize = 0
+						end
+						------------------------------------------------------------
+						if reg_sharesize < (CFG.RegShare_Limit * Gbyte) then
+							SQL_DelFromHubReglist(usr.sName);
+							BotSayToUser(usr.sName,messages[226].." ["..(getNormalShare(usr.iShareSize) or "ERR").."]")
+							VH:CloseConnection(usr.sName);
+							AddSysLog("Timer_ClearLowUsers_[Reg]: nick["..(usr.sName or "").."] ip["..(usr.sIP or "").."] sharesize["..(getNormalShare(reg_sharesize) or "").."] myinfo["..(reg_myinfo or "").."]")
+							ONLINEUSERS[usr.sName] = nil;
 						end
 					end
 				end
