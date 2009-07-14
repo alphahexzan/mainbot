@@ -28,29 +28,33 @@ function ParseCommand(sUser,arg,sData)--+
 	--VH:SendDataToAll("cmd: "..cmd.."|",10,10)
 	--VH:SendDataToAll("arg: "..arg.."|",10,10)
 	--if prefix==nil or prefix~="*" then return 0 end -- не найден префикс
-	------------------------------------------------------------------------
-	if prefix==nil or prefix~="+" then return 0 end -- не найден префикс
-	------------------------------------------------------------------------
-	-- фильтр +me и /me
-	if prefix=="+" or prefix=="/" then
-		if cmd == "me" then
-			--VH:SendDataToUser("$To: Palmer From: "..BOTNAME.." $<"..BOTNAME.."> +me /me filter: Nick["..sUser.sName.."] IP ["..sUser.sIP.."]|","Palmer")
-			-----------------------------------------------------------
-			--[[
-			--проверка: бан
-				local query = "SELECT user_status FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
-				local res, rows = VH:SQLQuery(query)
-				local res, curUserStatus = VH:SQLFetch(0)
-				curUserStatus = tonumber(curUserStatus)
-				if curUserStatus==4 or curUserStatus==6 or curUserStatus==1 or curUserStatus== 2 then
-					BotSayToUser(sUser,getBanInfo (sUser.sIP))
-					return 1
-				end
-			]]--
-			-----------------------------------------------------------
-			return VH_OnParsedMsgChat(sUser.sName, sData)
+	if prefix~=nil then
+		if prefix=="+" or prefix=="/" then-- фильтр +me и /me
+			if cmd == "me" then
+				--VH:SendDataToUser("$To: Palmer From: "..BOTNAME.." $<"..BOTNAME.."> +me /me filter: Nick["..sUser.sName.."] IP ["..sUser.sIP.."]|","Palmer")
+				-----------------------------------------------------------
+				--[[
+				--проверка: бан
+					local query = "SELECT user_status FROM MainBot_userlist WHERE ip='"..sUser.sIP.."'"
+					local res, rows = VH:SQLQuery(query)
+					local res, curUserStatus = VH:SQLFetch(0)
+					curUserStatus = tonumber(curUserStatus)
+					if curUserStatus==4 or curUserStatus==6 or curUserStatus==1 or curUserStatus== 2 then
+						BotSayToUser(sUser,getBanInfo (sUser.sIP))
+						return 1
+					end
+				]]--
+				-----------------------------------------------------------
+				return VH_OnParsedMsgChat(sUser.sName, sData)
+			end
 		end
+	else
+		return 0
 	end
+	------------------------------------------------------------------------
+	if prefix==nil or prefix~="+" then
+			return 0
+	end -- не найден префикс
 	------------------------------------------------------------------------
 	local ComCheck = 0
 	cmd = string.lower(cmd)

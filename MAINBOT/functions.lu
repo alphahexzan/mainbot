@@ -1183,7 +1183,7 @@ function AddIPToHubBanList(snick,bantime,nick_op,reason)
 		SQL_AddToHubBanList(ip,nick,bantype,range_fr,range_to,date_start,date_limit,nick_op,reason,share_size)
 		--VH:Ban(snick, nick_op, reason.." [Почта -> "..CFG.AdminMail.."]", bantime, bantype);
 		--VH:SendDataToUser("$To: Palmer From: AddIPToHubBanList $<AddIPToHubBanList>["..bantype.."] nick["..snick.."] ip["..ip.."] bantime["..bantime.."]|","Palmer")
-		AddSysLog("AddIPToHubBanList: nick["..snick.."] ip["..ip.."] bantime["..bantime.."] reason["..reason.."] share_size["..share_size.."]")
+		AddSysLog("AddIPToHubBanList: nick["..snick.."] ip["..ip.."] bantime["..bantime.."] reason["..reason.."] share_size["..(getNormalShare(share_size) or "").."]")
 		-------------------------------------
 		local res, value = VH:GetUserClass(snick)
 		local class = tonumber(value)

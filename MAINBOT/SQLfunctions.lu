@@ -2468,4 +2468,29 @@ function SQL_AgreementAdd(ip, nick, mail, val)
 end
 function SQL_AgreementDel(ip, nick, mail)
 end
+function SQL_InitCommonStats()
+	local query = "CREATE TABLE IF NOT EXISTS `common`.`verlihub_stats` (name varchar(64) NOT NULL, text mediumtext NOT NULL) TYPE = MYISAM ;"
+    local res, err = VH:SQLQuery(query)
+    if not res then
+		VH:SendDataToAll("Error in query: "..query.."|",10,10)
+		VH:SendDataToAll("Error: "..err.."|",10,10)
+    end
+    --check if settings database is filled
+    query = "SELECT * FROM `common`.`verlihub_stats` WHERE name ='BOTNAME'"
+    res, err = VH:SQLQuery(query)
+    local res, isDb = VH:SQLFetch(0)
+    if isDb == "could not fetch row" then
+		--default...
+		VH:SendDataToAll(" *** ХMainBotХ записал стандартные настройки.|",10,10)
+		-- todo: scrivere tutti i valori con una unica query
+		local query = "INSERT INTO MainBot_settings (name , valore) VALUES ('BOTNAME', 'ХMainBotХ')"
+		local res, err = VH:SQLQuery(query)
+		query = "INSERT INTO MainBot_settings (name , valore) VALUES ('BOTNAME', 'ХMainBotХ')"
+		res, err = VH:SQLQuery(query)
+	end
+end
+function SQL_DumpCommonStats()
+	query = "SELECT * FROM `common`.`verlihub_stats` LIMIT 0 , 30";
+	query = "INSERT INTO `common`.`verlihub_stats` (name , text) VALUES ('FloodValue', '5')";
+end
 ---------
